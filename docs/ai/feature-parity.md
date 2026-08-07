@@ -1,0 +1,45 @@
+# Feature Parity and Deliberate Deviations
+
+Reference implementation: `dbontr/fantasy-football-oracle` v5.2. The reference repository is not modified by this project.
+
+| Capability | Browser engine | Notes |
+|---|---|---|
+| Exact lineup optimization | Preserved | Hungarian assignment from proven browser core |
+| Draft simulation / VONA / return probability | Preserved | Pure JS combinatorial core |
+| Waiver add/drop optimization | Preserved | Worker-executed search + browser FAAB range |
+| Bilateral trade generation | Preserved | Through 2-for-2, worker-executed |
+| Player probability distributions | Rebuilt | Zero-inflated availability + active performance |
+| Correlated Monte Carlo | Rebuilt | Game/team/player latent factors, paired seeds |
+| Robust decision policy | Rebuilt | CVaR, regret, probability-best, Pareto, reversal |
+| Fantasy season simulation | Rebuilt | Weekly lineups, matchups, all-play, median game |
+| Championship optimization | Rebuilt | Seeds, byes, playoff bracket, title probability |
+| Temporal evidence ledger | Rebuilt | Browser-local SHA-256 lineage and as-of replay |
+| Coaching priors | Preserved compactly | 32-team static model artifact |
+| Health/recovery calibration | Preserved compactly | nflverse historical availability calibration |
+| Context intelligence | Lightweight replacement | Transparent matchup proxy + schedule/game context |
+| Source policy | Preserved/stricter | Runtime allowlist has no credential path |
+| Local persistence | Replaced | IndexedDB instead of server storage |
+| Native C++ simulator | Removed | Deterministic JS factor model is Pages-compatible |
+| Fastify/API server | Removed | No backend |
+| Automated ingestion jobs | Removed | Manual refresh by design; no Actions |
+## Features intentionally not fabricated
+
+The original ideal blueprint identifies route participation, targets per route, red-zone role, play-level xFP, offensive-line context, detailed coverage/pass-rush context, longitudinal recovery, and market disagreement as high-value evidence. The browser engine has evidence-family hooks for these ideas but does not manufacture values when a compliant source is absent.
+
+A future addition qualifies only when all of the following hold:
+
+1. The source is free/keyless under the project's source policy.
+2. The browser can retrieve or consume the data without a secret-bearing proxy.
+3. Historical as-of values can be reconstructed well enough to validate the feature without leakage.
+4. The feature improves rolling out-of-sample metrics or decision regret after calibration.
+5. Transfer/compute cost is acceptable for a static client.
+
+## Browser-specific improvements over the reference
+
+- No server/native deployment failure modes.
+- Deterministic paired Monte Carlo is available directly in the decision UI.
+- Offline bootstrap and local persistence are first-class behavior.
+- Source policy is enforced before every runtime fetch.
+- Evidence integrity uses built-in Web Crypto with no dependency.
+- Browser QA checks real Worker workflows at desktop and phone widths.
+- The static validator prevents accidental introduction of workflow/dependency/backend assumptions.

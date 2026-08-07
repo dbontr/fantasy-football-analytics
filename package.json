@@ -1,0 +1,16 @@
+{
+  "name": "fantasy-football-oracle-browser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-backend browser-native fantasy football decision engine for GitHub Pages",
+  "scripts": {
+    "check": "node scripts/check.js",
+    "test": "node --test tests/*.test.js",
+    "build": "node scripts/validate-static.js",
+    "verify": "npm run check && npm test && npm run build",
+    "serve": "node scripts/serve.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

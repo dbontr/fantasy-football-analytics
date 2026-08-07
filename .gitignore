@@ -1,0 +1,5 @@
+node_modules/
+.qa-*.png
+.qa-results.json
+.render-dom.html
+*.log
