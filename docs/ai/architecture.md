@@ -76,3 +76,7 @@ Historical weekly stats are stored as compressed nflverse CSV archives under `da
 ### Decision evidence fan-out
 
 The worker can resolve history profiles for a batch of players after a season is parsed once. The UI caches those summaries by player/season and merges bounded history evidence beneath current coaching, health, matchup, and local ledger evidence. Lineup, waiver, and trade paths use the selected week's evidence-aware forecast mean; season/title simulation receives static history/health/coaching evidence without leaking a single week's matchup context across the schedule. If history loading fails, each workflow falls back to the bounded baseline and labels that fallback.
+
+### Live status refresh
+
+Before lineup, waiver, trade, and league decisions, the browser attempts parallel position-filtered Sleeper player refreshes for relevant offensive positions. Successful responses replace stale bootstrap injury designations with canonical live availability states and preserve practice/depth metadata. Failed requests never block the decision engine: history/baseline evidence remains usable and the UI reports a `live-status fallback` instead of implying freshness.

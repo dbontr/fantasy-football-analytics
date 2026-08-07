@@ -36,6 +36,7 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, volatility, and trend summaries.
 - Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs.
 - Shared history-aware decision evidence now feeds lineup optimization, waiver add/drop search, bilateral trades, and league/title simulation.
+- Decision workflows automatically attempt position-filtered Sleeper health/status refreshes; active reports clear stale bootstrap injury labels and any network failure is surfaced as a live-status fallback.
 - Lightweight matchup context derived from the free bootstrap universe and clearly marked as a proxy.
 - Online exponentiated-loss ensemble reweighting stored locally.
 - Sleeper league import/status enrichment, generic nflverse release asset loading, and NWS forecast adapters.

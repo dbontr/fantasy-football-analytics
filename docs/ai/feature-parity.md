@@ -59,3 +59,9 @@ A future addition qualifies only when all of the following hold:
 - Trade search enriches both rosters while leaving season asset/fairness values anchored to the longer-horizon model.
 - League/title simulation receives per-player static history, health, coaching, and ledger evidence across every simulated week.
 - Browser QA now executes lineup, waiver, trade, and league paths and requires each to report history-aware execution.
+
+### Automatic health freshness
+
+- Lineup, waiver, trade, and league runs now request only the relevant Sleeper positions when live status has not already been synced.
+- Sleeper `Active` explicitly clears stale bootstrap injury designations; reserve/PUP/suspension states are normalized to the runtime availability vocabulary.
+- Partial or failed live refreshes are non-fatal and visibly labeled as `live-status fallback`.

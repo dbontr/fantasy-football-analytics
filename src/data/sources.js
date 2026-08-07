@@ -123,6 +123,22 @@
     return { league, rosters, users };
   }
 
+  function canonicalSleeperStatus(match, fallback = "ACTIVE") {
+    const injury = String(match?.injury_status || "").trim().toUpperCase();
+    if (injury) {
+      if (injury.includes("INJURED RESERVE") || injury === "IR") return "IR";
+      if (injury.includes("PUP") || injury.includes("PHYSICALLY UNABLE")) return "PUP";
+      if (injury.includes("SUSPEND")) return "SUSPENDED";
+      return injury;
+    }
+    const status = String(match?.status || "").trim().toUpperCase();
+    if (status === "ACTIVE") return "ACTIVE";
+    if (status.includes("INJURED RESERVE") || status === "IR") return "IR";
+    if (status.includes("PUP") || status.includes("PHYSICALLY UNABLE")) return "PUP";
+    if (status.includes("SUSPEND")) return "SUSPENDED";
+    return String(fallback || "ACTIVE").toUpperCase();
+  }
+
   function enrichLocalPlayers(localPlayers, sleeperPlayers) {
     const byKey = new Map();
     for (const [sleeperId, player] of Object.entries(sleeperPlayers || {})) {
@@ -140,9 +156,11 @@
       return {
         ...player,
         sleeperId: match.sleeperId,
-        injuryStatus: match.injury_status || player.injuryStatus,
+        injuryStatus: canonicalSleeperStatus(match, player.injuryStatus),
+        active: match.active === false ? false : player.active,
         sleeper: {
           status: match.status || null,
+          active: match.active !== false,
           injuryBodyPart: match.injury_body_part || null,
           injuryNotes: match.injury_notes || null,
           injuryStartDate: match.injury_start_date || null,

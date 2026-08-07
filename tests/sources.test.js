@@ -27,3 +27,22 @@ test("catalog contains only anonymous zero-cost sources", () => {
     assert.equal(source.cost.trialOnly, false);
   }
 });
+
+
+test("Sleeper active status clears a stale bootstrap injury designation", () => {
+  const [player] = sources.enrichLocalPlayers(
+    [{ id: "p1", name: "Test Runner", position: "RB", team: "DET", injuryStatus: "QUESTIONABLE", active: true }],
+    { "s1": { full_name: "Test Runner", position: "RB", team: "DET", status: "Active", active: true, injury_status: null } },
+  );
+  assert.equal(player.injuryStatus, "ACTIVE");
+  assert.equal(player.sleeper.active, true);
+});
+
+test("Sleeper reserve status canonicalizes to model availability vocabulary", () => {
+  const [player] = sources.enrichLocalPlayers(
+    [{ id: "p2", name: "Test Receiver", position: "WR", team: "GB", injuryStatus: "ACTIVE", active: true }],
+    { "s2": { full_name: "Test Receiver", position: "WR", team: "GB", status: "Injured Reserve", active: false, injury_status: null } },
+  );
+  assert.equal(player.injuryStatus, "IR");
+  assert.equal(player.active, false);
+});

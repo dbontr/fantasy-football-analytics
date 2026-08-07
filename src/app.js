@@ -165,6 +165,50 @@
     }
   }
 
+  function refreshDecisionPlayers(players) {
+    return (players || []).map((player) => playerById(player.id) || player);
+  }
+
+  async function ensureLiveDecisionStatus(players) {
+    if (state.sleeperLoaded) return { synced: 0, failed: [], cached: true };
+    const supported = new Set(["QB", "RB", "WR", "TE", "K"]);
+    const positions = [...new Set((players || []).map((player) => String(player?.position || "").toUpperCase()))]
+      .filter((position) => supported.has(position) && !state.sleeperPositions.has(position));
+    if (!positions.length) return { synced: 0, failed: [], cached: true };
+    const selectedPlayerId = $("#player-select").value;
+    const results = await Promise.allSettled(positions.map(async (position) => ({
+      position,
+      players: await sources.loadSleeperPlayers(position),
+    })));
+    const failed = [];
+    let synced = 0;
+    for (let index = 0; index < results.length; index += 1) {
+      const result = results[index];
+      if (result.status !== "fulfilled") { failed.push(positions[index]); continue; }
+      state.players = sources.enrichLocalPlayers(state.players, result.value.players);
+      state.sleeperPositions.add(result.value.position);
+      synced += 1;
+    }
+    if (synced) {
+      fillPlayerSelects();
+      if (selectedPlayerId && playerById(selectedPlayerId)) $("#player-select").value = selectedPlayerId;
+    }
+    return { synced, failed, cached: false };
+  }
+
+  async function prepareDecisionContext(players) {
+    const live = await ensureLiveDecisionStatus(players);
+    const refreshed = refreshDecisionPlayers(players);
+    const history = await ensureDecisionIntelligence(refreshed);
+    return { players: refreshed, live, history };
+  }
+
+  function decisionContextLabel(contextState) {
+    const history = contextState?.history?.error ? "history fallback" : "history-aware";
+    const live = contextState?.live?.failed?.length ? "live-status fallback" : "live-status synced";
+    return history + " · " + live;
+  }
+
   function temporaryEvidence(player) {
     const evidence = { ...decisionEvidence(player, Number($("#player-week").value || 1)) };
     const active = $("#whatif-active").value;
@@ -369,11 +413,12 @@
   }
 
   async function analyzeLineup() {
-    const roster = rosterPlayers();
+    let roster = rosterPlayers();
     if (!roster.length) return status("Build a roster first.", "error");
     const week = Number($("#lineup-week").value || 1);
-    status("Loading recent role intelligence for the roster…");
-    const intelligenceState = await ensureDecisionIntelligence(roster);
+    status("Refreshing live health + recent role intelligence for the roster…");
+    const contextState = await prepareDecisionContext(roster);
+    roster = contextState.players;
     const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week) }));
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({ ...forecast.player, weekProjection: forecast.distribution.mean }));
@@ -392,7 +437,7 @@
       const bench = lineup.bench.slice(0, 8).map((player) => `<div class="lineup-row"><span>BN</span><strong>${esc(player.name)}</strong><b>${num(byId.get(String(player.id))?.distribution.mean)}</b></div>`).join("");
       $("#lineup-result").className = "result-space";
       $("#lineup-result").innerHTML = `<div class="metric-grid"><div class="metric"><span>EXPECTED</span><strong>${num(summary.mean)}</strong></div><div class="metric"><span>P10</span><strong class="warn">${num(summary.p10)}</strong></div><div class="metric"><span>MEDIAN</span><strong>${num(summary.p50)}</strong></div><div class="metric"><span>P90</span><strong class="good">${num(summary.p90)}</strong></div><div class="metric"><span>CVaR10</span><strong>${num(summary.cvar10)}</strong></div></div>${rangeMarkup(summary)}<div class="result-grid"><div><p class="control-title">STARTERS</p><div class="lineup-list">${starters}</div></div><div><p class="control-title">BENCH ALTERNATIVES</p><div class="lineup-list">${bench || "<div class='lineup-row'><strong>No bench</strong></div>"}</div></div></div>`;
-      status(intelligenceState.error ? "Lineup portfolio complete · history fallback." : "Lineup portfolio complete · history-aware.", "good");
+      status(`Lineup portfolio complete · ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -413,29 +458,31 @@
   }
 
   async function runWaivers() {
-    const roster = rosterPlayers();
+    let roster = rosterPlayers();
     if (!roster.length) return status("Build a roster in the Lineup tab first.", "error");
     const rosterSet = new Set(state.rosterIds.map(String));
-    const freeAgents = state.players.filter((player) => !rosterSet.has(String(player.id)));
+    let freeAgents = state.players.filter((player) => !rosterSet.has(String(player.id)));
     const week = Number($("#waiver-week").value || 1);
     const budget = Math.max(0, Number($("#faab-budget").value || 0));
     $("#run-waivers").disabled = true;
-    status("Loading recent role intelligence for waiver candidates…");
-    let intelligenceState = { loaded: 0 };
+    status("Refreshing live health + recent role intelligence for waiver candidates…");
+    let contextState = { live: { failed: [] }, history: {} };
     try {
       const intelligencePool = [...freeAgents].sort((a, b) => baselineWeekProjection(b, week) - baselineWeekProjection(a, week)).slice(0, 180);
-      intelligenceState = await ensureDecisionIntelligence([...roster, ...intelligencePool]);
+      contextState = await prepareDecisionContext([...roster, ...intelligencePool]);
+      roster = refreshDecisionPlayers(roster);
+      freeAgents = state.players.filter((player) => !rosterSet.has(String(player.id)));
       const intelligenceIds = new Set(intelligencePool.map((player) => String(player.id)));
       const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week));
       const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week) : player);
-      status("Searching history-aware add/drop combinations in the worker…");
+      status("Searching live + history-aware add/drop combinations in the worker…");
       const suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week });
       $("#waiver-result").className = "result-space";
       $("#waiver-result").innerHTML = suggestions.length ? `<div class="decision-list">${suggestions.map((row) => {
         const bid = faabRange(row, budget, week);
         return `<article class="decision-card"><div class="decision-head"><strong>Add ${esc(row.add.name)} · Drop ${esc(row.drop.name)}</strong><b>$${bid.target}</b></div><p>${esc(row.reason)}</p><div class="decision-stats"><span>lineup ${row.lineupGain >= 0 ? "+" : ""}${num(row.lineupGain)}</span><span>depth ${row.depthGain >= 0 ? "+" : ""}${num(row.depthGain)}</span><span>FAAB $${bid.floor}–$${bid.ceiling}</span><span>score ${num(row.score)}</span></div></article>`;
       }).join("")}</div>` : `<p>No positive add/drop pairs found under the current roster and week.</p>`;
-      status(intelligenceState.error ? "Waiver search complete · history fallback." : "Waiver search complete · history-aware.", "good");
+      status(`Waiver search complete · ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -460,18 +507,20 @@
   }
 
   async function runTrades() {
-    const userRoster = rosterPlayers();
+    let userRoster = rosterPlayers();
     if (!userRoster.length) return status("Build a roster in the Lineup tab first.", "error");
-    const opponentRoster = counterpartyRoster();
+    let opponentRoster = counterpartyRoster();
     const week = Number($("#trade-week").value || 1);
     $("#run-trades").disabled = true;
-    status("Loading recent role intelligence for both rosters…");
-    let intelligenceState = { loaded: 0 };
+    status("Refreshing live health + recent role intelligence for both rosters…");
+    let contextState = { live: { failed: [] }, history: {} };
     try {
-      intelligenceState = await ensureDecisionIntelligence([...userRoster, ...opponentRoster]);
+      contextState = await prepareDecisionContext([...userRoster, ...opponentRoster]);
+      userRoster = refreshDecisionPlayers(userRoster);
+      opponentRoster = refreshDecisionPlayers(opponentRoster);
       const decisionUserRoster = userRoster.map((player) => decisionPlayerForWeek(player, week));
       const decisionOpponentRoster = opponentRoster.map((player) => decisionPlayerForWeek(player, week));
-      status("Searching history-aware bilateral packages in the worker…");
+      status("Searching live + history-aware bilateral packages in the worker…");
       const proposals = await runWorker("trade-proposals", { options: {
         userRoster: decisionUserRoster,
         opponentRoster: decisionOpponentRoster,
@@ -484,7 +533,7 @@
       } });
       $("#trade-result").className = "result-space";
       $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card"><div class="decision-head"><strong>${esc(row.give.map((p) => p.name).join(" + "))} → ${esc(row.receive.map((p) => p.name).join(" + "))}</strong><b>${esc(row.packageType)}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>your lineup ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)}</span><span>their lineup ${row.opponentAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.opponentAnalysis.lineupGain)}</span><span>fairness ${row.fairness}%</span><span>mutual ${num(row.mutualScore)}</span></div></article>`).join("")}</div>` : `<p>No mutually plausible packages passed the current fairness thresholds.</p>`;
-      status(intelligenceState.error ? "Trade search complete · history fallback." : "Trade search complete · history-aware.", "good");
+      status(`Trade search complete · ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -596,13 +645,15 @@
     const regularSeasonEnd = Number($("#regular-season-end").value || 14);
     const championshipWeek = Number($("#championship-week").value || 17);
     $("#run-league").disabled = true;
-    const leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
-    $("#league-source-status").textContent = `Loading recent role intelligence for ${leaguePlayers.length} rostered players…`;
-    let intelligenceState = { loaded: 0 };
+    let leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
+    $("#league-source-status").textContent = `Refreshing live health + recent role intelligence for ${leaguePlayers.length} rostered players…`;
+    let contextState = { live: { failed: [] }, history: {} };
     try {
-      intelligenceState = await ensureDecisionIntelligence(leaguePlayers);
+      contextState = await prepareDecisionContext(leaguePlayers);
+      state.leagueTeams = state.leagueTeams.map((team) => ({ ...team, roster: refreshDecisionPlayers(team.roster) }));
+      leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
       const evidenceByPlayer = Object.fromEntries(leaguePlayers.map((player) => [String(player.id), staticDecisionEvidence(player)]));
-      $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} history-aware league seasons in the worker…`;
+      $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} live + history-aware league seasons in the worker…`;
       const result = await runWorker("league", { options: {
         teams: state.leagueTeams,
         settings: core.DEFAULT_SETTINGS,
@@ -619,10 +670,8 @@
       } });
       $("#league-result").className = "result-space";
       $("#league-result").innerHTML = `<div class="table-header"><h2>Championship board</h2><span>${result.simulations.toLocaleString()} seasons · playoffs W${result.firstPlayoffWeek}–${result.championshipWeek}</span></div><div class="table-wrap"><table><thead><tr><th>Team</th><th>Title</th><th>Playoffs</th><th>Expected wins</th><th>All-play</th><th>Expected points</th></tr></thead><tbody>${result.teams.map((team) => `<tr><td class="player-cell"><strong>${esc(team.name)}</strong><span>team ${esc(team.teamId)}</span></td><td><b>${pct(team.championshipProbability, 1)}</b></td><td>${pct(team.playoffProbability, 1)}</td><td>${num(team.expectedWins, 2)}</td><td>${pct(team.allPlayWinPct, 1)}</td><td>${num(team.expectedPoints, 1)}</td></tr>`).join("")}</tbody></table></div>`;
-      $("#league-source-status").textContent = intelligenceState.error
-        ? "Title simulation complete with baseline fallback. Probabilities are model estimates, not guarantees."
-        : "Title simulation complete · history-aware. Probabilities are model estimates, not guarantees.";
-      status(intelligenceState.error ? "League championship simulation complete · history fallback." : "League championship simulation complete · history-aware.", "good");
+      $("#league-source-status").textContent = `Title simulation complete · ${decisionContextLabel(contextState)}. Probabilities are model estimates, not guarantees.`;
+      status(`League championship simulation complete · ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       $("#league-source-status").textContent = error.message;
       status(error.message, "error");
