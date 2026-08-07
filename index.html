@@ -94,6 +94,11 @@
         </aside>
         <div id="player-result" class="result-space empty-state"><p>Select a player and run the distribution.</p></div>
       </div>
+      <article class="module intelligence-module">
+        <div class="table-header"><div><p class="eyebrow">PLAYER INTELLIGENCE</p><h2>Game log + evidence-backed outlook</h2></div><span id="intelligence-source">On-demand · nflverse + Sleeper</span></div>
+        <div class="toolbar intelligence-toolbar"><label>History season<select id="history-season"><option selected>2025</option><option>2024</option><option>2023</option></select></label><button id="load-intelligence" class="secondary">Load game history + status</button></div>
+        <div id="player-intelligence" class="result-space empty-state"><p>Load a player’s actual weekly stats, rolling usage, current health evidence, and locally generated outlook.</p></div>
+      </article>
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
@@ -164,6 +169,7 @@
   <script src="./src/engine/runtime.js"></script>
   <script src="./src/engine/evidence.js"></script>
   <script src="./src/engine/context.js"></script>
+  <script src="./src/engine/intelligence.js"></script>
   <script src="./src/data/sources.js"></script>
   <script src="./src/storage/browser-store.js"></script>
   <script src="./src/app.js"></script>

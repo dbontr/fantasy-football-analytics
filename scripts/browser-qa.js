@@ -91,6 +91,11 @@ async function main() {
   const playerLab = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, metrics:document.querySelectorAll('#player-result .metric').length, drivers:document.querySelectorAll('#player-result .driver-row').length}))()`);
   if (playerLab.metrics < 5) throw new Error("Player Lab did not render distribution metrics");
 
+  await evaluate(`document.querySelector('#history-season').value='2025'; document.querySelector('#load-intelligence').click(); true`);
+  await waitFor(`document.querySelectorAll('#player-intelligence tbody tr').length >= 8`, 45000);
+  const intelligence = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, games:document.querySelectorAll('#player-intelligence tbody tr').length, outlook:document.querySelector('#player-intelligence .outlook-card h3')?.textContent, source:document.querySelector('#intelligence-source').textContent}))()`);
+  if (intelligence.games < 8 || !intelligence.outlook) throw new Error("Player intelligence did not render game history and outlook");
+
   await evaluate(`document.querySelector('[data-panel-target="lineup"]').click(); document.querySelector('#roster-demo').click(); document.querySelector('#run-lineup').click(); true`);
   await waitFor(`document.querySelectorAll('#lineup-result .metric').length >= 5`, 15000);
   const lineup = await evaluate(`(() => ({roster:document.querySelectorAll('.roster-chip').length, starters:document.querySelectorAll('#lineup-result .lineup-row').length, status:document.querySelector('#global-status').textContent}))()`);
@@ -105,7 +110,7 @@ async function main() {
   const mobile = await snapshot("mobile", 390, 844);
   if (mobile.horizontalOverflow) throw new Error(`Mobile horizontal overflow: ${mobile.documentWidth}/${mobile.viewportWidth}`);
 
-  const result = { desktop, playerLab, lineup, league, mobile, errors, screenshots: [".qa-desktop.png", ".qa-mobile.png"] };
+  const result = { desktop, playerLab, intelligence, lineup, league, mobile, errors, screenshots: [".qa-desktop.png", ".qa-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) throw new Error(`Browser logged ${errors.length} error(s)`);

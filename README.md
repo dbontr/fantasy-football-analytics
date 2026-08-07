@@ -33,6 +33,8 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - Robust action ranking with CVaR, expected regret, probability-best, Pareto frontiers, and reversal thresholds.
 - Temporal evidence ledger with effective/expiry timestamps, freshness decay, conflict resolution, as-of replay, and a SHA-256 chain.
 - Historical nflverse health calibration and 32-team coaching priors.
+- On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, volatility, and trend summaries.
+- Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs.
 - Lightweight matchup context derived from the free bootstrap universe and clearly marked as a proxy.
 - Online exponentiated-loss ensemble reweighting stored locally.
 - Sleeper league import/status enrichment, generic nflverse release asset loading, and NWS forecast adapters.
@@ -66,6 +68,7 @@ The bootstrap is intentionally explicit about provenance instead of pretending e
 
 - `data/players-lite.json`: compacted from the prior Oracle's 2026 public ESPN fantasy player/schedule snapshot, merged with nflverse-derived opportunity profiles. ESPN is **not** a live runtime adapter in this repo.
 - `data/health-calibration-2026.json`: historical nflverse official injury/practice reports joined to nflverse weekly player outcomes with leakage controls recorded in the artifact metadata.
+- `data/history/stats_player_week_2023.csv.gz` through `2025.csv.gz`: compressed nflverse weekly player statistics, loaded on demand and never included in initial-page precache.
 - `data/coaches-2026.json`: 32-team Bayesian-shrunk Oracle coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
 - Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, and NOAA/NWS.
 

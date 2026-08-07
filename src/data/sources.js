@@ -96,12 +96,19 @@
     return new TextDecoder().decode(result.bytes);
   }
 
+  async function decodeGzip(bytes) {
+    if (typeof DecompressionStream === "undefined") throw new Error("gzip decompression is unavailable in this browser");
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    return new Response(stream).text();
+  }
+
   function normalizeName(value) {
     return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
   }
 
-  async function loadSleeperPlayers() {
-    return fetchJson("sleeper", "https://api.sleeper.app/v1/players/nfl", { timeoutMs: 30_000 });
+  async function loadSleeperPlayers(position = null) {
+    const suffix = position ? `?position=${encodeURIComponent(String(position).toUpperCase())}` : "";
+    return fetchJson("sleeper", `https://api.sleeper.app/v1/players/nfl${suffix}`, { timeoutMs: 30_000 });
   }
 
   async function loadSleeperLeague(leagueId) {
@@ -138,6 +145,8 @@
           status: match.status || null,
           injuryBodyPart: match.injury_body_part || null,
           injuryNotes: match.injury_notes || null,
+          injuryStartDate: match.injury_start_date || null,
+          newsUpdated: match.news_updated || null,
           practiceParticipation: match.practice_participation || null,
           depthChartPosition: match.depth_chart_position || null,
           depthChartOrder: match.depth_chart_order || null,
@@ -158,6 +167,34 @@
     const asset = (release.assets || []).find((row) => predicate(row.name));
     if (!asset) throw new Error(`No matching nflverse asset in ${tag}`);
     return { name: asset.name, text: await fetchText("nflverse", asset.browser_download_url, options) };
+  }
+
+  async function nflversePlayerWeeklyText(season) {
+    const selected = Math.round(Number(season));
+    if (selected < 1999 || selected > 2100) throw new RangeError("Invalid NFL season");
+    const bundledUrl = `./data/history/stats_player_week_${selected}.csv.gz`;
+    if (typeof location !== "undefined" && typeof DecompressionStream !== "undefined") {
+      try {
+        const response = await fetch(bundledUrl, { method: "GET", cache: "default", credentials: "omit" });
+        if (response.ok) {
+          const bytes = new Uint8Array(await response.arrayBuffer());
+          if (bytes.byteLength > 16 * 1024 * 1024) throw new RangeError("Bundled nflverse history exceeds size limit");
+          return { season: selected, name: bundledUrl.split("/").pop(), text: await decodeGzip(bytes), bytes: bytes.byteLength, compressed: true, bundled: true, url: response.url || bundledUrl };
+        }
+      } catch (_) { /* fall through to the public nflverse release */ }
+    }
+    const release = await nflverseRelease("stats_player");
+    const gzipName = `stats_player_week_${selected}.csv.gz`;
+    const csvName = `stats_player_week_${selected}.csv`;
+    const compressed = (release.assets || []).find((row) => row.name === gzipName);
+    if (compressed && typeof DecompressionStream !== "undefined") {
+      const result = await fetchBounded("nflverse", compressed.browser_download_url, { maxBytes: 16 * 1024 * 1024, timeoutMs: 30_000 });
+      return { season: selected, name: gzipName, text: await decodeGzip(result.bytes), bytes: result.bytes.byteLength, compressed: true, url: result.url };
+    }
+    const plain = (release.assets || []).find((row) => row.name === csvName);
+    if (!plain) throw new Error(`nflverse weekly player stats are unavailable for ${selected}`);
+    const result = await fetchBounded("nflverse", plain.browser_download_url, { maxBytes: 32 * 1024 * 1024, timeoutMs: 30_000 });
+    return { season: selected, name: csvName, text: new TextDecoder().decode(result.bytes), bytes: result.bytes.byteLength, compressed: false, url: result.url };
   }
 
   function parseCsv(text) {
@@ -213,6 +250,7 @@
     loadSleeperLeague,
     loadSleeperPlayers,
     nflverseAssetText,
+    nflversePlayerWeeklyText,
     nflverseRelease,
     normalizeName,
     nwsForecast,

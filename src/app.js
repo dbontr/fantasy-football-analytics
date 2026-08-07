@@ -6,6 +6,7 @@
   const evidenceApi = window.OracleEvidence;
   const sources = window.OracleSources;
   const context = window.OracleContext;
+  const intelligence = window.OraclePlayerIntelligence;
   const store = window.OracleStore;
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -21,11 +22,13 @@
     coaches: null,
     healthCalibration: null,
     contextByWeek: new Map(),
+    intelligenceHistory: new Map(),
     ledger: new evidenceApi.EvidenceLedger(),
     rosterIds: [],
     draftState: null,
     leagueTeams: null,
     sleeperLoaded: false,
+    sleeperPositions: new Set(),
     ensembleWeights: { market: 0.55, opportunity: 0.45 },
   };
 
@@ -68,6 +71,10 @@
     return [...state.players].sort((a, b) => (a.pprRank || a.adp || 9999) - (b.pprRank || b.adp || 9999));
   }
 
+  function historyKey(player, season = Number($("#history-season")?.value || 2025)) {
+    return `${player?.id || "unknown"}:${season}`;
+  }
+
   function fillWeeks() {
     const options = Array.from({ length: 18 }, (_, index) => `<option value="${index + 1}">Week ${index + 1}</option>`).join("");
     ["#player-week", "#lineup-week", "#waiver-week", "#trade-week"].forEach((selector) => { $(selector).innerHTML = options; });
@@ -104,6 +111,8 @@
 
   function temporaryEvidence(player) {
     const evidence = { ...savedEvidence(player, Number($("#player-week").value || 1)) };
+    const history = state.intelligenceHistory.get(historyKey(player));
+    if (history?.evidence) Object.assign(evidence, history.evidence);
     const active = $("#whatif-active").value;
     const target = $("#whatif-target").value;
     const wind = $("#whatif-wind").value;
@@ -156,6 +165,51 @@
       status(error.message, "error");
     } finally {
       $("#run-player").disabled = false;
+    }
+  }
+
+  function renderPlayerIntelligence(player, result, forecast) {
+    const summary = result.summary;
+    const outlook = intelligence.generateOutlook(player, forecast, summary);
+    const health = outlook.health;
+    const healthParts = health.live ? [health.status, health.practice, health.bodyPart, health.notes].filter(Boolean) : [`Live status unavailable · bootstrap ${health.status}`];
+    const games = [...result.gameLog].reverse().slice(0, 10);
+    const directionClass = outlook.direction === "UP" ? "good" : outlook.direction === "DOWN" ? "warn" : "";
+    $("#intelligence-source").textContent = `${result.source.name} · ${(result.source.bytes / 1024 / 1024).toFixed(2)} MB · ${result.source.rowCount.toLocaleString()} rows`;
+    $("#player-intelligence").className = "result-space";
+    $("#player-intelligence").innerHTML = `
+      <div class="intelligence-grid">
+        <section class="outlook-card"><p class="control-title">ORACLE OUTLOOK</p><h3 class="${directionClass}">${esc(outlook.headline)}</h3>${outlook.bullets.map((item) => `<p>${esc(item)}</p>`).join("")}<small>${esc(outlook.provenance)}</small></section>
+        <section><p class="control-title">ROLLING FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 PPR</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>LAST 3 OPPS</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div><div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}.</p></section>
+      </div>
+      <div class="table-header"><h3>${esc(player.name)} · ${result.season} actual game log</h3><span>${summary.games} regular-season games</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Wk</th><th>Opp</th><th>PPR</th><th>Opps</th><th>Tgt</th><th>Car</th><th>Rec</th><th>Scrim Yd</th><th>Pass Yd</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+
+  async function loadPlayerIntelligence() {
+    const selectedId = $("#player-select").value;
+    let player = playerById(selectedId);
+    if (!player) return;
+    const season = Number($("#history-season").value || 2025);
+    $("#load-intelligence").disabled = true;
+    $("#intelligence-source").textContent = `Loading ${season} nflverse game logs…`;
+    status("Loading actual game history and current structured status…");
+    try {
+      if (!state.sleeperLoaded && !state.sleeperPositions.has(player.position)) {
+        try { await syncSleeperPosition(player.position); } catch (_) { /* history remains usable if live status is unavailable */ }
+      }
+      player = playerById(selectedId) || player;
+      const result = await runWorker("player-history", { player, season });
+      state.intelligenceHistory.set(historyKey(player, season), result);
+      const week = Number($("#player-week").value || 1);
+      const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
+      renderPlayerIntelligence(player, result, forecast);
+      status("Player intelligence loaded. Recent history is now available as bounded model evidence.", "good");
+    } catch (error) {
+      $("#intelligence-source").textContent = "History load failed";
+      status(error.message, "error");
+    } finally {
+      $("#load-intelligence").disabled = false;
     }
   }
 
@@ -398,14 +452,26 @@
     return teams;
   }
 
+  async function syncSleeperPosition(position) {
+    const selectedPlayerId = $("#player-select").value;
+    const sleeperPlayers = await sources.loadSleeperPlayers(position);
+    state.players = sources.enrichLocalPlayers(state.players, sleeperPlayers);
+    state.sleeperPositions.add(String(position).toUpperCase());
+    fillPlayerSelects();
+    if (selectedPlayerId && playerById(selectedPlayerId)) $("#player-select").value = selectedPlayerId;
+    return sleeperPlayers;
+  }
+
   async function syncSleeper() {
     $("#sync-sleeper").disabled = true;
     status("Downloading public Sleeper player status…");
     try {
       const sleeperPlayers = await sources.loadSleeperPlayers();
+      const selectedPlayerId = $("#player-select").value;
       state.players = sources.enrichLocalPlayers(state.players, sleeperPlayers);
       state.sleeperLoaded = true;
       fillPlayerSelects();
+      if (selectedPlayerId && playerById(selectedPlayerId)) $("#player-select").value = selectedPlayerId;
       status("Sleeper status, injury, practice, and depth fields synced in memory.", "good");
       return sleeperPlayers;
     } catch (error) {
@@ -533,6 +599,7 @@
     $$(".tab").forEach((tab) => tab.addEventListener("click", () => activatePanel(tab.dataset.panelTarget)));
     $$('[data-jump]').forEach((button) => button.addEventListener("click", () => activatePanel(button.dataset.jump)));
     $("#run-player").addEventListener("click", runPlayerLab);
+    $("#load-intelligence").addEventListener("click", loadPlayerIntelligence);
     $("#save-evidence").addEventListener("click", saveEvidence);
     $("#draft-reset").addEventListener("click", resetDraft);
     $("#draft-advance").addEventListener("click", advanceDraftToUser);

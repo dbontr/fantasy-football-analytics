@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "oracle-browser-v0.1.0";
+const CACHE = "oracle-browser-v0.2.0";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const STATIC_ASSETS = [
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/context.js",
+  "./src/engine/intelligence.js",
   "./src/data/sources.js",
   "./src/storage/browser-store.js",
   "./data/players-lite.json",

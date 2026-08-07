@@ -43,3 +43,11 @@ A future addition qualifies only when all of the following hold:
 - Evidence integrity uses built-in Web Crypto with no dependency.
 - Browser QA checks real Worker workflows at desktop and phone widths.
 - The static validator prevents accidental introduction of workflow/dependency/backend assumptions.
+
+## 2026-08-07 player-intelligence upgrade
+
+- Added actual 2023-2025 weekly player game logs from nflverse.
+- Added rolling last-3/last-5/season form, opportunity, target-share, consistency, and trend summaries.
+- Added optional position-filtered Sleeper status refresh for injury, practice, depth chart, and update freshness fields.
+- Added locally generated Oracle Outlook with explicit provenance and a no-fabrication health rule.
+- Historical archives are same-origin compressed assets and are loaded on demand rather than added to the initial application payload.

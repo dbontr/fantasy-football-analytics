@@ -23,3 +23,7 @@ Routine decisions are effectively immediate. Draft Monte Carlo stays comfortably
 Correlated scenario and full-season simulation scale approximately with the number of scenarios. Those jobs run in `engine-worker.js`, so they do not block UI interaction. The full championship simulation is the heaviest path because it repeatedly samples weekly lineups, fantasy matchups, standings, seeds, and playoff brackets.
 
 For interactive use, 500-1,500 league simulations are the practical range; deeper runs trade latency for lower Monte Carlo noise. Player-level simulations are much cheaper than full-league simulations.
+
+## Player intelligence load
+
+Measured against the real 2025 nflverse weekly player release on Jupiter. The compressed archive is 1,258,615 bytes. A direct source audit measured 846.6 ms for network + gzip decode and 78.3 ms to parse 19,399 compact weekly rows. The production Pages path prefers the bundled same-origin gzip, so historical analysis does not depend on cross-origin availability. Parsed seasons are cached inside the Web Worker for the session.

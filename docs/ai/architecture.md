@@ -68,3 +68,7 @@ The production root contains `index.html`, `.nojekyll`, immutable code/data asse
 ## Extension path
 
 ONNX Runtime Web, DuckDB-WASM, or Rust/WASM remain optional future accelerators. They should be introduced only if measured browser workloads require them; they are not baseline dependencies today.
+
+## Player intelligence plane
+
+Historical weekly stats are stored as compressed nflverse CSV archives under `data/history/` and fetched only when the Player Intelligence control is used. Decompression, selective parsing, indexing, rolling summaries, and player matching execute in the Web Worker. The worker keeps a per-season in-memory index, so subsequent player queries avoid reparsing. Recent target share may enter the forecast only as bounded, confidence-limited evidence. Structured Sleeper status is optional; if unavailable, the UI labels the fallback as bootstrap/model state rather than current news. Outlook text is generated locally from these structured inputs and does not reproduce third-party editorial analysis.
