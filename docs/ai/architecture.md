@@ -84,3 +84,11 @@ Before lineup, waiver, trade, and league decisions, the browser attempts paralle
 ### Rushing workload share
 
 The weekly-history index derives each player's carry share from total nflverse player carries for the same team, season type, season, and week. Recent three-game carry share is exposed only for RB/QB rushing-role evidence, capped to the existing `role.carry_share` family and confidence-limited before it can move a forecast. This avoids treating raw carries as equivalent across high- and low-volume team environments.
+
+### Prior-season defense matchup model
+
+The history index aggregates each defense's weekly fantasy points allowed to QB/RB/WR/TE, then shrinks team averages toward the league position average with a four-game prior. The resulting grade is deliberately low-confidence because personnel and scheme change across seasons. When available, this evidence replaces the older bootstrap matchup proxy for that player/week; otherwise the transparent proxy remains the fallback. League simulation accepts week-specific evidence so each scheduled opponent can receive its own prior without flattening one matchup across a season.
+
+### Offseason role decay
+
+Recent target/carry shares are treated as stronger evidence when history and target season match. When the latest game logs are from the prior season, their confidence is multiplied by 0.65 before entering the opportunity family. Older history decays further. The observed workload value is preserved; only confidence changes. This prevents December usage from being treated as equally fresh after an offseason with coaching, personnel, injury, and depth-chart changes.

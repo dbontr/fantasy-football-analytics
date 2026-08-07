@@ -27,3 +27,9 @@ For interactive use, 500-1,500 league simulations are the practical range; deepe
 ## Player intelligence load
 
 Measured against the real 2025 nflverse weekly player release on Jupiter. The compressed archive is 1,258,615 bytes. A direct source audit measured 846.6 ms for network + gzip decode and 78.3 ms to parse 19,399 compact weekly rows. The production Pages path prefers the bundled same-origin gzip, so historical analysis does not depend on cross-origin availability. Parsed seasons are cached inside the Web Worker for the session.
+
+## Defense and workload indexing
+
+Measured on the bundled 2025 nflverse weekly archive (19,399 rows) after adding team-relative carry share and position-specific defense-allowed profiles. Across seven warm Node runs on Jupiter, median CSV parse time was 83.7 ms and median index/aggregation time was 23.0 ms, for 106.7 ms combined. The worker builds this index once per loaded season and reuses it for subsequent player, lineup, waiver, trade, and league decisions.
+
+The defense index contains 32 defenses x 4 offensive positions (128 profiles). Each profile is shrunk toward the league position average with a four-game prior and capped at low prior-season confidence before entering forecasts.

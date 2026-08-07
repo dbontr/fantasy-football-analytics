@@ -24,6 +24,7 @@
     contextByWeek: new Map(),
     intelligenceHistory: new Map(),
     decisionHistorySeason: 2025,
+    defenseProfiles: null,
     ledger: new evidenceApi.EvidenceLedger(),
     rosterIds: [],
     draftState: null,
@@ -114,8 +115,19 @@
     return state.intelligenceHistory.get(historyKey(player, season))?.evidence || {};
   }
 
+  function scheduledOpponent(player, week = 1) {
+    return state.schedule?.[String(player?.team || "")]?.weeks?.[Math.max(0, Number(week || 1) - 1)]?.opponent || null;
+  }
+
+  function priorDefenseEvidence(player, week = 1) {
+    return intelligence.defenseMatchupEvidence(state.defenseProfiles, player, scheduledOpponent(player, week));
+  }
+
   function decisionEvidence(player, week = 1) {
-    return context.mergeEvidence(historyEvidenceFor(player), savedEvidence(player, week));
+    const base = { ...savedEvidence(player, week) };
+    const priorMatchup = priorDefenseEvidence(player, week);
+    if (Object.keys(priorMatchup).length) { delete base["matchup.pass_grade"]; delete base["matchup.rush_grade"]; }
+    return context.mergeEvidence(base, historyEvidenceFor(player), priorMatchup);
   }
 
   function staticDecisionEvidence(player) {
@@ -152,7 +164,8 @@
     const missing = unique.filter((player) => !state.intelligenceHistory.has(historyKey(player, season)));
     if (!missing.length) return { loaded: 0, total: unique.length, cached: true };
     try {
-      const result = await runWorker("player-history-batch", { players: missing, season });
+      const result = await runWorker("player-history-batch", { players: missing, season, targetSeason: Number(state.dataset?.meta?.season || 2026) });
+      state.defenseProfiles = result.defenseProfiles || state.defenseProfiles;
       for (const [id, profile] of Object.entries(result.histories || {})) {
         const player = missing.find((row) => String(row.id) === String(id));
         if (!player) continue;
@@ -206,7 +219,8 @@
   function decisionContextLabel(contextState) {
     const history = contextState?.history?.error ? "history fallback" : "history-aware";
     const live = contextState?.live?.failed?.length ? "live-status fallback" : "live-status synced";
-    return history + " · " + live;
+    const matchup = state.defenseProfiles ? "defense-prior" : "matchup-proxy";
+    return history + " | " + live + " | " + matchup;
   }
 
   function temporaryEvidence(player) {
@@ -270,6 +284,7 @@
     const summary = result.summary;
     const outlook = intelligence.generateOutlook(player, forecast, summary);
     const health = outlook.health;
+    const matchupPrior = priorDefenseEvidence(player, Number($("#player-week").value || 1))["matchup.position_grade"] || null;
     const healthParts = health.live ? [health.status, health.practice, health.bodyPart, health.notes].filter(Boolean) : [`Live status unavailable · bootstrap ${health.status}`];
     const games = [...result.gameLog].reverse().slice(0, 10);
     const directionClass = outlook.direction === "UP" ? "good" : outlook.direction === "DOWN" ? "warn" : "";
@@ -278,7 +293,7 @@
     $("#player-intelligence").innerHTML = `
       <div class="intelligence-grid">
         <section class="outlook-card"><p class="control-title">ORACLE OUTLOOK</p><h3 class="${directionClass}">${esc(outlook.headline)}</h3>${outlook.bullets.map((item) => `<p>${esc(item)}</p>`).join("")}<small>${esc(outlook.provenance)}</small></section>
-        <section><p class="control-title">ROLLING FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 PPR</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>LAST 3 OPPS</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}<div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}.</p></section>
+        <section><p class="control-title">ROLLING FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 PPR</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>LAST 3 OPPS</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}${matchupPrior ? `<div class="metric"><span>PRIOR MATCHUP</span><strong>${matchupPrior.value >= 0 ? "+" : ""}${num(matchupPrior.value, 2)}</strong></div>` : ""}<div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}.</p></section>
       </div>
       <div class="table-header"><h3>${esc(player.name)} · ${result.season} actual game log</h3><span>${summary.games} regular-season games</span></div>
       <div class="table-wrap"><table><thead><tr><th>Wk</th><th>Opp</th><th>PPR</th><th>Opps</th><th>Tgt</th><th>Car</th><th>Rec</th><th>Scrim Yd</th><th>Pass Yd</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div>`;
@@ -297,7 +312,8 @@
         try { await syncSleeperPosition(player.position); } catch (_) { /* history remains usable if live status is unavailable */ }
       }
       player = playerById(selectedId) || player;
-      const result = await runWorker("player-history", { player, season });
+      const result = await runWorker("player-history", { player, season, targetSeason: Number(state.dataset?.meta?.season || 2026) });
+      state.defenseProfiles = result.defenseProfiles || state.defenseProfiles;
       state.intelligenceHistory.set(historyKey(player, season), result);
       const week = Number($("#player-week").value || 1);
       const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
@@ -653,7 +669,12 @@
       state.leagueTeams = state.leagueTeams.map((team) => ({ ...team, roster: refreshDecisionPlayers(team.roster) }));
       leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
       const evidenceByPlayer = Object.fromEntries(leaguePlayers.map((player) => [String(player.id), staticDecisionEvidence(player)]));
-      $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} live + history-aware league seasons in the worker…`;
+      const evidenceByPlayerWeek = {};
+      for (let week = 1; week <= championshipWeek; week += 1) {
+        const rows = leaguePlayers.map((player) => [String(player.id), priorDefenseEvidence(player, week)]).filter(([, evidence]) => Object.keys(evidence).length);
+        if (rows.length) evidenceByPlayerWeek[week] = Object.fromEntries(rows);
+      }
+      $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} live + history-aware league seasons with matchup priors in the worker…`;
       const result = await runWorker("league", { options: {
         teams: state.leagueTeams,
         settings: core.DEFAULT_SETTINGS,
@@ -665,6 +686,7 @@
         playoffByes: state.leagueMeta?.playoffByes || 0,
         medianGame: $("#median-game").checked,
         evidenceByPlayer,
+        evidenceByPlayerWeek,
         simulations: scenarios,
         seed: `league-${state.leagueTeams.length}-${regularSeasonEnd}-${championshipWeek}`,
       } });

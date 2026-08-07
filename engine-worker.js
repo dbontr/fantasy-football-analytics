@@ -35,29 +35,31 @@ async function loadHistorySeason(season) {
   return { selected, cached };
 }
 
-function historyProfile(cached, player, includeGameLog = false) {
+function historyProfile(cached, player, includeGameLog = false, options = {}) {
   const gameLog = intelligence.findPlayerRows(cached.index, player, { seasonType: "REG" });
   const summary = intelligence.summarizeHistory(gameLog);
   return {
     ...(includeGameLog ? { gameLog } : {}),
     summary,
-    evidence: intelligence.historyEvidence(summary, player),
+    evidence: intelligence.historyEvidence(summary, player, options),
   };
 }
 
-async function playerHistory(player, season) {
+async function playerHistory(player, season, targetSeason) {
   const { selected, cached } = await loadHistorySeason(season);
-  return { version: intelligence.VERSION, season: selected, source: cached.source, ...historyProfile(cached, player, true) };
+  const options = { historySeason: selected, targetSeason: Number(targetSeason || selected) };
+  return { version: intelligence.VERSION, season: selected, source: cached.source, defenseProfiles: cached.index.defenseProfiles, ...historyProfile(cached, player, true, options) };
 }
 
-async function playerHistoryBatch(players, season) {
+async function playerHistoryBatch(players, season, targetSeason) {
   const { selected, cached } = await loadHistorySeason(season);
+  const options = { historySeason: selected, targetSeason: Number(targetSeason || selected) };
   const histories = {};
   for (const player of players || []) {
     if (!player?.id) continue;
-    histories[String(player.id)] = historyProfile(cached, player, false);
+    histories[String(player.id)] = historyProfile(cached, player, false, options);
   }
-  return { version: intelligence.VERSION, season: selected, source: cached.source, histories };
+  return { version: intelligence.VERSION, season: selected, source: cached.source, defenseProfiles: cached.index.defenseProfiles, histories };
 }
 
 self.addEventListener("message", async (event) => {
@@ -73,8 +75,8 @@ self.addEventListener("message", async (event) => {
       case "league": result = engine.simulateLeague(message.options || {}); break;
       case "championship-actions": result = engine.evaluateChampionshipActions(message.options || {}); break;
       case "trade-proposals": result = core.generateTradeProposals(message.options || {}); break;
-      case "player-history": result = await playerHistory(message.player, message.season); break;
-      case "player-history-batch": result = await playerHistoryBatch(message.players || [], message.season); break;
+      case "player-history": result = await playerHistory(message.player, message.season, message.targetSeason); break;
+      case "player-history-batch": result = await playerHistoryBatch(message.players || [], message.season, message.targetSeason); break;
       case "waivers":
         result = core.waiverRecommendations(message.roster || [], message.freeAgents || [], message.settings || {}, message.limit || 12, message.week || null);
         break;

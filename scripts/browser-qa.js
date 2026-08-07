@@ -93,30 +93,30 @@ async function main() {
 
   await evaluate(`document.querySelector('#history-season').value='2025'; document.querySelector('#load-intelligence').click(); true`);
   await waitFor(`document.querySelectorAll('#player-intelligence tbody tr').length >= 8`, 45000);
-  const intelligence = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, games:document.querySelectorAll('#player-intelligence tbody tr').length, outlook:document.querySelector('#player-intelligence .outlook-card h3')?.textContent, source:document.querySelector('#intelligence-source').textContent, carryShare:document.querySelector('#player-intelligence').textContent.includes('CARRY SHARE')}))()`);
-  if (intelligence.games < 8 || !intelligence.outlook || !intelligence.carryShare) throw new Error("Player intelligence did not render game history, outlook, and rushing workload share");
+  const intelligence = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, games:document.querySelectorAll('#player-intelligence tbody tr').length, outlook:document.querySelector('#player-intelligence .outlook-card h3')?.textContent, source:document.querySelector('#intelligence-source').textContent, carryShare:document.querySelector('#player-intelligence').textContent.includes('CARRY SHARE'), matchupPrior:document.querySelector('#player-intelligence').textContent.includes('PRIOR MATCHUP')}))()`);
+  if (intelligence.games < 8 || !intelligence.outlook || !intelligence.carryShare || !intelligence.matchupPrior) throw new Error("Player intelligence did not render game history, workload share, and defense matchup prior");
 
   await evaluate(`document.querySelector('[data-panel-target="lineup"]').click(); document.querySelector('#roster-demo').click(); document.querySelector('#run-lineup').click(); true`);
   await waitFor(`document.querySelectorAll('#lineup-result .metric').length >= 5`, 15000);
   const lineup = await evaluate(`(() => ({roster:document.querySelectorAll('.roster-chip').length, starters:document.querySelectorAll('#lineup-result .lineup-row').length, status:document.querySelector('#global-status').textContent}))()`);
   if (lineup.roster < 10 || lineup.starters < 8) throw new Error("Lineup workflow did not produce a complete roster analysis");
 
-  if (!lineup.status.includes("history") || !lineup.status.includes("live-status")) throw new Error("Lineup did not report history + live-status decision evidence");
+  if (!lineup.status.includes("history") || !lineup.status.includes("live-status") || !lineup.status.includes("defense-prior")) throw new Error("Lineup did not report history + live-status decision evidence");
 
   await evaluate(`document.querySelector('[data-panel-target="waivers"]').click(); document.querySelector('#run-waivers').click(); true`);
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('Waiver search complete')`, 30000);
   const waivers = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, empty:document.querySelector('#waiver-result').classList.contains('empty-state'), text:document.querySelector('#waiver-result').textContent.length}))()`);
-  if (waivers.empty || waivers.text < 20 || !waivers.status.includes("history") || !waivers.status.includes("live-status")) throw new Error("Waiver workflow did not use history + live-status intelligence");
+  if (waivers.empty || waivers.text < 20 || !waivers.status.includes("history") || !waivers.status.includes("live-status") || !waivers.status.includes("defense-prior")) throw new Error("Waiver workflow did not use history + live-status intelligence");
 
   await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); document.querySelector('#run-trades').click(); true`);
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('Trade search complete')`, 30000);
   const trades = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, empty:document.querySelector('#trade-result').classList.contains('empty-state'), text:document.querySelector('#trade-result').textContent.length}))()`);
-  if (trades.empty || trades.text < 20 || !trades.status.includes("history") || !trades.status.includes("live-status")) throw new Error("Trade workflow did not use history + live-status intelligence");
+  if (trades.empty || trades.text < 20 || !trades.status.includes("history") || !trades.status.includes("live-status") || !trades.status.includes("defense-prior")) throw new Error("Trade workflow did not use history + live-status intelligence");
 
   await evaluate(`document.querySelector('[data-panel-target="league"]').click(); document.querySelector('#build-demo-league').click(); document.querySelector('#league-scenarios').value='500'; document.querySelector('#run-league').click(); true`);
   await waitFor(`document.querySelectorAll('#league-result tbody tr').length >= 10`, 35000);
   const league = await evaluate(`(() => ({teams:document.querySelectorAll('#league-result tbody tr').length, status:document.querySelector('#league-source-status').textContent}))()`);
-  if (league.teams < 10 || !league.status.includes("history-aware") || !league.status.includes("live-status")) throw new Error("League simulator did not render a history + live-status board");
+  if (league.teams < 10 || !league.status.includes("history-aware") || !league.status.includes("live-status") || !league.status.includes("defense-prior")) throw new Error("League simulator did not render a history + live-status board");
 
   await evaluate(`document.querySelector('[data-panel-target="overview"]').click(); true`);
   const mobile = await snapshot("mobile", 390, 844);

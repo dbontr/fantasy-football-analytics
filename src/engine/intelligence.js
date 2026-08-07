@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPlayerIntelligence() {
   "use strict";
 
-  const VERSION = "oracle-player-intelligence-2026.1";
+  const VERSION = "oracle-player-intelligence-2026.3";
   const REQUIRED_FIELDS = [
     "player_id", "player_display_name", "position", "season", "week", "season_type", "game_id",
     "team", "opponent_team", "attempts", "passing_yards", "passing_tds", "passing_interceptions",
@@ -32,6 +32,11 @@
   function normalizeName(value) {
     return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
       .toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b/g, "").replace(/[^a-z0-9]/g, "");
+  }
+
+  function canonicalTeam(value) {
+    const team = String(value || "").trim().toUpperCase();
+    return ({ LAR: "LA", STL: "LA", WSH: "WAS", JAC: "JAX", OAK: "LV", SD: "LAC" })[team] || team;
   }
 
   function parseCsvLine(line) {
@@ -95,9 +100,42 @@
     const byNamePosition = new Map();
     const byName = new Map();
     const teamCarries = new Map();
+    const defenseGameTotals = new Map();
+    const supported = new Set(["QB", "RB", "WR", "TE"]);
     for (const row of rows || []) {
-      const key = [row.season, row.week, row.seasonType, row.team].join("|");
-      teamCarries.set(key, finite(teamCarries.get(key)) + Math.max(0, finite(row.carries)));
+      const carryKey = [row.season, row.week, row.seasonType, row.team].join("|");
+      teamCarries.set(carryKey, finite(teamCarries.get(carryKey)) + Math.max(0, finite(row.carries)));
+      const position = String(row.position || "").toUpperCase();
+      if (row.seasonType === "REG" && row.opponent && supported.has(position)) {
+        const defenseKey = [row.season, row.week, canonicalTeam(row.opponent), position].join("|");
+        defenseGameTotals.set(defenseKey, finite(defenseGameTotals.get(defenseKey)) + Math.max(0, finite(row.fantasyPpr)));
+      }
+    }
+    const defenseAggregate = new Map();
+    const leagueAggregate = new Map();
+    for (const [key, points] of defenseGameTotals) {
+      const [, , defense, position] = key.split("|");
+      const defenseKey = `${defense}|${position}`;
+      const current = defenseAggregate.get(defenseKey) || { points: 0, games: 0 };
+      current.points += points; current.games += 1; defenseAggregate.set(defenseKey, current);
+      const league = leagueAggregate.get(position) || { points: 0, games: 0 };
+      league.points += points; league.games += 1; leagueAggregate.set(position, league);
+    }
+    const defenseProfiles = {};
+    for (const [key, aggregate] of defenseAggregate) {
+      const [defense, position] = key.split("|");
+      const league = leagueAggregate.get(position);
+      const leagueAverage = league?.games ? league.points / league.games : 0;
+      if (!leagueAverage || aggregate.games < 3) continue;
+      const rawAverage = aggregate.points / aggregate.games;
+      const priorGames = 4;
+      const shrunkAverage = (aggregate.points + leagueAverage * priorGames) / (aggregate.games + priorGames);
+      const grade = clamp((shrunkAverage / leagueAverage - 1) / 0.22, -1, 1);
+      if (!defenseProfiles[defense]) defenseProfiles[defense] = {};
+      defenseProfiles[defense][position] = {
+        games: aggregate.games, rawAverage, shrunkAverage, leagueAverage, grade,
+        confidence: clamp(0.24 + aggregate.games / 17 * 0.18, 0.24, 0.42),
+      };
     }
     for (const row of rows || []) {
       const teamKey = [row.season, row.week, row.seasonType, row.team].join("|");
@@ -110,7 +148,7 @@
       byNamePosition.get(positionKey).push(row);
       byName.get(name).push(row);
     }
-    return { byNamePosition, byName, rows: rows?.length || 0 };
+    return { byNamePosition, byName, defenseProfiles, rows: rows?.length || 0 };
   }
 
   function findPlayerRows(index, player, options = {}) {
@@ -171,25 +209,44 @@
     return { games: games.length, last3, last5, season, trend, consistency };
   }
 
-  function historyEvidence(summary, player) {
+  function historyEvidence(summary, player, options = {}) {
     const evidence = {};
+    const historySeason = Number(options.historySeason || options.season || 0);
+    const targetSeason = Number(options.targetSeason || historySeason || 0);
+    const seasonGap = Math.max(0, targetSeason - historySeason);
+    const recencyMultiplier = seasonGap === 0 ? 1 : seasonGap === 1 ? 0.65 : 0.45;
+    const sourcePrefix = seasonGap ? "nflverse prior-season" : "nflverse current-season";
     if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.targetShare) && ["RB", "WR", "TE"].includes(String(player?.position || ""))) {
       evidence["role.target_share"] = {
         available: true, value: clamp(summary.last3.targetShare, 0, 0.65),
-        confidence: clamp(0.52 + summary.last3.games * 0.04, 0, 0.72), conflict: 0,
-        source: "nflverse recent game log",
+        confidence: clamp((0.52 + summary.last3.games * 0.04) * recencyMultiplier, 0.2, 0.72), conflict: 0,
+        source: sourcePrefix + " game log",
       };
     }
     if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.carryShare) && ["RB", "QB"].includes(String(player?.position || ""))) {
       evidence["role.carry_share"] = {
         available: true, value: clamp(summary.last3.carryShare, 0, 0.9),
-        confidence: clamp(0.54 + summary.last3.games * 0.04, 0, 0.74), conflict: 0,
-        source: "nflverse derived team carry share",
+        confidence: clamp((0.54 + summary.last3.games * 0.04) * recencyMultiplier, 0.2, 0.74), conflict: 0,
+        source: sourcePrefix + " derived team carry share",
       };
     }
     return evidence;
   }
 
+  function defenseMatchupEvidence(defenseProfiles, player, opponent) {
+    const position = String(player?.position || "").toUpperCase();
+    if (!["QB", "RB", "WR", "TE"].includes(position) || !opponent) return {};
+    const normalizedOpponent = canonicalTeam(opponent);
+    const profile = defenseProfiles?.[normalizedOpponent]?.[position];
+    if (!profile || profile.games < 3) return {};
+    return {
+      "matchup.position_grade": {
+        available: true, value: clamp(profile.grade, -1, 1), confidence: clamp(profile.confidence, 0, 0.5),
+        conflict: 0.08, source: "nflverse prior-season position fantasy points allowed",
+        opponent: normalizedOpponent, games: profile.games,
+      },
+    };
+  }
   function currentHealth(player) {
     const sleeper = player?.sleeper || {};
     const live = Boolean(player?.sleeper);
@@ -242,7 +299,7 @@
   }
 
   return {
-    VERSION, currentHealth, findPlayerRows, generateOutlook, historyEvidence, indexWeeklyRows,
+    VERSION, currentHealth, defenseMatchupEvidence, findPlayerRows, generateOutlook, historyEvidence, indexWeeklyRows,
     normalizeName, parseCsvLine, parseWeeklyStatsCsv, summarizeHistory, summarizeWindow,
   };
 });

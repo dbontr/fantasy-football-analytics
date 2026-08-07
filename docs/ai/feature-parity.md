@@ -71,3 +71,16 @@ A future addition qualifies only when all of the following hold:
 - Derived team-relative weekly carry share from the bundled nflverse player logs.
 - Added rolling carry share to Player Intelligence for RB/QB.
 - Added bounded `role.carry_share` evidence so recent rushing workload changes flow through every history-aware decision path.
+
+### Defense matchup intelligence
+
+- Added position-specific defense fantasy-points-allowed priors from bundled nflverse weekly stats.
+- Added empirical-Bayes shrinkage toward league position averages and capped prior-season confidence.
+- Added team-code normalization for common ESPN/nflverse aliases such as LAR/LA and WSH/WAS.
+- Week-specific defense priors now feed Player Lab, lineup, waiver, trade, and championship simulation; the old matchup proxy remains only as fallback.
+
+### Offseason calibration
+
+- Prior-season target-share and carry-share evidence is confidence-decayed before 2026 decisions.
+- Current-season history retains full bounded confidence; one-season-old history receives a 0.65 multiplier and older history a 0.45 multiplier.
+- The model keeps observed usage values intact and changes only evidence confidence.

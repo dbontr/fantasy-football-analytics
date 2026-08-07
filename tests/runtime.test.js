@@ -100,3 +100,12 @@ test("online ensemble weights penalize higher loss", () => {
   assert.ok(result.modelB > result.modelA);
   assert.ok(Math.abs(result.modelA + result.modelB - 1) < 1e-12);
 });
+
+test("position-specific matchup prior moves forecasts in the expected direction", () => {
+  const neutral = engine.forecastPlayer(player, { week: 1 });
+  const favorable = engine.forecastPlayer(player, { week: 1, evidence: { "matchup.position_grade": { available: true, value: 1, confidence: 0.4, conflict: 0 } } });
+  const difficult = engine.forecastPlayer(player, { week: 1, evidence: { "matchup.position_grade": { available: true, value: -1, confidence: 0.4, conflict: 0 } } });
+  assert.ok(favorable.distribution.mean > neutral.distribution.mean);
+  assert.ok(difficult.distribution.mean < neutral.distribution.mean);
+  assert.ok(favorable.drivers.some((row) => row.feature === "matchup.position_grade"));
+});

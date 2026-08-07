@@ -8,7 +8,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.1";
+  const VERSION = "oracle-browser-2026.2";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -183,6 +183,7 @@
     add("environment.precip_probability", "environment", "precipitation", (r) => finite(r.value) * baseline.mean * (["DST", "RB"].includes(player.position) ? 0.015 : -0.035));
     add("matchup.pass_grade", "matchup", "pass matchup", (r) => ["QB", "WR", "TE"].includes(player.position) ? finite(r.value) * baseline.mean * 0.08 : 0);
     add("matchup.rush_grade", "matchup", "rush matchup", (r) => ["RB", "QB"].includes(player.position) ? finite(r.value) * baseline.mean * 0.07 : 0);
+    add("matchup.position_grade", "matchup", "prior-season positional matchup", (r) => ["QB", "RB", "WR", "TE"].includes(player.position) ? finite(r.value) * baseline.mean * 0.075 : 0);
     add("line.pass_block_grade", "line", "pass protection", (r) => ["QB", "WR", "TE"].includes(player.position) ? finite(r.value) * baseline.mean * 0.045 : 0);
     add("line.run_block_grade", "line", "run blocking", (r) => ["RB", "QB"].includes(player.position) ? finite(r.value) * baseline.mean * 0.055 : 0);
     add("coaching.mean_delta", "coaching", "coaching context", (r) => finite(r.value) * baseline.mean);
@@ -501,8 +502,10 @@
     return pairs;
   }
 
-  function lineupForecastsForWeek(roster, settings, week, schedule, evidenceByPlayer = {}) {
-    const forecasts = forecastPlayers(roster, { week, evidenceByPlayer });
+  function lineupForecastsForWeek(roster, settings, week, schedule, evidenceByPlayer = {}, evidenceByPlayerWeek = {}) {
+    const weeklyEvidence = evidenceByPlayerWeek?.[week] || evidenceByPlayerWeek?.[String(week)] || {};
+    const mergedEvidence = Object.fromEntries((roster || []).map((player) => [String(player.id), { ...(evidenceByPlayer[String(player.id)] || {}), ...(weeklyEvidence[String(player.id)] || {}) }]));
+    const forecasts = forecastPlayers(roster, { week, evidenceByPlayer: mergedEvidence });
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({
       ...forecast.player,
@@ -535,7 +538,7 @@
     const seed = String(options.seed ?? 2026);
     const lineups = {};
     for (let week = startWeek; week <= endWeek; week += 1) {
-      lineups[week] = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer).selected;
+      lineups[week] = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek).selected;
     }
     const seasonTotals = new Float32Array(simulations);
     for (let scenario = 0; scenario < simulations; scenario += 1) {
@@ -621,7 +624,7 @@
     for (const team of teams) {
       lineups[team.teamId] = {};
       for (let week = startWeek; week <= championshipWeek; week += 1) {
-        lineups[team.teamId][week] = lineupForecastsForWeek(team.roster, settings, week, schedule, evidenceByPlayer).selected;
+        lineups[team.teamId][week] = lineupForecastsForWeek(team.roster, settings, week, schedule, evidenceByPlayer, options.evidenceByPlayerWeek).selected;
       }
     }
 

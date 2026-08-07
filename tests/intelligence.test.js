@@ -92,3 +92,28 @@ test("derived team carry share becomes bounded rushing-role evidence", () => {
   assert.equal(Number(evidence["role.carry_share"].value.toFixed(2)), 0.75);
   assert.ok(evidence["role.carry_share"].confidence <= 0.74);
 });
+
+test("defense profiles shrink position fantasy points allowed toward league average", () => {
+  const versus = (week, ppr, team, opponent, name) => {
+    const values = row(week, ppr, 12, 0.15).split(",");
+    values[0] = `${team}-${week}`; values[1] = name; values[2] = "RB"; values[7] = team; values[8] = opponent; values[26] = String(ppr);
+    return values.join(",");
+  };
+  const csv = [headers.join(","), versus(1, 28, "A", "B", "Runner A1"), versus(1, 8, "C", "D", "Runner C1"), versus(2, 26, "A", "B", "Runner A2"), versus(2, 10, "C", "D", "Runner C2"), versus(3, 30, "A", "B", "Runner A3"), versus(3, 9, "C", "D", "Runner C3")].join("\n");
+  const index = intel.indexWeeklyRows(intel.parseWeeklyStatsCsv(csv));
+  assert.ok(index.defenseProfiles.B.RB.grade > 0); assert.ok(index.defenseProfiles.D.RB.grade < 0);
+  const evidence = intel.defenseMatchupEvidence(index.defenseProfiles, { position: "RB" }, "B");
+  assert.ok(evidence["matchup.position_grade"].value > 0); assert.ok(evidence["matchup.position_grade"].confidence <= 0.5);
+});
+
+test("prior-season role evidence is confidence-decayed across the offseason", () => {
+  const csv = [headers.join(","), row(1, 12, 14, 0.20), row(2, 13, 15, 0.22), row(3, 14, 16, 0.24)].join("\n");
+  const rows = intel.parseWeeklyStatsCsv(csv);
+  const index = intel.indexWeeklyRows(rows);
+  const summary = intel.summarizeHistory(intel.findPlayerRows(index, { name: "Test Player", position: "RB", team: "A" }, { seasonType: "REG" }));
+  const sameSeason = intel.historyEvidence(summary, { position: "RB" }, { historySeason: 2025, targetSeason: 2025 });
+  const nextSeason = intel.historyEvidence(summary, { position: "RB" }, { historySeason: 2025, targetSeason: 2026 });
+  assert.ok(nextSeason["role.target_share"].confidence < sameSeason["role.target_share"].confidence);
+  assert.ok(nextSeason["role.carry_share"].confidence < sameSeason["role.carry_share"].confidence);
+  assert.match(nextSeason["role.target_share"].source, /prior-season/);
+});
