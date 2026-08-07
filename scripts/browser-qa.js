@@ -93,8 +93,8 @@ async function main() {
 
   await evaluate(`document.querySelector('#history-season').value='2025'; document.querySelector('#load-intelligence').click(); true`);
   await waitFor(`document.querySelectorAll('#player-intelligence tbody tr').length >= 8`, 45000);
-  const intelligence = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, games:document.querySelectorAll('#player-intelligence tbody tr').length, outlook:document.querySelector('#player-intelligence .outlook-card h3')?.textContent, source:document.querySelector('#intelligence-source').textContent}))()`);
-  if (intelligence.games < 8 || !intelligence.outlook) throw new Error("Player intelligence did not render game history and outlook");
+  const intelligence = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, games:document.querySelectorAll('#player-intelligence tbody tr').length, outlook:document.querySelector('#player-intelligence .outlook-card h3')?.textContent, source:document.querySelector('#intelligence-source').textContent, carryShare:document.querySelector('#player-intelligence').textContent.includes('CARRY SHARE')}))()`);
+  if (intelligence.games < 8 || !intelligence.outlook || !intelligence.carryShare) throw new Error("Player intelligence did not render game history, outlook, and rushing workload share");
 
   await evaluate(`document.querySelector('[data-panel-target="lineup"]').click(); document.querySelector('#roster-demo').click(); document.querySelector('#run-lineup').click(); true`);
   await waitFor(`document.querySelectorAll('#lineup-result .metric').length >= 5`, 15000);

@@ -94,7 +94,15 @@
   function indexWeeklyRows(rows) {
     const byNamePosition = new Map();
     const byName = new Map();
+    const teamCarries = new Map();
     for (const row of rows || []) {
+      const key = [row.season, row.week, row.seasonType, row.team].join("|");
+      teamCarries.set(key, finite(teamCarries.get(key)) + Math.max(0, finite(row.carries)));
+    }
+    for (const row of rows || []) {
+      const teamKey = [row.season, row.week, row.seasonType, row.team].join("|");
+      const teamTotal = finite(teamCarries.get(teamKey));
+      row.carryShare = teamTotal > 0 ? clamp(row.carries / teamTotal, 0, 1) : null;
       const name = normalizeName(row.name);
       const positionKey = `${name}|${String(row.position || "").toUpperCase()}`;
       if (!byNamePosition.has(positionKey)) byNamePosition.set(positionKey, []);
@@ -134,7 +142,8 @@
       games: selected.length, ppr: average(selected, "fantasyPpr"), opportunities: average(selected, "opportunities"),
       targets: average(selected, "targets"), carries: average(selected, "carries"), touches: average(selected, "touches"),
       scrimmageYards: average(selected, "scrimmageYards"), passingYards: average(selected, "passingYards"),
-      touchdowns: average(selected, "totalTds"), targetShare: average(selected, "targetShare"), wopr: average(selected, "wopr"),
+      touchdowns: average(selected, "totalTds"), targetShare: average(selected, "targetShare"),
+      carryShare: average(selected, "carryShare"), wopr: average(selected, "wopr"),
       volatility: standardDeviation(ppr),
     };
   }
@@ -171,6 +180,13 @@
         source: "nflverse recent game log",
       };
     }
+    if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.carryShare) && ["RB", "QB"].includes(String(player?.position || ""))) {
+      evidence["role.carry_share"] = {
+        available: true, value: clamp(summary.last3.carryShare, 0, 0.9),
+        confidence: clamp(0.54 + summary.last3.games * 0.04, 0, 0.74), conflict: 0,
+        source: "nflverse derived team carry share",
+      };
+    }
     return evidence;
   }
 
@@ -200,6 +216,9 @@
       bullets.push(`Recent role/form trend is ${summary.trend.direction.toUpperCase()}: ${summary.trend.fantasyDelta >= 0 ? "+" : ""}${summary.trend.fantasyDelta.toFixed(1)} PPR and ${summary.trend.opportunityDelta >= 0 ? "+" : ""}${summary.trend.opportunityDelta.toFixed(1)} opportunities/game versus the prior three.`);
     }
     if (Number.isFinite(summary?.last3?.targetShare)) bullets.push(`Recent target share: ${(summary.last3.targetShare * 100).toFixed(1)}%.`);
+    if (["RB", "QB"].includes(String(player?.position || "")) && Number.isFinite(summary?.last3?.carryShare)) {
+      bullets.push(`Recent team carry share: ${(summary.last3.carryShare * 100).toFixed(1)}%.`);
+    }
     if (health.live && (health.status !== "ACTIVE" || health.practice || health.bodyPart || health.notes)) {
       const parts = [health.status !== "ACTIVE" ? health.status : null, health.practice, health.bodyPart, health.notes].filter(Boolean);
       bullets.push(`Current Sleeper health evidence: ${parts.join(" · ")}.`);

@@ -33,7 +33,7 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - Robust action ranking with CVaR, expected regret, probability-best, Pareto frontiers, and reversal thresholds.
 - Temporal evidence ledger with effective/expiry timestamps, freshness decay, conflict resolution, as-of replay, and a SHA-256 chain.
 - Historical nflverse health calibration and 32-team coaching priors.
-- On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, volatility, and trend summaries.
+- On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, derived team carry-share, volatility, and trend summaries.
 - Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs.
 - Shared history-aware decision evidence now feeds lineup optimization, waiver add/drop search, bilateral trades, and league/title simulation.
 - Decision workflows automatically attempt position-filtered Sleeper health/status refreshes; active reports clear stale bootstrap injury labels and any network failure is surfaced as a live-status fallback.

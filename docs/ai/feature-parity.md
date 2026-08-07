@@ -65,3 +65,9 @@ A future addition qualifies only when all of the following hold:
 - Lineup, waiver, trade, and league runs now request only the relevant Sleeper positions when live status has not already been synced.
 - Sleeper `Active` explicitly clears stale bootstrap injury designations; reserve/PUP/suspension states are normalized to the runtime availability vocabulary.
 - Partial or failed live refreshes are non-fatal and visibly labeled as `live-status fallback`.
+
+### Rushing workload intelligence
+
+- Derived team-relative weekly carry share from the bundled nflverse player logs.
+- Added rolling carry share to Player Intelligence for RB/QB.
+- Added bounded `role.carry_share` evidence so recent rushing workload changes flow through every history-aware decision path.

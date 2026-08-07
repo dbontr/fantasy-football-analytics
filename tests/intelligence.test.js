@@ -69,3 +69,26 @@ test("history evidence is bounded and only emitted with sufficient target-share 
   assert.ok(evidence["role.target_share"].value <= 0.65);
   assert.ok(evidence["role.target_share"].confidence <= 0.72);
 });
+
+
+test("derived team carry share becomes bounded rushing-role evidence", () => {
+  const teammate = (week) => {
+    const values = row(week, 8, 12, 0.1).split(",");
+    values[0] = "00-MATE";
+    values[1] = "Teammate";
+    return values.join(",");
+  };
+  const csv = [headers.join(","),
+    row(1, 14, 20, 0.2), teammate(1),
+    row(2, 15, 20, 0.21), teammate(2),
+    row(3, 16, 20, 0.22), teammate(3),
+  ].join("\n");
+  const rows = intel.parseWeeklyStatsCsv(csv);
+  const index = intel.indexWeeklyRows(rows);
+  const primary = intel.findPlayerRows(index, { name: "Test Player", position: "RB", team: "A" }, { seasonType: "REG" });
+  const summary = intel.summarizeHistory(primary);
+  assert.equal(Number(summary.last3.carryShare.toFixed(2)), 0.75);
+  const evidence = intel.historyEvidence(summary, { position: "RB" });
+  assert.equal(Number(evidence["role.carry_share"].value.toFixed(2)), 0.75);
+  assert.ok(evidence["role.carry_share"].confidence <= 0.74);
+});

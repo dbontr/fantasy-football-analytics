@@ -80,3 +80,7 @@ The worker can resolve history profiles for a batch of players after a season is
 ### Live status refresh
 
 Before lineup, waiver, trade, and league decisions, the browser attempts parallel position-filtered Sleeper player refreshes for relevant offensive positions. Successful responses replace stale bootstrap injury designations with canonical live availability states and preserve practice/depth metadata. Failed requests never block the decision engine: history/baseline evidence remains usable and the UI reports a `live-status fallback` instead of implying freshness.
+
+### Rushing workload share
+
+The weekly-history index derives each player's carry share from total nflverse player carries for the same team, season type, season, and week. Recent three-game carry share is exposed only for RB/QB rushing-role evidence, capped to the existing `role.carry_share` family and confidence-limited before it can move a forecast. This avoids treating raw carries as equivalent across high- and low-volume team environments.
