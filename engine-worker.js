@@ -20,29 +20,44 @@ function withoutSamples(result) {
   return rest;
 }
 
-async function playerHistory(player, season) {
+async function loadHistorySeason(season) {
   const selected = Math.round(Number(season || 2025));
   let cached = historyCache.get(selected);
-  if (!cached) {
-    const started = performance.now();
-    const loaded = await sources.nflversePlayerWeeklyText(selected);
-    const rows = intelligence.parseWeeklyStatsCsv(loaded.text);
-    cached = {
-      index: intelligence.indexWeeklyRows(rows),
-      source: { name: loaded.name, bytes: loaded.bytes, compressed: loaded.compressed, rowCount: rows.length, loadMs: performance.now() - started },
-    };
-    historyCache.set(selected, cached);
-  }
+  if (cached) return { selected, cached };
+  const started = performance.now();
+  const loaded = await sources.nflversePlayerWeeklyText(selected);
+  const rows = intelligence.parseWeeklyStatsCsv(loaded.text);
+  cached = {
+    index: intelligence.indexWeeklyRows(rows),
+    source: { name: loaded.name, bytes: loaded.bytes, compressed: loaded.compressed, rowCount: rows.length, loadMs: performance.now() - started },
+  };
+  historyCache.set(selected, cached);
+  return { selected, cached };
+}
+
+function historyProfile(cached, player, includeGameLog = false) {
   const gameLog = intelligence.findPlayerRows(cached.index, player, { seasonType: "REG" });
   const summary = intelligence.summarizeHistory(gameLog);
   return {
-    version: intelligence.VERSION,
-    season: selected,
-    source: cached.source,
-    gameLog,
+    ...(includeGameLog ? { gameLog } : {}),
     summary,
     evidence: intelligence.historyEvidence(summary, player),
   };
+}
+
+async function playerHistory(player, season) {
+  const { selected, cached } = await loadHistorySeason(season);
+  return { version: intelligence.VERSION, season: selected, source: cached.source, ...historyProfile(cached, player, true) };
+}
+
+async function playerHistoryBatch(players, season) {
+  const { selected, cached } = await loadHistorySeason(season);
+  const histories = {};
+  for (const player of players || []) {
+    if (!player?.id) continue;
+    histories[String(player.id)] = historyProfile(cached, player, false);
+  }
+  return { version: intelligence.VERSION, season: selected, source: cached.source, histories };
 }
 
 self.addEventListener("message", async (event) => {
@@ -59,6 +74,7 @@ self.addEventListener("message", async (event) => {
       case "championship-actions": result = engine.evaluateChampionshipActions(message.options || {}); break;
       case "trade-proposals": result = core.generateTradeProposals(message.options || {}); break;
       case "player-history": result = await playerHistory(message.player, message.season); break;
+      case "player-history-batch": result = await playerHistoryBatch(message.players || [], message.season); break;
       case "waivers":
         result = core.waiverRecommendations(message.roster || [], message.freeAgents || [], message.settings || {}, message.limit || 12, message.week || null);
         break;

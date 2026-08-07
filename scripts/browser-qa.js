@@ -101,16 +101,28 @@ async function main() {
   const lineup = await evaluate(`(() => ({roster:document.querySelectorAll('.roster-chip').length, starters:document.querySelectorAll('#lineup-result .lineup-row').length, status:document.querySelector('#global-status').textContent}))()`);
   if (lineup.roster < 10 || lineup.starters < 8) throw new Error("Lineup workflow did not produce a complete roster analysis");
 
+  if (!lineup.status.includes("history")) throw new Error("Lineup did not report history-aware decision evidence");
+
+  await evaluate(`document.querySelector('[data-panel-target="waivers"]').click(); document.querySelector('#run-waivers').click(); true`);
+  await waitFor(`document.querySelector('#global-status')?.textContent.includes('Waiver search complete')`, 30000);
+  const waivers = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, empty:document.querySelector('#waiver-result').classList.contains('empty-state'), text:document.querySelector('#waiver-result').textContent.length}))()`);
+  if (waivers.empty || waivers.text < 20 || !waivers.status.includes("history")) throw new Error("Waiver workflow did not use decision intelligence");
+
+  await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); document.querySelector('#run-trades').click(); true`);
+  await waitFor(`document.querySelector('#global-status')?.textContent.includes('Trade search complete')`, 30000);
+  const trades = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, empty:document.querySelector('#trade-result').classList.contains('empty-state'), text:document.querySelector('#trade-result').textContent.length}))()`);
+  if (trades.empty || trades.text < 20 || !trades.status.includes("history")) throw new Error("Trade workflow did not use decision intelligence");
+
   await evaluate(`document.querySelector('[data-panel-target="league"]').click(); document.querySelector('#build-demo-league').click(); document.querySelector('#league-scenarios').value='500'; document.querySelector('#run-league').click(); true`);
-  await waitFor(`document.querySelectorAll('#league-result tbody tr').length >= 10`, 25000);
+  await waitFor(`document.querySelectorAll('#league-result tbody tr').length >= 10`, 35000);
   const league = await evaluate(`(() => ({teams:document.querySelectorAll('#league-result tbody tr').length, status:document.querySelector('#league-source-status').textContent}))()`);
-  if (league.teams < 10) throw new Error("League simulator did not render all teams");
+  if (league.teams < 10 || !league.status.includes("history-aware")) throw new Error("League simulator did not render a history-aware board");
 
   await evaluate(`document.querySelector('[data-panel-target="overview"]').click(); true`);
   const mobile = await snapshot("mobile", 390, 844);
   if (mobile.horizontalOverflow) throw new Error(`Mobile horizontal overflow: ${mobile.documentWidth}/${mobile.viewportWidth}`);
 
-  const result = { desktop, playerLab, intelligence, lineup, league, mobile, errors, screenshots: [".qa-desktop.png", ".qa-mobile.png"] };
+  const result = { desktop, playerLab, intelligence, lineup, waivers, trades, league, mobile, errors, screenshots: [".qa-desktop.png", ".qa-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) throw new Error(`Browser logged ${errors.length} error(s)`);

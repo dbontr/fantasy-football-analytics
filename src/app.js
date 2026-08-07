@@ -23,6 +23,7 @@
     healthCalibration: null,
     contextByWeek: new Map(),
     intelligenceHistory: new Map(),
+    decisionHistorySeason: 2025,
     ledger: new evidenceApi.EvidenceLedger(),
     rosterIds: [],
     draftState: null,
@@ -109,10 +110,63 @@
     );
   }
 
+  function historyEvidenceFor(player, season = state.decisionHistorySeason) {
+    return state.intelligenceHistory.get(historyKey(player, season))?.evidence || {};
+  }
+
+  function decisionEvidence(player, week = 1) {
+    return context.mergeEvidence(historyEvidenceFor(player), savedEvidence(player, week));
+  }
+
+  function staticDecisionEvidence(player) {
+    return context.mergeEvidence(
+      historyEvidenceFor(player),
+      context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
+      context.healthEvidence(player, state.healthCalibration),
+      state.ledger.evidenceFor("player", String(player.id)),
+    );
+  }
+
+  function baselineWeekProjection(player, week) {
+    const value = Number(player?.weeklyProjections?.[Math.max(0, week - 1)]);
+    if (Number.isFinite(value)) return value;
+    return Number(player?.weeklyProjection || 0);
+  }
+
+  function decisionPlayerForWeek(player, week) {
+    const forecast = engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week) });
+    const weekly = Array.isArray(player.weeklyProjections)
+      ? [...player.weeklyProjections]
+      : Array.from({ length: 18 }, () => Number(player.weeklyProjection || 0));
+    weekly[Math.max(0, Math.min(17, week - 1))] = forecast.distribution.mean;
+    return {
+      ...player,
+      weeklyProjections: weekly,
+      decisionProjection: forecast.distribution.mean,
+      decisionAvailability: forecast.availability.probability,
+    };
+  }
+
+  async function ensureDecisionIntelligence(players, season = state.decisionHistorySeason) {
+    const unique = [...new Map((players || []).filter((player) => player?.id).map((player) => [String(player.id), player])).values()];
+    const missing = unique.filter((player) => !state.intelligenceHistory.has(historyKey(player, season)));
+    if (!missing.length) return { loaded: 0, total: unique.length, cached: true };
+    try {
+      const result = await runWorker("player-history-batch", { players: missing, season });
+      for (const [id, profile] of Object.entries(result.histories || {})) {
+        const player = missing.find((row) => String(row.id) === String(id));
+        if (!player) continue;
+        state.intelligenceHistory.set(historyKey(player, season), { season, source: result.source, ...profile });
+      }
+      return { loaded: Object.keys(result.histories || {}).length, total: unique.length, source: result.source };
+    } catch (error) {
+      console.warn("Decision intelligence unavailable; continuing with bounded baseline evidence.", error);
+      return { loaded: 0, total: unique.length, error };
+    }
+  }
+
   function temporaryEvidence(player) {
-    const evidence = { ...savedEvidence(player, Number($("#player-week").value || 1)) };
-    const history = state.intelligenceHistory.get(historyKey(player));
-    if (history?.evidence) Object.assign(evidence, history.evidence);
+    const evidence = { ...decisionEvidence(player, Number($("#player-week").value || 1)) };
     const active = $("#whatif-active").value;
     const target = $("#whatif-target").value;
     const wind = $("#whatif-wind").value;
@@ -318,7 +372,9 @@
     const roster = rosterPlayers();
     if (!roster.length) return status("Build a roster first.", "error");
     const week = Number($("#lineup-week").value || 1);
-    const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: savedEvidence(player, week) }));
+    status("Loading recent role intelligence for the roster…");
+    const intelligenceState = await ensureDecisionIntelligence(roster);
+    const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week) }));
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({ ...forecast.player, weekProjection: forecast.distribution.mean }));
     const lineup = core.optimizeLineup(prepared, core.DEFAULT_SETTINGS, "weekProjection");
@@ -336,7 +392,7 @@
       const bench = lineup.bench.slice(0, 8).map((player) => `<div class="lineup-row"><span>BN</span><strong>${esc(player.name)}</strong><b>${num(byId.get(String(player.id))?.distribution.mean)}</b></div>`).join("");
       $("#lineup-result").className = "result-space";
       $("#lineup-result").innerHTML = `<div class="metric-grid"><div class="metric"><span>EXPECTED</span><strong>${num(summary.mean)}</strong></div><div class="metric"><span>P10</span><strong class="warn">${num(summary.p10)}</strong></div><div class="metric"><span>MEDIAN</span><strong>${num(summary.p50)}</strong></div><div class="metric"><span>P90</span><strong class="good">${num(summary.p90)}</strong></div><div class="metric"><span>CVaR10</span><strong>${num(summary.cvar10)}</strong></div></div>${rangeMarkup(summary)}<div class="result-grid"><div><p class="control-title">STARTERS</p><div class="lineup-list">${starters}</div></div><div><p class="control-title">BENCH ALTERNATIVES</p><div class="lineup-list">${bench || "<div class='lineup-row'><strong>No bench</strong></div>"}</div></div></div>`;
-      status("Lineup portfolio complete.", "good");
+      status(intelligenceState.error ? "Lineup portfolio complete · history fallback." : "Lineup portfolio complete · history-aware.", "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -364,15 +420,22 @@
     const week = Number($("#waiver-week").value || 1);
     const budget = Math.max(0, Number($("#faab-budget").value || 0));
     $("#run-waivers").disabled = true;
-    status("Searching legal add/drop combinations in the worker…");
+    status("Loading recent role intelligence for waiver candidates…");
+    let intelligenceState = { loaded: 0 };
     try {
-      const suggestions = await runWorker("waivers", { roster, freeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week });
+      const intelligencePool = [...freeAgents].sort((a, b) => baselineWeekProjection(b, week) - baselineWeekProjection(a, week)).slice(0, 180);
+      intelligenceState = await ensureDecisionIntelligence([...roster, ...intelligencePool]);
+      const intelligenceIds = new Set(intelligencePool.map((player) => String(player.id)));
+      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week));
+      const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week) : player);
+      status("Searching history-aware add/drop combinations in the worker…");
+      const suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week });
       $("#waiver-result").className = "result-space";
       $("#waiver-result").innerHTML = suggestions.length ? `<div class="decision-list">${suggestions.map((row) => {
         const bid = faabRange(row, budget, week);
         return `<article class="decision-card"><div class="decision-head"><strong>Add ${esc(row.add.name)} · Drop ${esc(row.drop.name)}</strong><b>$${bid.target}</b></div><p>${esc(row.reason)}</p><div class="decision-stats"><span>lineup ${row.lineupGain >= 0 ? "+" : ""}${num(row.lineupGain)}</span><span>depth ${row.depthGain >= 0 ? "+" : ""}${num(row.depthGain)}</span><span>FAAB $${bid.floor}–$${bid.ceiling}</span><span>score ${num(row.score)}</span></div></article>`;
       }).join("")}</div>` : `<p>No positive add/drop pairs found under the current roster and week.</p>`;
-      status("Waiver search complete.", "good");
+      status(intelligenceState.error ? "Waiver search complete · history fallback." : "Waiver search complete · history-aware.", "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -402,11 +465,16 @@
     const opponentRoster = counterpartyRoster();
     const week = Number($("#trade-week").value || 1);
     $("#run-trades").disabled = true;
-    status("Searching bilateral packages in the worker…");
+    status("Loading recent role intelligence for both rosters…");
+    let intelligenceState = { loaded: 0 };
     try {
+      intelligenceState = await ensureDecisionIntelligence([...userRoster, ...opponentRoster]);
+      const decisionUserRoster = userRoster.map((player) => decisionPlayerForWeek(player, week));
+      const decisionOpponentRoster = opponentRoster.map((player) => decisionPlayerForWeek(player, week));
+      status("Searching history-aware bilateral packages in the worker…");
       const proposals = await runWorker("trade-proposals", { options: {
-        userRoster,
-        opponentRoster,
+        userRoster: decisionUserRoster,
+        opponentRoster: decisionOpponentRoster,
         players: state.players,
         settings: core.DEFAULT_SETTINGS,
         week,
@@ -416,7 +484,7 @@
       } });
       $("#trade-result").className = "result-space";
       $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card"><div class="decision-head"><strong>${esc(row.give.map((p) => p.name).join(" + "))} → ${esc(row.receive.map((p) => p.name).join(" + "))}</strong><b>${esc(row.packageType)}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>your lineup ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)}</span><span>their lineup ${row.opponentAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.opponentAnalysis.lineupGain)}</span><span>fairness ${row.fairness}%</span><span>mutual ${num(row.mutualScore)}</span></div></article>`).join("")}</div>` : `<p>No mutually plausible packages passed the current fairness thresholds.</p>`;
-      status("Trade search complete.", "good");
+      status(intelligenceState.error ? "Trade search complete · history fallback." : "Trade search complete · history-aware.", "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -528,8 +596,13 @@
     const regularSeasonEnd = Number($("#regular-season-end").value || 14);
     const championshipWeek = Number($("#championship-week").value || 17);
     $("#run-league").disabled = true;
-    $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} league seasons in the worker…`;
+    const leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
+    $("#league-source-status").textContent = `Loading recent role intelligence for ${leaguePlayers.length} rostered players…`;
+    let intelligenceState = { loaded: 0 };
     try {
+      intelligenceState = await ensureDecisionIntelligence(leaguePlayers);
+      const evidenceByPlayer = Object.fromEntries(leaguePlayers.map((player) => [String(player.id), staticDecisionEvidence(player)]));
+      $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} history-aware league seasons in the worker…`;
       const result = await runWorker("league", { options: {
         teams: state.leagueTeams,
         settings: core.DEFAULT_SETTINGS,
@@ -540,13 +613,16 @@
         playoffTeams: state.leagueMeta?.playoffTeams || Math.min(6, state.leagueTeams.length),
         playoffByes: state.leagueMeta?.playoffByes || 0,
         medianGame: $("#median-game").checked,
+        evidenceByPlayer,
         simulations: scenarios,
         seed: `league-${state.leagueTeams.length}-${regularSeasonEnd}-${championshipWeek}`,
       } });
       $("#league-result").className = "result-space";
       $("#league-result").innerHTML = `<div class="table-header"><h2>Championship board</h2><span>${result.simulations.toLocaleString()} seasons · playoffs W${result.firstPlayoffWeek}–${result.championshipWeek}</span></div><div class="table-wrap"><table><thead><tr><th>Team</th><th>Title</th><th>Playoffs</th><th>Expected wins</th><th>All-play</th><th>Expected points</th></tr></thead><tbody>${result.teams.map((team) => `<tr><td class="player-cell"><strong>${esc(team.name)}</strong><span>team ${esc(team.teamId)}</span></td><td><b>${pct(team.championshipProbability, 1)}</b></td><td>${pct(team.playoffProbability, 1)}</td><td>${num(team.expectedWins, 2)}</td><td>${pct(team.allPlayWinPct, 1)}</td><td>${num(team.expectedPoints, 1)}</td></tr>`).join("")}</tbody></table></div>`;
-      $("#league-source-status").textContent = "Title simulation complete. Probabilities are model estimates, not guarantees.";
-      status("League championship simulation complete.", "good");
+      $("#league-source-status").textContent = intelligenceState.error
+        ? "Title simulation complete with baseline fallback. Probabilities are model estimates, not guarantees."
+        : "Title simulation complete · history-aware. Probabilities are model estimates, not guarantees.";
+      status(intelligenceState.error ? "League championship simulation complete · history fallback." : "League championship simulation complete · history-aware.", "good");
     } catch (error) {
       $("#league-source-status").textContent = error.message;
       status(error.message, "error");

@@ -51,3 +51,11 @@ A future addition qualifies only when all of the following hold:
 - Added optional position-filtered Sleeper status refresh for injury, practice, depth chart, and update freshness fields.
 - Added locally generated Oracle Outlook with explicit provenance and a no-fabrication health rule.
 - Historical archives are same-origin compressed assets and are loaded on demand rather than added to the initial application payload.
+
+### Decision-intelligence propagation
+
+- Lineup optimization now loads recent history for the active roster before forecasting starters.
+- Waiver search enriches the roster plus the top 180 baseline weekly candidates before the worker evaluates add/drop pairs.
+- Trade search enriches both rosters while leaving season asset/fairness values anchored to the longer-horizon model.
+- League/title simulation receives per-player static history, health, coaching, and ledger evidence across every simulated week.
+- Browser QA now executes lineup, waiver, trade, and league paths and requires each to report history-aware execution.

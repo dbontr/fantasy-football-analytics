@@ -35,6 +35,7 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - Historical nflverse health calibration and 32-team coaching priors.
 - On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, volatility, and trend summaries.
 - Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs.
+- Shared history-aware decision evidence now feeds lineup optimization, waiver add/drop search, bilateral trades, and league/title simulation.
 - Lightweight matchup context derived from the free bootstrap universe and clearly marked as a proxy.
 - Online exponentiated-loss ensemble reweighting stored locally.
 - Sleeper league import/status enrichment, generic nflverse release asset loading, and NWS forecast adapters.
@@ -85,7 +86,7 @@ npm.cmd run serve
 
 Open `http://127.0.0.1:4173/` (or set `PORT` if that port is occupied).
 
-For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, lineup analysis, league simulation, desktop/mobile overflow, and browser console errors.
+For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, player intelligence, history-aware lineup/waiver/trade decisions, league simulation, desktop/mobile overflow, and browser console errors.
 
 ## GitHub Pages
 
