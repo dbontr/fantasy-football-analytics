@@ -1,8 +1,8 @@
-# Fantasy Football Oracle — Browser Engine
+# Oracle Fantasy Football Assistant
 
-A separate browser-native implementation of the Fantasy Football Oracle designed to run as a static GitHub Pages application with **no application server, no database server, no custom GitHub Actions workflow, no API keys, and zero runtime npm dependencies**.
+A user-first fantasy football assistant for people who want a clear answer without needing to understand fantasy analytics. The interface focuses on the jobs users actually have: **draft well, set the right lineup, judge trades, find waiver pickups, and understand a player**. The advanced forecasting and simulation stack stays under the hood.
 
-The original `fantasy-football-oracle` repository remains the feature/behavior reference. This repository preserves its strongest decision logic while moving probabilistic forecasting, correlated Monte Carlo, evidence resolution, roster optimization, and league simulation into the browser.
+The application is still fully browser-native: static GitHub Pages, **no application server, no database server, no custom GitHub Actions workflow, no API keys, and zero runtime npm dependencies**. The original `fantasy-football-oracle` repository remains the feature/behavior reference.
 
 ## Deployment contract
 
@@ -16,6 +16,12 @@ The original `fantasy-football-oracle` repository remains the feature/behavior r
 - GitHub Actions is disabled in repository settings; branch-based Pages publishes the committed static root with `.nojekyll`.
 
 Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
+
+## User experience
+
+The product intentionally hides research terminology by default. The seven user-facing areas are **Home, Draft, Start / Sit, Trades, Waivers, Players, and Season**. Home starts with plain-English tasks; Draft includes an Oracle-ranked player list, mock draft, and manual live-draft helper; Trades includes a direct give/get analyzer; detailed distributions, model diagnostics, and custom what-if controls are kept behind optional disclosures when they are useful.
+
+The visual system is a bright, accessible light theme with large controls, responsive cards, and task-oriented recommendations such as **Draft him**, **Start these players**, **Accept / Pass**, and **Add / Drop**.
 
 ## What is implemented
 

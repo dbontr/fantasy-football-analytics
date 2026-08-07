@@ -1,10 +1,10 @@
 {
-  "name": "Fantasy Football Oracle Browser Engine",
+  "name": "Oracle Fantasy Football Assistant",
   "short_name": "Oracle",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#090c0a",
-  "theme_color": "#0b0e0c",
-  "description": "Browser-native probabilistic fantasy football decision engine using free public data."
+  "background_color": "#f6f7f2",
+  "theme_color": "#f7f8f3",
+  "description": "Simple fantasy football help for drafts, lineups, trades, waivers, and players."
 }

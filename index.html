@@ -3,53 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0e0c">
-  <meta name="description" content="Browser-native fantasy football decision engine using free public data and local Monte Carlo simulation.">
-  <title>Fantasy Football Oracle — Browser Engine</title>
+  <meta name="theme-color" content="#f7f8f3">
+  <meta name="description" content="A simple fantasy football assistant for drafts, start/sit decisions, trades, waivers, and player rankings.">
+  <title>Oracle Fantasy Football Assistant</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#overview" aria-label="Fantasy Football Oracle home">
-      <span class="brand-mark" aria-hidden="true">FFO</span>
-      <span><strong>ORACLE</strong><small>BROWSER ENGINE</small></span>
+    <a class="brand" href="#overview" data-jump="overview" aria-label="Oracle Fantasy Football home">
+      <span class="brand-mark" aria-hidden="true">O</span>
+      <span><strong>ORACLE</strong><small>FANTASY FOOTBALL</small></span>
     </a>
-    <div class="runtime-strip" aria-label="Runtime architecture">
-      <span>LOCAL COMPUTE</span><span>FREE DATA</span><span>ZERO BACKEND</span>
-    </div>
-    <nav class="tabs" aria-label="Oracle sections">
-      <button class="tab active" data-panel-target="overview">Overview</button>
-      <button class="tab" data-panel-target="player">Player Lab</button>
+    <nav class="tabs" aria-label="Fantasy football tools">
+      <button class="tab active" data-panel-target="overview">Home</button>
       <button class="tab" data-panel-target="draft">Draft</button>
-      <button class="tab" data-panel-target="lineup">Lineup</button>
-      <button class="tab" data-panel-target="waivers">Waivers</button>
+      <button class="tab" data-panel-target="lineup">Start / Sit</button>
       <button class="tab" data-panel-target="trades">Trades</button>
-      <button class="tab" data-panel-target="league">League</button>
-      <button class="tab" data-panel-target="research">Research</button>
+      <button class="tab" data-panel-target="waivers">Waivers</button>
+      <button class="tab" data-panel-target="player">Players</button>
+      <button class="tab" data-panel-target="league">Season</button>
     </nav>
   </header>
+  <p id="global-status" class="status-line app-status" aria-live="polite"></p>
 
   <main>
     <section class="panel active" data-panel="overview" id="overview">
-      <div class="hero-grid">
+      <div class="hero-grid friendly-hero">
         <div>
-          <p class="eyebrow">CHAMPIONSHIP DECISION SYSTEM / 2026</p>
-          <h1>Championship equity,<br>computed in your browser.</h1>
-          <p class="lede">Probabilistic forecasts, correlated Monte Carlo, draft VONA, exact lineup assignment, waiver and trade search, and full league playoff simulation. No application server is involved.</p>
+          <p class="eyebrow">FANTASY FOOTBALL, MADE SIMPLE</p>
+          <h1>Make the right move.<br>We handle the math.</h1>
+          <p class="lede">Tell Oracle what you need help with. Get a clear recommendation for your draft, lineup, trades, waivers, or a specific player — with the complicated modeling kept out of your way.</p>
           <div class="action-row">
-            <button class="primary" data-jump="player">Open Player Lab</button>
-            <button class="secondary" data-jump="league">Simulate a League</button>
+            <button class="primary" data-jump="draft">Help me draft</button>
+            <button class="secondary" data-jump="lineup">Set my lineup</button>
           </div>
         </div>
-        <div class="field-card" aria-label="Architecture overview">
-          <div class="field-line"><span>01</span><b>PUBLIC DATA</b><em>Sleeper / nflverse / ESPN / NWS</em></div>
-          <div class="field-line"><span>02</span><b>LOCAL EVIDENCE</b><em>temporal + conflict aware</em></div>
-          <div class="field-line"><span>03</span><b>DISTRIBUTIONS</b><em>availability + uncertainty</em></div>
-          <div class="field-line"><span>04</span><b>SCENARIOS</b><em>correlated Web Worker MC</em></div>
-          <div class="field-line"><span>05</span><b>DECISIONS</b><em>regret / CVaR / title odds</em></div>
+        <div class="field-card friendly-promise" aria-label="What Oracle helps with">
+          <strong>Built for one job:</strong>
+          <h2>Help you win your league.</h2>
+          <p>No fantasy jargon required. Oracle turns projections, injuries, rookies, news, matchups, preseason usage, and simulations into a simple answer.</p>
+          <span class="confidence-note">Default setup: ESPN-style PPR</span>
         </div>
+      </div>
+      <div class="quick-actions" aria-label="Choose what you need help with">
+        <button class="quick-action" data-jump="draft"><span>1</span><strong>Draft help</strong><small>Live helper, mock draft, and our ranked board</small></button>
+        <button class="quick-action" data-jump="lineup"><span>2</span><strong>Who should I start?</strong><small>Build your roster and get the best lineup</small></button>
+        <button class="quick-action" data-jump="trades"><span>3</span><strong>Is this trade good?</strong><small>Check a trade or find trade ideas</small></button>
+        <button class="quick-action" data-jump="waivers"><span>4</span><strong>Who should I pick up?</strong><small>Find upgrades and who to drop</small></button>
+        <button class="quick-action" data-jump="player"><span>5</span><strong>Check a player</strong><small>Projection, upside, risk, news, and outlook</small></button>
       </div>
 
       <div class="scoreboard" aria-label="Engine status">
@@ -73,109 +76,125 @@
             <div><dt>Persistent cache</dt><dd id="cache-status">IndexedDB</dd></div>
             <div><dt>Worker</dt><dd id="worker-status">Starting…</dd></div>
           </dl>
-          <div class="action-row compact"><button id="sync-sleeper" class="secondary">Sync Sleeper status</button><button id="clear-local" class="ghost">Reset local state</button></div>
-          <p id="global-status" class="status-line" aria-live="polite"></p>
+          <div class="action-row compact"><button id="sync-sleeper" class="secondary">Refresh player status</button><button id="clear-local" class="ghost">Reset saved data</button></div>
         </article>
       </div>
     </section>
 
     <section class="panel" data-panel="player" id="player">
-      <div class="section-heading"><div><p class="eyebrow">PLAYER LAB</p><h1>One player. Full distribution.</h1></div><p>Model availability separately from active-game performance, then layer temporary or persisted evidence on top.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">PLAYER CHECK</p><h1>How good is this player right now?</h1></div><p>Pick a player and week. Oracle will give you a projection, upside, risk, current status, and the biggest reasons behind the recommendation.</p></div>
       <div class="workbench">
-        <aside class="controls module">
+        <aside class="controls module friendly-controls">
+          <label>Find a player<input id="player-search" type="search" placeholder="Start typing a name…" autocomplete="off"></label>
           <label>Player<select id="player-select"></select></label>
-          <div class="control-pair"><label>Week<select id="player-week"></select></label><label>Scenarios<select id="player-scenarios"><option>2000</option><option selected>5000</option><option>10000</option><option>25000</option></select></label></div>
-          <hr>
-          <p class="control-title">Temporary evidence</p>
-          <label>Active probability %<input id="whatif-active" type="number" min="0" max="100" step="1" placeholder="model"></label>
-          <label>Target share<input id="whatif-target" type="number" min="0" max="1" step="0.01" placeholder="e.g. 0.24"></label>
-          <label>Wind mph<input id="whatif-wind" type="number" min="0" max="80" step="1" placeholder="optional"></label>
-          <div class="stacked-actions"><button id="run-player" class="primary">Run distribution</button><button id="save-evidence" class="secondary">Commit evidence locally</button></div>
+          <label>Week<select id="player-week"></select></label>
+          <button id="run-player" class="primary">Check this player</button>
+          <details class="advanced-details"><summary>Advanced what-if settings</summary>
+            <label>Simulation depth<select id="player-scenarios"><option>2000</option><option selected>5000</option><option>10000</option><option>25000</option></select></label>
+            <label>Override chance to play %<input id="whatif-active" type="number" min="0" max="100" step="1" placeholder="use model"></label>
+            <label>Override target share<input id="whatif-target" type="number" min="0" max="1" step="0.01" placeholder="optional"></label>
+            <label>Wind mph<input id="whatif-wind" type="number" min="0" max="80" step="1" placeholder="optional"></label>
+            <button id="save-evidence" class="secondary">Save this what-if</button>
+          </details>
         </aside>
-        <div id="player-result" class="result-space empty-state"><p>Select a player and run the distribution.</p></div>
+        <div id="player-result" class="result-space empty-state"><p>Choose a player, then select <strong>Check this player</strong>.</p></div>
       </div>
       <article class="module intelligence-module">
-        <div class="table-header"><div><p class="eyebrow">PLAYER INTELLIGENCE</p><h2>Game log + evidence-backed outlook</h2></div><span id="intelligence-source">On-demand · nflverse + Sleeper</span></div>
-        <div class="toolbar intelligence-toolbar"><label>History season<select id="history-season"><option selected>2025</option><option>2024</option><option>2023</option></select></label><button id="load-intelligence" class="secondary">Load game history + status</button><button id="sync-live-intelligence" class="secondary">Sync preseason + news</button><span id="live-intelligence-status" class="toolbar-note">Optional · keyless</span></div>
+        <div class="table-header"><div><p class="eyebrow">MORE ABOUT THIS PLAYER</p><h2>Recent games, news, role, and outlook</h2></div><span id="intelligence-source">Loads only when you ask</span></div>
+        <div class="toolbar intelligence-toolbar"><label>Past season<select id="history-season"><option selected>2025</option><option>2024</option><option>2023</option></select></label><button id="load-intelligence" class="secondary">Show recent games + status</button><button id="sync-live-intelligence" class="secondary">Refresh news + preseason</button><span id="live-intelligence-status" class="toolbar-note">Optional live update</span></div>
         <div id="news-pulse" class="news-pulse"></div>
-        <div id="player-intelligence" class="result-space empty-state"><p>Load a player’s actual weekly stats, rolling usage, current health evidence, and locally generated outlook.</p></div>
+        <div id="player-intelligence" class="result-space empty-state"><p>Use this when you want more context behind the recommendation.</p></div>
       </article>
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
-      <div class="section-heading"><div><p class="eyebrow">DRAFT ROOM + LIVE HELPER</p><h1>Draft against a realistic room, not clones of Oracle.</h1></div><p>You control your team. Opponents follow configurable market/roster strategies while Oracle exposes VONA, return probability, disagreement, run pressure, and roster construction.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">DRAFT HELP</p><h1>Know who to take before you're on the clock.</h1></div><p>Use our ranked board before the draft, practice in a mock draft, or switch to Live Draft Helper and record the real picks as they happen.</p></div>
       <div class="toolbar module draft-toolbar">
-        <label>Mode<select id="draft-mode"><option value="sim" selected>Draft simulator</option><option value="live">Live draft helper</option></select></label>
-        <label>Teams<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
-        <label>Your slot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
+        <label>What are you doing?<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
+        <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
+        <label>My draft spot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
         <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
-        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>PPR / ESPN</option><option value="standard">Standard</option><option value="superflex">Superflex</option></select></label>
-        <label>Opponent room<select id="draft-opponent-strategy"></select></label>
-        <button id="draft-reset" class="secondary">Reset</button>
+        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>ESPN PPR</option><option value="standard">Standard</option><option value="superflex">Superflex</option></select></label>
+        <label>How others draft<select id="draft-opponent-strategy"></select></label>
+        <button id="draft-reset" class="secondary">Start over</button>
         <button id="draft-advance" class="primary">Sim to my pick</button>
-        <button id="draft-undo" class="ghost">Undo</button>
-        <div class="toolbar-stat"><span>NEXT</span><strong id="draft-next">—</strong></div>
+        <button id="draft-undo" class="ghost">Undo last pick</button>
+        <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
       </div>
+      <article class="module big-board-module">
+        <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>Oracle Top Players</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
+        <p class="helper-copy">This is our simple pre-draft ranking. Higher scores mean a better mix of projection, positional value, risk, and rookie upside.</p>
+        <div id="draft-big-board" class="big-board-list"></div>
+      </article>
       <div class="draft-layout">
         <article class="module draft-side">
-          <div class="table-header"><div><p class="eyebrow">ROOM CONTROL</p><h2>Record picks + market board</h2></div><span id="draft-meta"></span></div>
-          <label>Available player<select id="draft-manual-player"></select></label>
-          <button id="draft-record-pick" class="secondary">Record next pick</button>
-          <p class="fineprint">In Live Helper mode, use this after any real-world pick. Oracle updates recommendations from the exact board state.</p>
-          <hr>
-          <label>Custom ranking board<textarea id="draft-custom-board" rows="7" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
-          <div class="action-row"><button id="draft-import-board" class="secondary">Use custom rankings</button><button id="draft-clear-board" class="ghost">Use ESPN market</button></div>
-          <p id="draft-board-status" class="fineprint">Built-in market order uses the committed ESPN-derived ADP/rank baseline. Paste Yahoo/NFL/other rankings to simulate that room instead.</p>
+          <div class="table-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>Record the picks</h2></div><span id="draft-meta"></span></div>
+          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
+          <label>Player picked<select id="draft-manual-player"></select></label>
+          <button id="draft-record-pick" class="secondary">Record this pick</button>
+          <p class="helper-copy">In Live Draft Helper, enter each real pick from your ESPN draft. Oracle immediately updates who you should take next.</p>
+          <details class="advanced-details"><summary>Use Yahoo, NFL, or another ranking list</summary>
+            <label>Paste rankings<textarea id="draft-custom-board" rows="7" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
+            <div class="action-row compact"><button id="draft-import-board" class="secondary">Use these rankings</button><button id="draft-clear-board" class="ghost">Use built-in market</button></div>
+            <p id="draft-board-status" class="fineprint">Built-in market rankings are active.</p>
+          </details>
         </article>
-        <article class="module draft-side">
-          <div class="table-header"><div><p class="eyebrow">STRATEGY LAB</p><h2>Does Oracle actually draft better?</h2></div><span>paired rooms</span></div>
-          <label>Benchmark rooms<select id="draft-benchmark-count"><option>40</option><option selected>100</option><option>200</option></select></label>
-          <label>Baseline<select id="draft-baseline-strategy"><option value="espn-market" selected>ESPN market / ADP</option><option value="balanced">Balanced market</option><option value="need-heavy">Need-heavy</option><option value="zero-rb">Zero-RB</option></select></label>
-          <button id="draft-benchmark" class="primary">Benchmark Oracle strategy</button>
-          <div id="draft-benchmark-result" class="result-space empty-state"><p>Run paired draft rooms to compare roster outcomes under the same opponent randomness.</p></div>
-        </article>
+        <details class="module draft-side optional-tool">
+          <summary><span><small>OPTIONAL</small><strong>Compare our draft strategy</strong></span><em>See how Oracle performs in simulated drafts</em></summary>
+          <label>Number of mock drafts<select id="draft-benchmark-count"><option>40</option><option selected>100</option><option>200</option></select></label>
+          <label>Compare against<select id="draft-baseline-strategy"><option value="espn-market" selected>Normal ESPN rankings</option><option value="balanced">Balanced drafter</option><option value="need-heavy">Position-need drafter</option><option value="zero-rb">Zero-RB</option></select></label>
+          <button id="draft-benchmark" class="secondary">Run comparison</button>
+          <div id="draft-benchmark-result" class="result-space empty-state"><p>Optional: see how our draft approach compares with a normal ranking-based strategy.</p></div>
+        </details>
       </div>
-      <div class="module table-module"><div class="table-header"><h2>Oracle decision board</h2><span>live recommendations</span></div><div class="table-wrap"><table><thead><tr><th>Player</th><th>Pos</th><th>Market</th><th>Decision</th><th>VONA</th><th>Return</th><th>Urgency</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div></div>
+      <div class="module table-module"><div class="table-header"><h2>Who should I draft right now?</h2><span>updates after every pick</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Our take</th><th>Chance he's there next turn</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div></div>
       <div class="draft-layout"><div id="draft-roster" class="module result-space empty-state"><p>Your drafted roster will appear here.</p></div><div id="draft-history" class="module result-space empty-state"><p>Pick history will appear here.</p></div></div>
     </section>
 
     <section class="panel" data-panel="lineup" id="lineup">
-      <div class="section-heading"><div><p class="eyebrow">LINEUP ENGINE</p><h1>Exact assignment, then tail risk.</h1></div><p>The lineup is solved exactly across FLEX/SUPERFLEX eligibility, then the selected starters are evaluated as one correlated portfolio.</p></div>
-      <div class="toolbar module"><label>Add player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add</button><button id="roster-demo" class="secondary">Load demo roster</button><button id="roster-clear" class="ghost">Clear</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Analyze lineup</button></div>
+      <div class="section-heading"><div><p class="eyebrow">START / SIT</p><h1>Set my best lineup.</h1></div><p>Add the players on your roster, choose the week, and Oracle will tell you exactly who to start and who to leave on the bench.</p></div>
+      <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
       <div id="roster-strip" class="roster-strip"></div>
-      <div id="lineup-result" class="result-space empty-state"><p>Build a roster to evaluate starters, bench alternatives, floor, ceiling, and correlated downside.</p></div>
+      <div id="lineup-result" class="result-space empty-state"><p>Add your roster above. Oracle will choose the starters for you.</p></div>
     </section>
 
     <section class="panel" data-panel="waivers" id="waivers">
-      <div class="section-heading"><div><p class="eyebrow">WAIVER WIRE</p><h1>Marginal roster value, with the right claim mechanism.</h1></div><p>ESPN-style waiver priority/free agency is the default. FAAB pricing appears only when your league actually uses a budget.</p></div>
-      <div class="toolbar module"><label>Waiver system<select id="waiver-mode"><option value="priority" selected>Waiver priority / free agency</option><option value="faab">FAAB budget</option></select></label><label id="faab-budget-label" class="hidden">FAAB remaining<input id="faab-budget" type="number" min="0" max="1000" value="100"></label><label>Week<select id="waiver-week"></select></label><button id="run-waivers" class="primary">Search waivers</button></div>
-      <div id="waiver-result" class="result-space empty-state"><p>Waiver analysis uses the roster from the Lineup tab.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">WAIVERS</p><h1>Who should I pick up?</h1></div><p>Oracle checks the available player pool against your roster and tells you who is actually worth adding — and who you should drop.</p></div>
+      <div class="toolbar module"><label>My league uses<select id="waiver-mode"><option value="priority" selected>Normal waiver priority / free agency</option><option value="faab">FAAB budget</option></select></label><label id="faab-budget-label" class="hidden">FAAB left<input id="faab-budget" type="number" min="0" max="1000" value="100"></label><label>Week<select id="waiver-week"></select></label><button id="run-waivers" class="primary">Find my best pickups</button></div>
+      <div id="waiver-result" class="result-space empty-state"><p>First add your roster in <strong>Start / Sit</strong>, then come back here.</p></div>
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow">TRADE LAB</p><h1>Search both sides of the deal.</h1></div><p>Generate 1-for-1 through 2-for-2 packages, re-optimize both lineups, and reject proposals that do not preserve plausible bilateral value.</p></div>
-      <div class="toolbar module"><label>Week<select id="trade-week"></select></label><button id="run-trades" class="primary">Generate opponent packages</button></div>
-      <div id="trade-result" class="result-space empty-state"><p>The counterparty is generated from the remaining player pool so the search is immediately testable.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">TRADES</p><h1>Should I make this trade?</h1></div><p>Choose what you give up and what you get back. Oracle checks whether the trade actually improves your lineup and roster.</p></div>
+      <article class="module trade-checker">
+        <div class="trade-side"><strong>I GIVE</strong><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
+        <div class="trade-arrow" aria-hidden="true">⇄</div>
+        <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
+        <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
+      </article>
+      <div id="trade-check-result" class="result-space empty-state"><p>Add your roster in <strong>Start / Sit</strong>, then choose the trade above.</p></div>
+      <details class="module optional-tool trade-ideas"><summary><span><small>OPTIONAL</small><strong>Find trade ideas for me</strong></span><em>Search for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>Oracle can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
     </section>
 
     <section class="panel" data-panel="league" id="league">
-      <div class="section-heading"><div><p class="eyebrow">LEAGUE SIMULATOR</p><h1>Optimize for the trophy.</h1></div><p>Simulate every roster through the fantasy schedule and playoffs with correlated weekly player outcomes. Rank decisions by title probability, not generic trade value.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">SEASON OUTLOOK</p><h1>How strong is my team?</h1></div><p>See how often your team makes the playoffs and wins the league across many possible seasons.</p></div>
       <div class="league-grid">
         <article class="module controls">
-          <p class="control-title">League source</p>
+          <p class="control-title">League setup</p>
           <label>Sleeper league ID<input id="sleeper-league-id" type="text" inputmode="numeric" placeholder="optional"></label>
           <button id="import-sleeper-league" class="secondary">Import Sleeper league</button>
           <span class="or-rule">OR</span>
-          <button id="build-demo-league" class="secondary">Build balanced demo league</button>
-          <hr>
-          <label>Simulations<select id="league-scenarios"><option>500</option><option selected>1500</option><option>3000</option><option>5000</option></select></label>
-          <label>Regular season ends<input id="regular-season-end" type="number" min="8" max="16" value="14"></label>
-          <label>Championship week<input id="championship-week" type="number" min="15" max="18" value="17"></label>
-          <label class="check"><input id="median-game" type="checkbox"> League median game</label>
-          <button id="run-league" class="primary">Run title simulation</button>
+          <button id="build-demo-league" class="secondary">Try a demo league</button>
+          <details class="advanced-details"><summary>Season settings</summary>
+            <label>Simulation depth<select id="league-scenarios"><option>500</option><option selected>1500</option><option>3000</option><option>5000</option></select></label>
+            <label>Regular season ends<input id="regular-season-end" type="number" min="8" max="16" value="14"></label>
+            <label>Championship week<input id="championship-week" type="number" min="15" max="18" value="17"></label>
+            <label class="check"><input id="median-game" type="checkbox"> My league uses a median game</label>
+          </details>
+          <button id="run-league" class="primary">Show my season outlook</button>
           <p id="league-source-status" class="status-line" aria-live="polite">No league loaded.</p>
         </article>
-        <div id="league-result" class="result-space empty-state"><p>Load or generate a league to estimate seeds, playoff odds, all-play strength, and championship probability.</p></div>
+        <div id="league-result" class="result-space empty-state"><p>Load a league or try the demo to see playoff and championship chances.</p></div>
       </div>
     </section>
 
@@ -189,7 +208,7 @@
     </section>
   </main>
 
-  <footer><span>Fantasy Football Oracle / Browser Engine</span><span>Static application · calculations stay on-device</span></footer>
+  <footer><span>Oracle Fantasy Football</span><span>Simple answers on top. Advanced modeling underneath.</span></footer>
 
   <script src="./src/engine/core.js"></script>
   <script src="./src/engine/rookies.js"></script>

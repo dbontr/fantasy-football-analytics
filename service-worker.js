@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "oracle-browser-v0.9.0";
+const CACHE = "oracle-browser-v1.0.0-friendly";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

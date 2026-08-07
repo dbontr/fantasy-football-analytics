@@ -100,10 +100,25 @@
     ["#player-week", "#lineup-week", "#waiver-week", "#trade-week"].forEach((selector) => { $(selector).innerHTML = options; });
   }
 
+  function playerMatchesSearch(player, query) {
+    const needle = String(query || "").trim().toLowerCase();
+    if (!needle) return true;
+    return `${player.name} ${player.position} ${player.team}`.toLowerCase().includes(needle);
+  }
+
+  function fillPlayerPicker(selector, query = "") {
+    const node = $(selector);
+    if (!node) return [];
+    const previous = node.value;
+    const rows = rankedPlayers().filter((player) => playerMatchesSearch(player, query)).slice(0, query ? 120 : 300);
+    node.innerHTML = rows.map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}</option>`).join("");
+    if (rows.some((player) => String(player.id) === String(previous))) node.value = previous;
+    return rows;
+  }
+
   function fillPlayerSelects() {
-    const options = rankedPlayers().map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}</option>`).join("");
-    $("#player-select").innerHTML = options;
-    $("#roster-add").innerHTML = options;
+    fillPlayerPicker("#player-select", $("#player-search")?.value || "");
+    fillPlayerPicker("#roster-add", $("#roster-search")?.value || "");
   }
 
   function renderSources() {
@@ -115,6 +130,7 @@
   function activatePanel(name) {
     $$(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.panelTarget === name));
     $$(".panel").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
+    status("");
     history.replaceState(null, "", `#${name}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -296,11 +312,8 @@
   }
 
   function decisionContextLabel(contextState) {
-    const history = contextState?.history?.error ? "history fallback" : "history-aware";
-    const live = contextState?.live?.failed?.length ? "live-status fallback" : "live-status synced";
-    const matchup = state.defenseProfiles ? "defense-prior" : "matchup-proxy";
-    const market = contextState?.market ? (contextState.market.available ? "market-live" : "market-fallback") : null;
-    return [history, live, matchup, market].filter(Boolean).join(" | ");
+    if (contextState?.live?.failed?.length || contextState?.history?.error) return "Some live updates were unavailable — Oracle used its saved model instead";
+    return "Updated with the latest available player context";
   }
 
   function temporaryEvidence(player) {
@@ -322,23 +335,40 @@
     return `<div class="range-block"><div class="range-labels"><span>P10 ${num(summary.p10)}</span><span>P50 ${num(summary.p50)}</span><span>P90 ${num(summary.p90)}</span></div><div class="range-track"><div class="range-band" style="left:${left}%;width:${Math.max(1, right - left)}%"></div><div class="range-median" style="left:${median}%"></div></div></div>`;
   }
 
+  function friendlyDriverLabel(label) {
+    const value = String(label || "").toLowerCase();
+    if (value.includes("historical opportunity")) return "Past usage and opportunity";
+    if (value.includes("role trend")) return "Recent role trend";
+    if (value.includes("target share")) return "Passing-game role";
+    if (value.includes("carry share")) return "Rushing workload";
+    if (value.includes("scoring environment") || value.includes("game total")) return "Expected game scoring";
+    if (value.includes("matchup")) return "Matchup";
+    if (value.includes("draft capital")) return "Draft investment";
+    if (value.includes("rookie cohort")) return "Comparable rookies";
+    if (value.includes("prospect")) return "Prospect profile";
+    if (value.includes("athletic")) return "Athletic testing";
+    return String(label || "Projection input");
+  }
+
   function renderPlayerResult(forecast, simulationSummary) {
     const summary = simulationSummary || forecast.distribution;
-    const drivers = forecast.drivers.length ? forecast.drivers : [{ label: "baseline projection", family: "baseline", impact: 0, confidence: forecast.baseline.reliability }];
+    const drivers = forecast.drivers.length ? forecast.drivers : [{ label: "baseline projection", impact: 0 }];
+    const availability = forecast.availability.probability;
+    const bust = forecast.probabilities.bust;
+    const risk = availability < 0.75 || bust > 0.4 ? "High" : availability < 0.92 || bust > 0.25 ? "Medium" : "Low";
+    const verdict = forecast.edge.points >= 1.5 ? "Trending better than the baseline" : forecast.edge.points <= -1.5 ? "Trending worse than the baseline" : "Close to the baseline";
     $("#player-result").className = "result-space";
     $("#player-result").innerHTML = `
-      <div class="player-banner"><div><span class="pos-pill">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week} · ${pct(forecast.availability.probability)} active</p></div><div class="rank-note">EDGE ${forecast.edge.points >= 0 ? "+" : ""}${num(forecast.edge.points)} PTS</div></div>
-      <div class="metric-grid">
-        <div class="metric"><span>MEAN</span><strong>${num(summary.mean)}</strong></div>
-        <div class="metric"><span>MEDIAN</span><strong>${num(summary.p50)}</strong></div>
-        <div class="metric"><span>CEILING P90</span><strong class="good">${num(summary.p90)}</strong></div>
-        <div class="metric"><span>DOWNSIDE CVAR10</span><strong class="warn">${num(summary.cvar10)}</strong></div>
-        <div class="metric"><span>BOOM / BUST</span><strong>${pct(forecast.probabilities.boom)} / ${pct(forecast.probabilities.bust)}</strong></div>
+      <div class="friendly-verdict"><div><span class="pos-pill">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week}</p></div><strong>${esc(verdict)}</strong></div>
+      <div class="metric-grid friendly-metrics">
+        <div class="metric"><span>PROJECTED POINTS</span><strong>${num(summary.mean)}</strong></div>
+        <div class="metric"><span>LIKELY RANGE</span><strong>${num(summary.p25)}–${num(summary.p75)}</strong></div>
+        <div class="metric"><span>UPSIDE</span><strong class="good">${num(summary.p90)}</strong></div>
+        <div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(availability)}</strong></div>
+        <div class="metric"><span>RISK</span><strong class="${risk === "High" ? "warn" : ""}">${risk}</strong></div>
       </div>
-      ${rangeMarkup(summary)}
-      <p class="control-title">MODEL DRIVERS</p>
-      <div class="driver-list">${drivers.slice(0, 10).map((driver) => `<div class="driver-row"><span>${esc(driver.label)}</span><b class="${driver.impact >= 0 ? "positive" : "negative"}">${driver.impact >= 0 ? "+" : ""}${num(driver.impact, 2)}</b><em>${esc(driver.family)} · ${pct(driver.confidence || 0)}</em></div>`).join("")}</div>
-      <p class="fineprint">Uncertainty: epistemic ${pct(forecast.uncertainty.epistemic)}, role ${pct(forecast.uncertainty.role)}, evidence conflict ${pct(forecast.uncertainty.evidenceConflict)}.</p>
+      <div class="why-box"><h3>Why Oracle sees it this way</h3>${drivers.slice(0, 5).map((driver) => `<div class="why-row"><span>${esc(friendlyDriverLabel(driver.label))}</span><b class="${driver.impact >= 0 ? "positive" : "negative"}">${driver.impact >= 0 ? "helps" : "hurts"} ${Math.abs(driver.impact) >= 1 ? "a lot" : "a little"}</b></div>`).join("")}</div>
+      <details class="advanced-details result-details"><summary>See advanced projection details</summary>${rangeMarkup(summary)}<p class="fineprint">Median ${num(summary.p50)} · boom chance ${pct(forecast.probabilities.boom)} · bust chance ${pct(bust)}.</p></details>
     `;
   }
 
@@ -349,11 +379,11 @@
     await ensureMarketWeek(week);
     const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
     $("#run-player").disabled = true;
-    status(`Running ${$("#player-scenarios").value} local scenarios…`);
+    status("Checking this player…");
     try {
       const simulation = await runWorker("scenario", { forecasts: [forecast], options: { week, scenarios: Number($("#player-scenarios").value), schedule: state.schedule, seed: `player-${player.id}-${week}` } });
       renderPlayerResult(forecast, simulation.playerSummaries[String(player.id)]);
-      status("Distribution complete.", "good");
+      status("Player check ready.", "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -367,7 +397,7 @@
     const athletic = Number.isFinite(summary.athleticPercentile) ? pct(summary.athleticPercentile, 0) : "—";
     const hit = Number.isFinite(summary.hitRate) ? pct(summary.hitRate, 0) : "—";
     const depth = summary.depthChartOrder ? `#${summary.depthChartOrder}` : "—";
-    return `<section class="rookie-profile"><p class="control-title">ROOKIE PROFILE</p><div class="metric-grid compact-metrics"><div class="metric"><span>DRAFT</span><strong>${esc(summary.draftLabel)}</strong></div><div class="metric"><span>AGE</span><strong>${summary.age ?? "—"}</strong></div><div class="metric"><span>COHORT P50</span><strong>${summary.cohortP50 == null ? "—" : num(summary.cohortP50)}</strong></div><div class="metric"><span>COHORT P90</span><strong>${summary.cohortP90 == null ? "—" : num(summary.cohortP90)}</strong></div><div class="metric"><span>ROOKIE HIT RATE</span><strong>${hit}</strong></div><div class="metric"><span>ATHLETIC %ILE</span><strong>${athletic}</strong></div><div class="metric"><span>LIVE DEPTH</span><strong>${depth}</strong></div></div><p class="fineprint">${esc(summary.college || "College unavailable")} · Historical cohort is a prior, not a projection override.</p></section>`;
+    return `<section class="rookie-profile"><p class="control-title">ROOKIE SNAPSHOT</p><div class="metric-grid compact-metrics"><div class="metric"><span>DRAFTED</span><strong>${esc(summary.draftLabel)}</strong></div><div class="metric"><span>AGE</span><strong>${summary.age ?? "—"}</strong></div><div class="metric"><span>TYPICAL ROOKIE OUTPUT</span><strong>${summary.cohortP50 == null ? "—" : num(summary.cohortP50)}</strong></div><div class="metric"><span>HIGH-END ROOKIE UPSIDE</span><strong>${summary.cohortP90 == null ? "—" : num(summary.cohortP90)}</strong></div><div class="metric"><span>PAST HIT RATE</span><strong>${hit}</strong></div><div class="metric"><span>ATHLETIC RANK</span><strong>${athletic}</strong></div><div class="metric"><span>DEPTH CHART</span><strong>${depth}</strong></div></div><p class="fineprint">${esc(summary.college || "College unavailable")} · Rookie history helps set expectations, but current role and projection still matter more.</p></section>`;
   }
 
   function renderPlayerIntelligence(player, result, forecast) {
@@ -378,20 +408,30 @@
     const outlook = intelligence.generateOutlook(player, forecast, summary);
     const health = outlook.health;
     const matchupPrior = priorDefenseEvidence(player, Number($("#player-week").value || 1))["matchup.position_grade"] || null;
-    const healthParts = health.live ? [health.status, health.practice, health.bodyPart, health.notes].filter(Boolean) : [`Live status unavailable · bootstrap ${health.status}`];
+    const healthParts = health.live ? [health.status, health.practice, health.bodyPart, health.notes].filter(Boolean) : [`Saved status: ${health.status}`];
     const games = [...result.gameLog].reverse().slice(0, 10);
     const directionClass = outlook.direction === "UP" ? "good" : outlook.direction === "DOWN" ? "warn" : "";
+    const trendLabel = outlook.direction === "UP" ? "Looking better" : outlook.direction === "DOWN" ? "Trending down" : "Holding steady";
+    const riskLabel = String(outlook.risk || "LOW").toLowerCase();
+    const matchupLabel = !matchupPrior ? "Not loaded" : matchupPrior.value >= 0.35 ? "Good" : matchupPrior.value <= -0.35 ? "Tough" : "Average";
+    const readText = rookieProfile
+      ? "Rookie value is driven most by draft investment, current depth-chart role, preseason work, and how quickly the NFL role grows."
+      : outlook.direction === "UP"
+        ? "Recent usage and production are moving in the right direction."
+        : outlook.direction === "DOWN"
+          ? "Recent usage or production has slipped, so there is more downside than usual."
+          : "Recent role and production have been fairly steady.";
     $("#intelligence-source").textContent = rookieProfile
-      ? `${rookieProfile.draftLabel} · ${rookieProfile.college || "rookie cohort"}`
-      : `${result.source.name} · ${(result.source.bytes / 1024 / 1024).toFixed(2)} MB · ${result.source.rowCount.toLocaleString()} rows`;
+      ? `${rookieProfile.draftLabel} · ${rookieProfile.college || "rookie"}`
+      : `${result.season} recent-game data loaded`;
     $("#player-intelligence").className = "result-space";
     $("#player-intelligence").innerHTML = `
       <div class="intelligence-grid">
-        <section class="outlook-card"><p class="control-title">ORACLE OUTLOOK</p><h3 class="${directionClass}">${esc(outlook.headline)}</h3>${outlook.bullets.map((item) => `<p>${esc(item)}</p>`).join("")}<small>${esc(outlook.provenance)}</small></section>
-        ${rookieProfile ? `<section><p class="control-title">CURRENT ROOKIE ROLE</p><div class="metric-grid compact-metrics"><div class="metric"><span>MODEL MEAN</span><strong>${num(forecast.distribution.mean)}</strong></div><div class="metric"><span>P90 CEILING</span><strong>${num(forecast.distribution.p90)}</strong></div><div class="metric"><span>ACTIVE PROB.</span><strong>${pct(forecast.availability.probability)}</strong></div><div class="metric"><span>ROLE UNCERTAINTY</span><strong>${pct(forecast.uncertainty.role)}</strong></div>${preseason ? `<div class="metric"><span>PRESEASON OPPS</span><strong>${num(preseason.opportunitiesPerGame)}</strong></div>` : ""}${matchupPrior ? `<div class="metric"><span>PRIOR MATCHUP</span><strong>${matchupPrior.value >= 0 ? "+" : ""}${num(matchupPrior.value, 2)}</strong></div>` : ""}</div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}. Live depth/preseason evidence narrows uncertainty; absent NFL history is not treated as zero production.</p></section>` : `<section><p class="control-title">ROLLING FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 PPR</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>LAST 3 OPPS</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div>${Number.isFinite(xfp.last3?.xfp) ? `<div class="metric"><span>LAST 3 xFP</span><strong>${num(xfp.last3.xfp)}</strong></div>` : ""}${Number.isFinite(xfp.last5?.fpoe) ? `<div class="metric"><span>LAST 5 FPOE</span><strong>${xfp.last5.fpoe >= 0 ? "+" : ""}${num(xfp.last5.fpoe)}</strong></div>` : ""}<div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}${matchupPrior ? `<div class="metric"><span>PRIOR MATCHUP</span><strong>${matchupPrior.value >= 0 ? "+" : ""}${num(matchupPrior.value, 2)}</strong></div>` : ""}<div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}.${preseason ? ` Preseason: ${preseason.games} game(s), ${num(preseason.opportunitiesPerGame)} weighted opportunities/game.` : ""}</p></section>`}
+        <section class="outlook-card"><p class="control-title">OUR READ</p><h3 class="${directionClass}">${esc(trendLabel)} · ${esc(riskLabel)} risk</h3><p>Oracle projects <strong>${num(forecast.distribution.mean)} points</strong> with a ${pct(forecast.availability.probability)} chance to play.</p><p>${esc(readText)}</p></section>
+        ${rookieProfile ? `<section><p class="control-title">WHAT MATTERS MOST</p><div class="metric-grid compact-metrics"><div class="metric"><span>PROJECTION</span><strong>${num(forecast.distribution.mean)}</strong></div><div class="metric"><span>UPSIDE</span><strong>${num(forecast.distribution.p90)}</strong></div><div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(forecast.availability.probability)}</strong></div><div class="metric"><span>ROLE CLARITY</span><strong>${pct(1 - forecast.uncertainty.role)}</strong></div>${preseason ? `<div class="metric"><span>PRESEASON WORK</span><strong>${num(preseason.opportunitiesPerGame)} / game</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}. Rookies naturally carry more uncertainty until their NFL role is proven.</p></section>` : `<section><p class="control-title">RECENT FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 FANTASY PTS</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>OPPORTUNITIES / GAME</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div><div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}.${preseason ? ` Preseason usage is also included in the model.` : ""}</p></section>`}
       </div>
       ${rookieProfileMarkup(player)}
-      ${rookieProfile ? `<div class="rookie-history-note"><strong>No prior NFL regular-season history.</strong><span>Oracle uses cohort priors, 2026 draft capital, age/combine context, live depth chart, preseason usage, and market projection while carrying extra uncertainty.</span></div>` : `<div class="table-header"><h3>${esc(player.name)} · ${result.season} actual game log</h3><span>${summary.games} regular-season games</span></div><div class="table-wrap"><table><thead><tr><th>Wk</th><th>Opp</th><th>PPR</th><th>Opps</th><th>Tgt</th><th>Car</th><th>Rec</th><th>Scrim Yd</th><th>Pass Yd</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div>`}`;
+      ${rookieProfile ? `<div class="rookie-history-note"><strong>No NFL game history yet.</strong><span>Oracle uses draft position, comparable rookies, current depth chart, preseason work, and the market projection instead of pretending missing history is bad history.</span></div>` : `<details class="advanced-details game-log-details"><summary>Show game-by-game stats</summary><div class="table-wrap"><table><thead><tr><th>Week</th><th>Opp</th><th>Fantasy pts</th><th>Touches + targets</th><th>Targets</th><th>Carries</th><th>Receptions</th><th>Scrim yds</th><th>Pass yds</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div></details>`}`;
   }
 
   function renderNewsPulse(player = playerById($("#player-select")?.value)) {
@@ -428,7 +468,7 @@
       state.trendingDrops = new Map((news.trendingDrops || []).map((row) => [String(row.player_id), Number(row.count || 0)]));
       renderNewsPulse();
       $("#live-intelligence-status").textContent = `${preseason.games || 0} preseason games · ${state.newsPulse.length} headlines`;
-      status("Preseason usage, headlines, and Sleeper market momentum synced as bounded evidence.", "good");
+      status("News, preseason, and player trends refreshed.", "good");
     } catch (error) {
       $("#live-intelligence-status").textContent = "Live intelligence unavailable";
       status(error.message, "error");
@@ -441,8 +481,8 @@
     if (!player) return;
     const season = Number($("#history-season").value || 2025);
     $("#load-intelligence").disabled = true;
-    $("#intelligence-source").textContent = `Loading ${season} nflverse game logs…`;
-    status("Loading actual game history and current structured status…");
+    $("#intelligence-source").textContent = `Loading ${season} recent games…`;
+    status("Loading recent games and player status…");
     try {
       if (!state.sleeperLoaded && !state.sleeperPositions.has(player.position)) {
         try { await syncSleeperPosition(player.position); } catch (_) { /* history remains usable if live status is unavailable */ }
@@ -457,7 +497,7 @@
       await ensureMarketWeek(week);
       const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
       renderPlayerIntelligence(player, result, forecast);
-      status(player.rookie ? "Rookie intelligence loaded. Cohort, draft, live role, preseason, and uncertainty priors are active." : "Player intelligence loaded. Recent history is now available as bounded model evidence.", "good");
+      status(player.rookie ? "Rookie outlook ready." : "Recent games and player outlook ready.", "good");
     } catch (error) {
       $("#intelligence-source").textContent = "History load failed";
       status(error.message, "error");
@@ -499,6 +539,31 @@
     return state.draftBoard ? { byId: state.draftBoard.byId, byName: state.draftBoard.byName } : null;
   }
 
+  function oracleDraftBoard(settings) {
+    const room = draftSim.createRoomContext(state.players, settings, state.draftBoard);
+    const rows = room.market.map((row) => ({
+      ...row.player,
+      marketRank: row.rank,
+      oracleValue: row.asset + draftSim.rookieTailScore(row.player),
+    })).sort((a, b) => b.oracleValue - a.oracleValue || a.marketRank - b.marketRank);
+    const scoringPool = rows.slice(0, Math.min(220, rows.length));
+    const best = scoringPool[0]?.oracleValue || 1;
+    const floor = scoringPool.at(-1)?.oracleValue || 0;
+    return rows.map((row, index) => ({
+      ...row,
+      oracleRank: index + 1,
+      oracleScore: Math.round(clamp(50 + 50 * (row.oracleValue - floor) / Math.max(1e-6, best - floor), 1, 100)),
+    }));
+  }
+
+  function renderDraftBigBoard() {
+    const node = $("#draft-big-board");
+    if (!node || !state.players.length) return;
+    const position = $("#draft-board-position")?.value || "ALL";
+    const rows = oracleDraftBoard(currentDraftSettings()).filter((row) => position === "ALL" || row.position === position).slice(0, 80);
+    node.innerHTML = rows.map((row) => `<div class="big-board-row"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><small>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}</small></div><div class="board-score"><span>ORACLE SCORE</span><strong>${row.oracleScore}</strong></div></div>`).join("");
+  }
+
   function resetDraft() {
     const settings = currentDraftSettings();
     $("#draft-position").max = String(settings.teams);
@@ -513,11 +578,10 @@
   }
   function renderDraftTable(recommendations, summary, settings) {
     const mode = $("#draft-mode").value;
-    $("#draft-table").innerHTML = recommendations.map((row) => {
-      const market = draftSim.boardRank(row, settings, state.draftBoard);
+    $("#draft-table").innerHTML = recommendations.map((row, index) => {
       const canRecord = mode === "live" || summary.isUserPick;
-      const disagreement = Number.isFinite(row.pprRank) ? market - row.pprRank : 0;
-      return `<tr><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><span>${esc(row.team)} · ${disagreement >= 0 ? "+" : ""}${num(disagreement, 0)} rank edge${row.rookieTailScore ? ` · rookie +${num(row.rookieTailScore, 1)}` : ""}</span></td><td><span class="pos-pill">${esc(row.position)}</span></td><td>${num(market, 1)}</td><td>${esc(row.decision)}</td><td>${row.vona >= 0 ? "+" : ""}${num(row.vona)}</td><td>${pct(row.returnChance)}</td><td>${num(row.urgency, 0)}</td><td><button class="mini-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record" : "Draft"}</button></td></tr>`;
+      const take = row.returnChance <= 0.22 ? "Take him now — he probably won't make it back" : row.rookieTailScore >= 1.5 ? "High-upside rookie worth considering" : row.vona >= 8 ? "Strong value at this pick" : row.need > 0 ? `Fills a ${row.position} need` : (row.reasons?.[0] || "Good value for your roster");
+      return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><span>${esc(row.position)} · ${esc(row.team)}</span></td><td class="draft-take">${esc(take)}</td><td><strong>${pct(row.returnChance)}</strong></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record pick" : "Draft him"}</button></td></tr>`;
     }).join("");
     $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => {
       state.draftState = core.applyDraftPick(state.draftState, button.dataset.draftPlayer, settings);
@@ -533,14 +597,20 @@
     $("#draft-history").className = "module result-space";
     $("#draft-history").innerHTML = `<div class="table-header"><h3>Recent picks</h3><span>${state.draftState?.picks?.length || 0} total</span></div><div class="pick-history">${recent.map((pick) => { const player = playerById(pick.playerId); return `<div class="lineup-row"><span>${pick.pick}</span><strong>T${pick.teamId} · ${player ? esc(player.name) : esc(pick.playerId)}</strong><b>${player ? esc(player.position) : ""}</b></div>`; }).join("") || "<p class='fineprint'>No picks yet.</p>"}</div>`;
   }
+  function renderDraftManualOptions(settings = currentDraftSettings()) {
+    const drafted = new Set((state.draftState?.picks || []).map((pick) => String(pick.playerId)));
+    const query = $("#draft-pick-search")?.value || "";
+    const available = state.players.filter((player) => !drafted.has(String(player.id)) && playerMatchesSearch(player, query))
+      .sort((a, b) => draftSim.boardRank(a, settings, state.draftBoard) - draftSim.boardRank(b, settings, state.draftBoard));
+    $("#draft-manual-player").innerHTML = available.slice(0, query ? 120 : 260).map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)} · usually drafted #${Math.round(draftSim.boardRank(player, settings, state.draftBoard))}</option>`).join("");
+  }
+
   async function renderDraft() {
     const settings = currentDraftSettings();
+    renderDraftBigBoard();
     if (!state.draftState) state.draftState = core.createDraftState(settings);
     const summary = core.draftPickSummary(state.draftState, settings);
-    const drafted = new Set((state.draftState.picks || []).map((pick) => String(pick.playerId)));
-    const available = state.players.filter((player) => !drafted.has(String(player.id)))
-      .sort((a, b) => draftSim.boardRank(a, settings, state.draftBoard) - draftSim.boardRank(b, settings, state.draftBoard));
-    $("#draft-manual-player").innerHTML = available.slice(0, 260).map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)} · market ${num(draftSim.boardRank(player, settings, state.draftBoard), 1)}</option>`).join("");
+    renderDraftManualOptions(settings);
     $("#draft-next").textContent = summary.remaining > 0 ? `P${summary.pickNumber} / T${summary.teamId}` : "COMPLETE";
     $("#draft-meta").textContent = `${state.draftState.picks.length} picks · ${summary.isUserPick ? "YOUR PICK" : `team ${summary.teamId}`}`;
     const initial = draftSim.adjustRecommendations(core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36), 18);
@@ -569,6 +639,7 @@
     const id = $("#draft-manual-player").value;
     if (!id) return;
     state.draftState = core.applyDraftPick(state.draftState, id, currentDraftSettings());
+    $("#draft-pick-search").value = "";
     renderDraft();
   }
 
@@ -603,8 +674,8 @@
     try {
       const settings = currentDraftSettings();
       const result = await runWorker("draft-benchmark", { options: { players: state.players, settings, userTeamId: settings.draftPosition, opponentStrategy: $("#draft-opponent-strategy").value || "mixed", baselineStrategy: $("#draft-baseline-strategy").value || "espn-market", board: draftBoardPayload(), simulations: Number($("#draft-benchmark-count").value || 100), seed: "draft-benchmark-2026" } });
-      $("#draft-benchmark-result").innerHTML = `<div class="metric-grid"><div class="metric"><span>ORACLE WIN RATE</span><strong>${pct(result.oracleWinRate, 1)}</strong></div><div class="metric"><span>MEAN SEASON EDGE</span><strong>${result.meanSeasonEdge >= 0 ? "+" : ""}${num(result.meanSeasonEdge)}</strong></div><div class="metric"><span>MEDIAN EDGE</span><strong>${result.medianEdge >= 0 ? "+" : ""}${num(result.medianEdge)}</strong></div><div class="metric"><span>P10 / P90</span><strong>${num(result.p10Edge)} / ${num(result.p90Edge)}</strong></div></div><p class="fineprint">Edge is projected starter-season points from exact weekly lineup assignment across paired simulated draft rooms. It is a strategy diagnostic, not a claim of realized future performance.</p>`;
-      status(`Draft benchmark complete across ${result.simulations} paired rooms.`, "good");
+      $("#draft-benchmark-result").innerHTML = `<div class="friendly-benchmark"><strong>Oracle built the better projected roster in ${pct(result.oracleWinRate, 1)} of these mock drafts.</strong><p>Average projected season advantage: <b>${result.meanSeasonEdge >= 0 ? "+" : ""}${num(result.meanSeasonEdge)} points</b>.</p><small>This is a simulator comparison, not a guarantee of real-world results.</small></div>`;
+      status(`Comparison finished across ${result.simulations} mock drafts.`, "good");
     } catch (error) {
       $("#draft-benchmark-result").innerHTML = `<p>${esc(error.message)}</p>`;
       status(error.message, "error");
@@ -616,6 +687,20 @@
     return state.players.filter((player) => ids.has(String(player.id)));
   }
 
+  function populateTradeSelectors() {
+    const giveIds = ["#trade-give-1", "#trade-give-2"];
+    const getIds = ["#trade-get-1", "#trade-get-2"];
+    if (!$(giveIds[0]) || !state.players.length) return;
+    const roster = rosterPlayers();
+    const rosterSet = new Set(roster.map((player) => String(player.id)));
+    const giveOptions = [`<option value="">${roster.length ? "Choose a player" : "Add your roster first"}</option>`, ...roster.sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999)).map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}</option>`)].join("");
+    const tradeQuery = $("#trade-search")?.value || "";
+    const getPool = rankedPlayers().filter((player) => !rosterSet.has(String(player.id)) && playerMatchesSearch(player, tradeQuery)).slice(0, tradeQuery ? 120 : 320);
+    const getOptions = [`<option value="">Choose a player</option>`, ...getPool.map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}</option>`)].join("");
+    giveIds.forEach((selector) => { const previous = $(selector).value; $(selector).innerHTML = giveOptions; if ([...$(selector).options].some((option) => option.value === previous)) $(selector).value = previous; });
+    getIds.forEach((selector) => { const previous = $(selector).value; $(selector).innerHTML = getOptions; if ([...$(selector).options].some((option) => option.value === previous)) $(selector).value = previous; });
+  }
+
   async function persistRoster() {
     await store.set("roster-ids", state.rosterIds);
   }
@@ -623,6 +708,7 @@
   function renderRoster() {
     const roster = rosterPlayers();
     $("#roster-strip").innerHTML = roster.length ? roster.map((player) => `<div class="roster-chip"><span>${esc(player.position)}</span>${esc(player.name)}<button type="button" aria-label="Remove ${esc(player.name)}" data-remove-roster="${esc(player.id)}">×</button></div>`).join("") : `<span class="fineprint">Roster is empty.</span>`;
+    populateTradeSelectors();
     $$('[data-remove-roster]').forEach((button) => button.addEventListener("click", async () => {
       state.rosterIds = state.rosterIds.filter((id) => String(id) !== String(button.dataset.removeRoster));
       await persistRoster();
@@ -634,6 +720,8 @@
     if (!id || state.rosterIds.includes(String(id))) return;
     state.rosterIds.push(String(id));
     persistRoster();
+    $("#roster-search").value = "";
+    fillPlayerPicker("#roster-add");
     renderRoster();
   }
 
@@ -657,7 +745,7 @@
     let roster = rosterPlayers();
     if (!roster.length) return status("Build a roster first.", "error");
     const week = Number($("#lineup-week").value || 1);
-    status("Refreshing live health + recent role intelligence for the roster…");
+    status("Checking your roster and the latest player updates…");
     const contextState = await prepareDecisionContext(roster, week);
     roster = contextState.players;
     const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week) }));
@@ -666,7 +754,7 @@
     const lineup = core.optimizeLineup(prepared, core.DEFAULT_SETTINGS, "weekProjection");
     const starterIds = lineup.starters.filter((row) => row.player).map((row) => String(row.player.id));
     $("#run-lineup").disabled = true;
-    status("Sampling correlated starter outcomes…");
+    status("Finding your best starting lineup…");
     try {
       const portfolio = await runWorker("portfolio", {
         forecasts,
@@ -677,8 +765,8 @@
       const starters = lineup.starters.map((row) => `<div class="lineup-row"><span>${esc(row.slot)}</span><strong>${row.player ? esc(row.player.name) : "EMPTY"}</strong><b>${row.player ? num(byId.get(String(row.player.id))?.distribution.mean) : "—"}</b></div>`).join("");
       const bench = lineup.bench.slice(0, 8).map((player) => `<div class="lineup-row"><span>BN</span><strong>${esc(player.name)}</strong><b>${num(byId.get(String(player.id))?.distribution.mean)}</b></div>`).join("");
       $("#lineup-result").className = "result-space";
-      $("#lineup-result").innerHTML = `<div class="metric-grid"><div class="metric"><span>EXPECTED</span><strong>${num(summary.mean)}</strong></div><div class="metric"><span>P10</span><strong class="warn">${num(summary.p10)}</strong></div><div class="metric"><span>MEDIAN</span><strong>${num(summary.p50)}</strong></div><div class="metric"><span>P90</span><strong class="good">${num(summary.p90)}</strong></div><div class="metric"><span>CVaR10</span><strong>${num(summary.cvar10)}</strong></div></div>${rangeMarkup(summary)}<div class="result-grid"><div><p class="control-title">STARTERS</p><div class="lineup-list">${starters}</div></div><div><p class="control-title">BENCH ALTERNATIVES</p><div class="lineup-list">${bench || "<div class='lineup-row'><strong>No bench</strong></div>"}</div></div></div>`;
-      status(`Lineup portfolio complete · ${decisionContextLabel(contextState)}.`, "good");
+      $("#lineup-result").innerHTML = `<div class="friendly-result-head"><div><span class="result-kicker">RECOMMENDED LINEUP</span><h2>Start these players</h2></div><strong>${num(summary.mean)} projected points</strong></div><div class="metric-grid friendly-metrics lineup-summary"><div class="metric"><span>PROJECTED TOTAL</span><strong>${num(summary.mean)}</strong></div><div class="metric"><span>TYPICAL RANGE</span><strong>${num(summary.p25)}–${num(summary.p75)}</strong></div><div class="metric"><span>UPSIDE</span><strong class="good">${num(summary.p90)}</strong></div></div><div class="result-grid"><div><p class="control-title">START THESE</p><div class="lineup-list">${starters}</div></div><div><p class="control-title">BENCH THESE</p><div class="lineup-list">${bench || "<div class='lineup-row'><strong>No bench players</strong></div>"}</div></div></div><details class="advanced-details result-details"><summary>See projection range details</summary>${rangeMarkup(summary)}</details>`;
+      status(`Your best lineup is ready. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -713,7 +801,7 @@
     const mode = $("#waiver-mode").value || "priority";
     const budget = Math.max(0, Number($("#faab-budget").value || 0));
     $("#run-waivers").disabled = true;
-    status("Refreshing live health + recent role intelligence for waiver candidates…");
+    status("Checking available players against your roster…");
     let contextState = { live: { failed: [] }, history: {} };
     try {
       const intelligencePool = [...freeAgents].sort((a, b) => baselineWeekProjection(b, week) - baselineWeekProjection(a, week)).slice(0, 180);
@@ -723,16 +811,16 @@
       const intelligenceIds = new Set(intelligencePool.map((player) => String(player.id)));
       const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week));
       const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week) : player);
-      status("Searching live + history-aware add/drop combinations in the worker…");
+      status("Finding the pickups that help you most…");
       const suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week });
       $("#waiver-result").className = "result-space";
       $("#waiver-result").innerHTML = suggestions.length ? `<div class="decision-list">${suggestions.map((row) => {
         const bid = mode === "faab" ? faabRange(row, budget, week) : null;
-        const headline = bid ? `${bid.target}` : waiverPriorityLabel(row);
-        const mechanism = bid ? `FAAB ${bid.floor}–${bid.ceiling}` : `priority score ${num(row.score)}`;
-        return `<article class="decision-card"><div class="decision-head"><strong>Add ${esc(row.add.name)} · Drop ${esc(row.drop.name)}</strong><b>${headline}</b></div><p>${esc(row.reason)}</p><div class="decision-stats"><span>lineup ${row.lineupGain >= 0 ? "+" : ""}${num(row.lineupGain)}</span><span>depth ${row.depthGain >= 0 ? "+" : ""}${num(row.depthGain)}</span><span>${mechanism}</span><span>score ${num(row.score)}</span></div></article>`;
-      }).join("")}</div>` : `<p>No positive add/drop pairs found under the current roster and week.</p>`;
-      status(`Waiver search complete · ${decisionContextLabel(contextState)}.`, "good");
+        const claim = bid ? `Bid about $${bid.target}` : waiverPriorityLabel(row);
+        const detail = bid ? `Reasonable range: $${bid.floor}–$${bid.ceiling}` : row.lineupGain > 0 ? `Could improve your starters by ${num(row.lineupGain)} points` : `Adds ${num(row.depthGain)} points of bench depth`;
+        return `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">${esc(claim)}</span><strong>Add ${esc(row.add.name)}</strong></div><b>Drop ${esc(row.drop.name)}</b></div><p>${esc(row.reason)}</p><div class="decision-stats"><span>${esc(detail)}</span></div></article>`;
+      }).join("")}</div>` : `<div class="empty-answer"><strong>No pickup is clearly worth it right now.</strong><p>Your current roster grades better than the available add/drop options for this week.</p></div>`;
+      status(`Your waiver recommendations are ready. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -756,13 +844,44 @@
     return roster;
   }
 
+  async function analyzeSelectedTrade() {
+    let roster = rosterPlayers();
+    if (!roster.length) return status("Add your roster in Start / Sit first.", "error");
+    const giveIds = [$("#trade-give-1").value, $("#trade-give-2").value].filter(Boolean);
+    const getIds = [$("#trade-get-1").value, $("#trade-get-2").value].filter(Boolean);
+    if (!giveIds.length || !getIds.length) return status("Choose at least one player on each side of the trade.", "error");
+    const week = Number($("#trade-week").value || 1);
+    const selected = [...roster, ...getIds.map((id) => playerById(id)).filter(Boolean)];
+    const button = $("#analyze-trade");
+    button.disabled = true;
+    status("Checking the trade against your lineup and current player context…");
+    try {
+      const contextState = await prepareDecisionContext(selected, week);
+      roster = refreshDecisionPlayers(roster);
+      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week));
+      const give = giveIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week));
+      const receive = getIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week));
+      const analysis = core.analyzeTrade({ roster: decisionRoster, give, receive, players: state.players, settings: core.DEFAULT_SETTINGS, week });
+      const verdict = analysis.score >= 4 ? "ACCEPT" : analysis.score <= -4 ? "PASS" : "CLOSE CALL";
+      const tone = verdict === "ACCEPT" ? "good" : verdict === "PASS" ? "bad" : "neutral";
+      const longTerm = analysis.assetGain >= 5 ? "Better" : analysis.assetGain <= -5 ? "Worse" : "About even";
+      $("#trade-check-result").className = "result-space";
+      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>ORACLE SAYS</span><strong>${verdict}</strong><p>${esc(analysis.verdict)}. ${esc(analysis.summary)}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>STARTING LINEUP CHANGE</span><strong class="${analysis.lineupGain >= 0 ? "good" : "warn"}">${analysis.lineupGain >= 0 ? "+" : ""}${num(analysis.lineupGain)} pts/week</strong></div><div class="metric"><span>LONG-TERM ROSTER VALUE</span><strong>${longTerm}</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}</div>`;
+      status(`Trade checked. ${decisionContextLabel(contextState)}.`, "good");
+    } catch (error) {
+      status(error.message, "error");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   async function runTrades() {
     let userRoster = rosterPlayers();
     if (!userRoster.length) return status("Build a roster in the Lineup tab first.", "error");
     let opponentRoster = counterpartyRoster();
     const week = Number($("#trade-week").value || 1);
     $("#run-trades").disabled = true;
-    status("Refreshing live health + recent role intelligence for both rosters…");
+    status("Looking for realistic trade ideas that improve your team…");
     let contextState = { live: { failed: [] }, history: {} };
     try {
       contextState = await prepareDecisionContext([...userRoster, ...opponentRoster], week);
@@ -770,7 +889,7 @@
       opponentRoster = refreshDecisionPlayers(opponentRoster);
       const decisionUserRoster = userRoster.map((player) => decisionPlayerForWeek(player, week));
       const decisionOpponentRoster = opponentRoster.map((player) => decisionPlayerForWeek(player, week));
-      status("Searching live + history-aware bilateral packages in the worker…");
+      status("Comparing trade ideas…");
       const proposals = await runWorker("trade-proposals", { options: {
         userRoster: decisionUserRoster,
         opponentRoster: decisionOpponentRoster,
@@ -782,8 +901,8 @@
         limit: 10,
       } });
       $("#trade-result").className = "result-space";
-      $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card"><div class="decision-head"><strong>${esc(row.give.map((p) => p.name).join(" + "))} → ${esc(row.receive.map((p) => p.name).join(" + "))}</strong><b>${esc(row.packageType)}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>your lineup ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)}</span><span>their lineup ${row.opponentAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.opponentAnalysis.lineupGain)}</span><span>fairness ${row.fairness}%</span><span>mutual ${num(row.mutualScore)}</span></div></article>`).join("")}</div>` : `<p>No mutually plausible packages passed the current fairness thresholds.</p>`;
-      status(`Trade search complete · ${decisionContextLabel(contextState)}.`, "good");
+      $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">TRADE IDEA</span><strong>Give ${esc(row.give.map((p) => p.name).join(" + "))}</strong></div><b>Get ${esc(row.receive.map((p) => p.name).join(" + "))}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>Your lineup: ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)} pts</span><span>Trade balance: ${row.fairness}/100</span></div></article>`).join("")}</div>` : `<div class="empty-answer"><strong>No strong trade idea found right now.</strong><p>Oracle did not find a package that clearly helps you without becoming unrealistic for the other side.</p></div>`;
+      status(`Trade ideas are ready. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
@@ -898,7 +1017,7 @@
     const championshipWeek = Number($("#championship-week").value || 17);
     $("#run-league").disabled = true;
     let leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
-    $("#league-source-status").textContent = `Refreshing live health + recent role intelligence for ${leaguePlayers.length} rostered players…`;
+    $("#league-source-status").textContent = `Checking ${leaguePlayers.length} players and current team context…`;
     let contextState = { live: { failed: [] }, history: {} };
     try {
       contextState = await prepareDecisionContext(leaguePlayers);
@@ -910,7 +1029,7 @@
         const rows = leaguePlayers.map((player) => [String(player.id), context.mergeEvidence(priorDefenseEvidence(player, week), marketEvidenceFor(player, week), rookieEvidenceFor(player, week))]).filter(([, evidence]) => Object.keys(evidence).length);
         if (rows.length) evidenceByPlayerWeek[week] = Object.fromEntries(rows);
       }
-      $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} live + history-aware league seasons with matchup priors in the worker…`;
+      $("#league-source-status").textContent = `Testing ${scenarios.toLocaleString()} possible seasons…`;
       const result = await runWorker("league", { options: {
         teams: state.leagueTeams,
         settings: core.DEFAULT_SETTINGS,
@@ -927,9 +1046,9 @@
         seed: `league-${state.leagueTeams.length}-${regularSeasonEnd}-${championshipWeek}`,
       } });
       $("#league-result").className = "result-space";
-      $("#league-result").innerHTML = `<div class="table-header"><h2>Championship board</h2><span>${result.simulations.toLocaleString()} seasons · playoffs W${result.firstPlayoffWeek}–${result.championshipWeek}</span></div><div class="table-wrap"><table><thead><tr><th>Team</th><th>Title</th><th>Playoffs</th><th>Expected wins</th><th>All-play</th><th>Expected points</th></tr></thead><tbody>${result.teams.map((team) => `<tr><td class="player-cell"><strong>${esc(team.name)}</strong><span>team ${esc(team.teamId)}</span></td><td><b>${pct(team.championshipProbability, 1)}</b></td><td>${pct(team.playoffProbability, 1)}</td><td>${num(team.expectedWins, 2)}</td><td>${pct(team.allPlayWinPct, 1)}</td><td>${num(team.expectedPoints, 1)}</td></tr>`).join("")}</tbody></table></div>`;
-      $("#league-source-status").textContent = `Title simulation complete · ${decisionContextLabel(contextState)}. Probabilities are model estimates, not guarantees.`;
-      status(`League championship simulation complete · ${decisionContextLabel(contextState)}.`, "good");
+      $("#league-result").innerHTML = `<div class="table-header"><h2>Season outlook</h2><span>${result.simulations.toLocaleString()} possible seasons</span></div><div class="table-wrap"><table><thead><tr><th>Team</th><th>Make playoffs</th><th>Win league</th><th>Expected wins</th></tr></thead><tbody>${result.teams.map((team) => `<tr><td class="player-cell"><strong>${esc(team.name)}</strong></td><td>${pct(team.playoffProbability, 1)}</td><td><b>${pct(team.championshipProbability, 1)}</b></td><td>${num(team.expectedWins, 1)}</td></tr>`).join("")}</tbody></table></div>`;
+      $("#league-source-status").textContent = `Season outlook ready. ${decisionContextLabel(contextState)}.`;
+      status(`Season outlook ready. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       $("#league-source-status").textContent = error.message;
       status(error.message, "error");
@@ -983,6 +1102,10 @@
   function bindEvents() {
     $$(".tab").forEach((tab) => tab.addEventListener("click", () => activatePanel(tab.dataset.panelTarget)));
     $$('[data-jump]').forEach((button) => button.addEventListener("click", () => activatePanel(button.dataset.jump)));
+    $("#player-search").addEventListener("input", () => { const rows = fillPlayerPicker("#player-select", $("#player-search").value); if (rows[0]) { $("#player-select").value = String(rows[0].id); renderNewsPulse(); } });
+    $("#roster-search").addEventListener("input", () => fillPlayerPicker("#roster-add", $("#roster-search").value));
+    $("#trade-search").addEventListener("input", populateTradeSelectors);
+    $("#draft-pick-search").addEventListener("input", () => renderDraftManualOptions());
     $("#run-player").addEventListener("click", runPlayerLab);
     $("#load-intelligence").addEventListener("click", loadPlayerIntelligence);
     $("#sync-live-intelligence").addEventListener("click", syncLiveIntelligence);
@@ -995,7 +1118,8 @@
     $("#draft-import-board").addEventListener("click", importDraftBoard);
     $("#draft-clear-board").addEventListener("click", clearDraftBoard);
     $("#draft-benchmark").addEventListener("click", runDraftBenchmark);
-    $("#draft-mode").addEventListener("change", () => { $("#draft-advance").textContent = $("#draft-mode").value === "live" ? "Live mode" : "Sim to my pick"; renderDraft(); });
+    $("#draft-board-position").addEventListener("change", renderDraftBigBoard);
+    $("#draft-mode").addEventListener("change", () => { $("#draft-advance").textContent = $("#draft-mode").value === "live" ? "Live Draft Helper" : "Sim to my pick"; renderDraft(); });
     $("#draft-teams").addEventListener("change", resetDraft);
     $("#draft-position").addEventListener("change", resetDraft);
     $("#draft-rounds").addEventListener("change", resetDraft);
@@ -1006,6 +1130,7 @@
     $("#run-lineup").addEventListener("click", analyzeLineup);
     $("#run-waivers").addEventListener("click", runWaivers);
     $("#waiver-mode").addEventListener("change", () => $("#faab-budget-label").classList.toggle("hidden", $("#waiver-mode").value !== "faab"));
+    $("#analyze-trade").addEventListener("click", analyzeSelectedTrade);
     $("#run-trades").addEventListener("click", runTrades);
     $("#build-demo-league").addEventListener("click", () => { balancedLeague(10); status("Balanced demo league ready.", "good"); });
     $("#import-sleeper-league").addEventListener("click", importSleeperLeague);
@@ -1063,9 +1188,9 @@
       resetDraft();
       bindEvents();
       $("#cache-status").textContent = globalThis.indexedDB ? "IndexedDB enabled" : "localStorage fallback";
-      status("Bootstrap loaded. All analytical paths are local.", "good");
+      status("");
       const requested = location.hash.replace("#", "");
-      if ($(`[data-panel="${CSS.escape(requested)}"]`)) activatePanel(requested);
+      if ($(`[data-panel-target="${CSS.escape(requested)}"]`)) activatePanel(requested);
       if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js").catch(() => {});
     } catch (error) {
       $("#bootstrap-status").textContent = "Load failed";
