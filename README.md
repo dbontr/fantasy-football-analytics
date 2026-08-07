@@ -15,7 +15,7 @@ The original `fantasy-football-oracle` repository remains the feature/behavior r
 - `.github/workflows` must remain absent; `npm run build` fails if workflows are added.
 - GitHub Actions is disabled in repository settings; branch-based Pages publishes the committed static root with `.nojekyll`.
 
-Production Pages site: <https://dbontr.github.io/fantasy-football-oracle-browser/>
+Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 
 ## What is implemented
 
@@ -93,4 +93,4 @@ This project does not fabricate precision when free evidence is unavailable. Rou
 
 The browser simulator is a lightweight statistical approximation, not a literal NFL play-by-play physics engine. Its value comes from calibrated distributions, correlated scenarios, exact fantasy decision logic, paired comparisons, and transparent uncertainty. New model complexity should be accepted only when it improves rolling historical validation.
 
-See `docs/ai/architecture.md` and `docs/ai/feature-parity.md` for the implementation boundaries and migration decisions.
+See `docs/ai/architecture.md`, `docs/ai/feature-parity.md`, and `docs/ai/performance.md` for implementation boundaries, migration decisions, and measured runtime performance.
