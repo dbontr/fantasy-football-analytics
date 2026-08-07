@@ -24,7 +24,7 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - Zero-inflated player distributions: availability + active-game performance.
 - P10/P25/P50/P75/P90, CVaR10, boom/bust probability, and uncertainty decomposition.
 - Bounded health, coaching, role, weather, matchup, line, news, and market evidence families.
-- Correlated game/team/player Monte Carlo with deterministic paired scenarios.
+- Correlated game/team/player Monte Carlo with deterministic paired scenarios and per-scenario shared-factor caching so game/team latents are generated once and reused across players.
 - Exact lineup assignment across normal, FLEX, and SUPERFLEX slots.
 - Interactive draft simulator + live draft helper: the user controls one team while CPU opponents use configurable market/value/need/positional strategies.
 - Draft VONA, replacement value, strategy-aware return probability, run pressure, market disagreement, custom external ranking-board import, and paired Oracle-vs-market strategy benchmarks.
@@ -36,6 +36,9 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - Historical nflverse health calibration and 32-team coaching priors.
 - On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, derived team carry-share, volatility, trend, and position-specific defense-allowed priors.
 - On-demand ffopportunity expected-fantasy-points (xFP) and FPOE evidence, confidence-decayed across the offseason.
+- Rookie-specific 2026 intelligence for 74 fantasy-relevant rookies: 2016-2025 draft-capital cohorts, age, structured draft grade/rank, position-relative combine context, live depth chart, preseason usage, week-progressive development priors, and explicitly wider uncertainty when NFL evidence is sparse.
+- Rookie cohorts include non-producing developmental/UDFAs rather than conditioning on players who logged stats; drafted buckets shrink toward a drafted-player baseline to reduce survivorship and population-mix bias.
+- Oracle draft recommendations can use a small capped rookie-upside/tail term, while simulated market opponents remain driven by the selected market/value/need strategy rather than Oracle's rookie model.
 - Optional live 2026 preseason boxscore usage, ESPN headline metadata, Sleeper add/drop momentum, and current game scoring-environment priors; all enter forecasts through bounded evidence families.
 - Conservative teammate-absence redistribution estimates vacated target/carry opportunity without treating it as guaranteed usage.
 - Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs or article bodies.
@@ -77,6 +80,7 @@ The bootstrap is intentionally explicit about provenance instead of pretending e
 - `data/history/stats_player_week_2023.csv.gz` through `2025.csv.gz`: compressed nflverse weekly player statistics, loaded on demand and never included in initial-page precache.
 - `data/coaches-2026.json`: 32-team Bayesian-shrunk Oracle coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
 - `data/intelligence/xfp_weekly_2025.csv.gz`: 153 KB compact ffopportunity expected-fantasy-points artifact (CC BY-SA 4.0), loaded only with player/decision intelligence.
+- `data/rookies-2026.json`: ~47 KB offline rookie artifact covering 74 players. It is reproducibly built from nflverse player/combine/stat data plus ESPN's public structured 2026 draft metadata; the build uses 1,868 historical rookie records and ships only compact priors/current-player metadata.
 - Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, ESPN public keyless NFL web JSON, and NOAA/NWS. ESPN terms apply to ESPN-sourced metadata.
 
 The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists.
@@ -87,12 +91,13 @@ Requires Node 20+ only for tests/dev serving; the deployed application itself ha
 
 ```powershell
 npm.cmd run verify
+npm.cmd run refresh:rookies   # manual reproducible rookie-artifact refresh
 npm.cmd run serve
 ```
 
 Open `http://127.0.0.1:4173/` (or set `PORT` if that port is occupied).
 
-For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, xFP/history intelligence, preseason/news sync, realistic draft-room simulation + strategy benchmark, ESPN-style waivers, lineup/trades/league simulation, draft/overview desktop-mobile layouts, and browser console errors.
+For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, veteran xFP/history intelligence, a no-prior-NFL-history rookie path, preseason/news sync, realistic draft-room simulation + strategy benchmark, ESPN-style waivers, lineup/trades/league simulation, and rookie/draft/overview layouts at desktop, tablet, and phone widths while checking browser console errors and overflow.
 
 ## GitHub Pages
 

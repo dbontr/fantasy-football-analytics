@@ -135,3 +135,21 @@ test("live scoring environment nudges offensive projections without dominating t
   assert.ok(high.drivers.some((row) => row.feature === "market.team_implied_points"));
   assert.ok(high.distribution.mean < base.distribution.mean * 1.25);
 });
+
+test("cached scenario factors preserve stronger same-game correlation than unrelated players", () => {
+  const forecasts = [
+    engine.forecastPlayer(makePlayer("corr-qb", "QB", "DET", 20), { week: 1 }),
+    engine.forecastPlayer(makePlayer("corr-wr", "WR", "DET", 15), { week: 1 }),
+    engine.forecastPlayer(makePlayer("corr-other", "WR", "GB", 15), { week: 1 }),
+  ];
+  const result = engine.simulateForecasts(forecasts, {
+    week: 1,
+    scenarios: 5000,
+    seed: "factor-cache-correlation",
+    correlationPairs: [["corr-qb", "corr-wr"], ["corr-qb", "corr-other"]],
+  });
+  const sameGame = result.correlations[0].correlation;
+  const unrelated = result.correlations[1].correlation;
+  assert.ok(sameGame > 0.15);
+  assert.ok(sameGame > unrelated + 0.12);
+});

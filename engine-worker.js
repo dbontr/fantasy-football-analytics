@@ -2,6 +2,7 @@
 
 importScripts(
   "./src/engine/core.js",
+  "./src/engine/rookies.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/intelligence.js",

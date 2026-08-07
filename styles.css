@@ -339,3 +339,15 @@ textarea:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; 
   .news-pulse { grid-template-columns: 1fr; }
   .draft-toolbar label { flex: 1 1 140px; }
 }
+
+
+/* Rookie intelligence */
+.rookie-pill { display: inline-block; margin-left: 7px; padding: 3px 6px; border: 1px solid var(--signal); color: var(--signal-2); font: 800 9px ui-monospace, monospace; letter-spacing: .1em; vertical-align: middle; }
+.rookie-pill.compact { margin-left: 5px; padding: 1px 4px; font-size: 8px; }
+.rookie-chip { margin-left: 2px; color: var(--signal-2); font: 800 8px ui-monospace, monospace; }
+.rookie-profile { margin: 18px 0; border: 1px solid var(--field-line); background: var(--field); padding: 18px; }
+.rookie-profile .metric { background: rgba(0, 0, 0, .18); }
+.rookie-history-note { display: grid; grid-template-columns: minmax(180px, .35fr) 1fr; gap: 18px; align-items: start; border-top: 1px solid var(--line); padding: 18px 0 2px; }
+.rookie-history-note strong { color: var(--signal-2); font-size: 12px; }
+.rookie-history-note span { color: var(--muted); font-size: 11px; line-height: 1.55; }
+@media (max-width: 780px) { .rookie-history-note { grid-template-columns: 1fr; gap: 6px; } }

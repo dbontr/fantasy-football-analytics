@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "oracle-browser-v0.8.4";
+const CACHE = "oracle-browser-v0.9.0";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const STATIC_ASSETS = [
   "./engine-worker.js",
   "./src/app.js",
   "./src/engine/core.js",
+  "./src/engine/rookies.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/context.js",
@@ -21,6 +22,7 @@ const STATIC_ASSETS = [
   "./data/players-lite.json",
   "./data/coaches-2026.json",
   "./data/health-calibration-2026.json",
+  "./data/rookies-2026.json",
 ];
 
 self.addEventListener("install", (event) => {

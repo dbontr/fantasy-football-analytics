@@ -2,13 +2,16 @@
   const core = typeof module !== "undefined" && module.exports
     ? require("./core.js")
     : root.FantasyOracleCore;
-  const api = factory(core);
+  const rookies = typeof module !== "undefined" && module.exports
+    ? require("./rookies.js")
+    : root.OracleRookies;
+  const api = factory(core, rookies);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OracleBrowserEngine = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.3";
+  const VERSION = "oracle-browser-2026.4";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -36,17 +39,27 @@
     return sorted[lower] * (1 - weight) + sorted[upper] * weight;
   }
   function summarizeSamples(samples, options = {}) {
-    const values = (samples || []).map((value) => finite(value)).sort((a, b) => a - b);
-    if (!values.length) throw new TypeError("Sample summary requires values");
-    const average = mean(values);
-    const tailCount = Math.max(1, Math.ceil(values.length * 0.1));
+    const count = samples?.length || 0;
+    if (!count) throw new TypeError("Sample summary requires values");
+    const values = new Float64Array(count);
+    for (let index = 0; index < count; index += 1) values[index] = finite(samples[index]);
+    values.sort();
+    let sum = 0, sumSquares = 0;
+    for (let index = 0; index < count; index += 1) { sum += values[index]; sumSquares += values[index] * values[index]; }
+    const average = sum / count;
     const target = finite(options.target, average);
+    const tailCount = Math.max(1, Math.ceil(count * 0.1));
+    let tailSum = 0, downside = 0;
+    for (let index = 0; index < count; index += 1) {
+      if (index < tailCount) tailSum += values[index];
+      if (values[index] < target) downside += 1;
+    }
+    const variance = Math.max(0, sumSquares / count - average * average);
     return {
-      samples: values.length, mean: average, standardDeviation: standardDeviation(values, average),
+      samples: count, mean: average, standardDeviation: Math.sqrt(variance),
       p10: quantileSorted(values, 0.1), p25: quantileSorted(values, 0.25), p50: quantileSorted(values, 0.5),
-      p75: quantileSorted(values, 0.75), p90: quantileSorted(values, 0.9), cvar10: mean(values.slice(0, tailCount)),
-      downsideProbability: values.filter((value) => value < target).length / values.length,
-      targetProbability: values.filter((value) => value >= target).length / values.length,
+      p75: quantileSorted(values, 0.75), p90: quantileSorted(values, 0.9), cvar10: tailSum / tailCount,
+      downsideProbability: downside / count, targetProbability: 1 - downside / count,
     };
   }
 
@@ -155,7 +168,7 @@
     return rows;
   }
 
-  const FAMILY_CAPS = Object.freeze({ market: 0.3, opportunity: 0.28, efficiency: 0.08, health: 0.45, environment: 0.12, matchup: 0.12, line: 0.1, news: 0.18, coaching: 0.06 });
+  const FAMILY_CAPS = Object.freeze({ market: 0.3, opportunity: 0.28, efficiency: 0.08, health: 0.45, environment: 0.12, matchup: 0.12, line: 0.1, news: 0.18, coaching: 0.06, rookie: 0.1 });
   function evidenceDrivers(player, baseline, evidence = {}) {
     const rows = [];
     const add = (feature, family, label, rawImpact) => {
@@ -167,6 +180,13 @@
     add("market.player_points", "market", "market projection", (r) => (finite(r.value) - baseline.mean) * 0.65);
     add("market.game_total", "market", "live game total", (r) => (finite(r.value) - 44) * baseline.mean * (player.position === "DST" ? -0.006 : 0.005));
     add("market.team_implied_points", "market", "team scoring environment", (r) => ["QB", "RB", "WR", "TE", "K"].includes(player.position) ? (finite(r.value) - 22.5) * baseline.mean * 0.012 : 0);
+    add("rookie.cohort_ppg", "rookie", "historical rookie cohort", (r) => (finite(r.value) - baseline.mean) * 0.22);
+    add("rookie.draft_capital", "rookie", "draft capital", (r) => (finite(r.value) - 0.45) * baseline.mean * 0.06);
+    add("rookie.prospect_score", "rookie", "prospect grade", (r) => (finite(r.value) - 0.5) * baseline.mean * 0.04);
+    add("rookie.athletic_percentile", "rookie", "combine athletic profile", (r) => (finite(r.value) - 0.5) * baseline.mean * 0.035);
+    add("rookie.age_score", "rookie", "age-adjusted rookie prior", (r) => finite(r.value) * baseline.mean * 0.025);
+    add("rookie.depth_chart_delta", "rookie", "live rookie depth chart", (r) => finite(r.value) * baseline.mean);
+    add("rookie.development_delta", "rookie", "rookie development curve", (r) => finite(r.value) * baseline.mean * 0.24);
     add("role.target_share", "opportunity", "live target share", (r) => {
       const prior = player.position === "WR" ? 0.2 : player.position === "TE" ? 0.17 : 0.1;
       return (finite(r.value) - prior) * baseline.mean * 1.05;
@@ -254,9 +274,14 @@
     const correction = drivers.reduce((sum, row) => sum + row.impact, 0);
     const activeMean = Math.max(0, baseline.mean + correction);
     const opportunity = baseline.player.opportunity || {};
-    const roleUncertainty = clamp(1 - finite(opportunity.volumeStability, baseline.reliability), 0, 1);
+    let roleUncertainty = clamp(1 - finite(opportunity.volumeStability, baseline.reliability), 0, 1);
     const conflict = clamp(mean(drivers.map((row) => row.conflict || 0)), 0, 1);
-    const epistemic = clamp(1 - Math.max(baseline.reliability, finite(opportunity.reliability, 0)), 0, 1);
+    let epistemic = clamp(1 - Math.max(baseline.reliability, finite(opportunity.reliability, 0)), 0, 1);
+    const rookieProfile = rookies?.uncertainty?.(baseline.player, evidence);
+    if (rookieProfile) {
+      roleUncertainty = clamp(Math.max(roleUncertainty, finite(rookieProfile.roleFloor)), 0, 0.78);
+      epistemic = clamp(Math.max(epistemic, finite(rookieProfile.epistemicFloor)), 0, 0.75);
+    }
     const volatility = POSITION_VOLATILITY[baseline.player.position] || 0.46;
     const stdMultiplier = 1 + epistemic * 0.34 + roleUncertainty * 0.28 + conflict * 0.32;
     const activeStdDev = Math.max(activeMean * 0.12, baseline.standardDeviation, activeMean * volatility * 0.62) * stdMultiplier;
@@ -344,21 +369,18 @@
   function correlation(left, right) {
     const count = Math.min(left?.length || 0, right?.length || 0);
     if (count < 2) return 0;
-    const leftMean = mean(left.slice(0, count));
-    const rightMean = mean(right.slice(0, count));
-    let covariance = 0;
-    let leftVariance = 0;
-    let rightVariance = 0;
+    let sumLeft = 0, sumRight = 0, sumLeftSq = 0, sumRightSq = 0, sumProduct = 0;
     for (let index = 0; index < count; index += 1) {
-      const l = left[index] - leftMean;
-      const r = right[index] - rightMean;
-      covariance += l * r;
-      leftVariance += l ** 2;
-      rightVariance += r ** 2;
+      const l = finite(left[index]), r = finite(right[index]);
+      sumLeft += l; sumRight += r; sumLeftSq += l * l; sumRightSq += r * r; sumProduct += l * r;
     }
-    const denominator = Math.sqrt(leftVariance * rightVariance);
+    const covariance = sumProduct - sumLeft * sumRight / count;
+    const leftVariance = sumLeftSq - sumLeft * sumLeft / count;
+    const rightVariance = sumRightSq - sumRight * sumRight / count;
+    const denominator = Math.sqrt(Math.max(0, leftVariance) * Math.max(0, rightVariance));
     return denominator > 0 ? clamp(covariance / denominator, -1, 1) : 0;
   }
+
   function simulateForecasts(forecasts, options = {}) {
     if (!forecasts?.length) throw new TypeError("Scenario simulation requires forecasts");
     if (forecasts.length > 192) throw new RangeError("At most 192 players per scenario run");
@@ -366,21 +388,64 @@
     const seed = String(options.seed ?? 2026);
     const week = Math.round(clamp(options.week || forecasts[0].week || 1, 1, 18));
     const schedule = options.schedule || {};
-    const playerSamples = Object.fromEntries(forecasts.map((forecast) => [String(forecast.player.id), new Float32Array(scenarios)]));
-    const contexts = Object.fromEntries(forecasts.map((forecast) => [String(forecast.player.id), gameContext(forecast.player, schedule, week)]));
+    const gameIndex = new Map(), teamIndex = new Map(), gameKeys = [], teamKeys = [];
+    const entries = forecasts.map((forecast) => {
+      const id = String(forecast.player.id);
+      const context = gameContext(forecast.player, schedule, week);
+      if (!gameIndex.has(context.gameKey)) { gameIndex.set(context.gameKey, gameKeys.length); gameKeys.push(context.gameKey); }
+      if (!teamIndex.has(context.team)) { teamIndex.set(context.team, teamKeys.length); teamKeys.push(context.team); }
+      const weights = factorWeights(forecast.player.position);
+      let sharedVariance = 0;
+      for (const factor of ["scoring", "passing", "rushing", "pace", "team", "chaos"]) sharedVariance += finite(weights[factor]) ** 2;
+      return {
+        forecast, id, context, weights,
+        gameIndex: gameIndex.get(context.gameKey), teamIndex: teamIndex.get(context.team),
+        residualWeight: Math.sqrt(Math.max(0.05, 1 - sharedVariance)),
+        activeMean: finite(forecast.activeDistribution?.mean),
+        activeStdDev: finite(forecast.activeDistribution?.standardDeviation),
+        availability: clamp(forecast.availability?.probability, 0, 1),
+        samples: new Float32Array(scenarios),
+      };
+    });
+    const scoring = new Float64Array(gameKeys.length);
+    const passing = new Float64Array(gameKeys.length);
+    const rushing = new Float64Array(gameKeys.length);
+    const pace = new Float64Array(gameKeys.length);
+    const chaos = new Float64Array(gameKeys.length);
+    const teamPerformance = new Float64Array(teamKeys.length);
     for (let scenario = 0; scenario < scenarios; scenario += 1) {
-      for (const forecast of forecasts) {
-        const id = String(forecast.player.id);
-        playerSamples[id][scenario] = sampleForecast(forecast, contexts[id], seed, scenario);
+      for (let index = 0; index < gameKeys.length; index += 1) {
+        const key = gameKeys[index];
+        scoring[index] = normalFromParts(seed, scenario, key, "game-scoring");
+        passing[index] = normalFromParts(seed, scenario, key, "game-passing");
+        rushing[index] = normalFromParts(seed, scenario, key, "game-rushing");
+        pace[index] = normalFromParts(seed, scenario, key, "game-pace");
+        chaos[index] = normalFromParts(seed, scenario, key, "game-chaos");
+      }
+      for (let index = 0; index < teamKeys.length; index += 1) {
+        teamPerformance[index] = normalFromParts(seed, scenario, teamKeys[index], "team-performance");
+      }
+      for (const entry of entries) {
+        if (entry.context.bye || entry.forecast.baseline?.bye || uniformFromParts(seed, scenario, entry.id, "availability") > entry.availability) {
+          entry.samples[scenario] = 0;
+          continue;
+        }
+        const w = entry.weights, gi = entry.gameIndex;
+        let shared = 0;
+        shared += scoring[gi] * finite(w.scoring);
+        shared += passing[gi] * finite(w.passing);
+        shared += rushing[gi] * finite(w.rushing);
+        shared += pace[gi] * finite(w.pace);
+        shared += teamPerformance[entry.teamIndex] * finite(w.team);
+        shared += chaos[gi] * finite(w.chaos);
+        const residual = normalFromParts(seed, scenario, entry.id, "player-residual") * entry.residualWeight;
+        entry.samples[scenario] = Math.max(0, entry.activeMean + entry.activeStdDev * (shared + residual));
       }
     }
-    const playerSummaries = Object.fromEntries(forecasts.map((forecast) => {
-      const id = String(forecast.player.id);
-      return [id, { player: forecast.player, ...summarizeSamples(Array.from(playerSamples[id]), { target: forecast.baseline?.mean }) }];
-    }));
+    const playerSamples = Object.fromEntries(entries.map((entry) => [entry.id, entry.samples]));
+    const playerSummaries = Object.fromEntries(entries.map((entry) => [entry.id, { player: entry.forecast.player, ...summarizeSamples(entry.samples, { target: entry.forecast.baseline?.mean }) }]));
     const correlations = [];
-    const pairs = options.correlationPairs || [];
-    for (const [leftId, rightId] of pairs.slice(0, 40)) {
+    for (const [leftId, rightId] of (options.correlationPairs || []).slice(0, 40)) {
       if (playerSamples[leftId] && playerSamples[rightId]) correlations.push({ leftId, rightId, correlation: correlation(playerSamples[leftId], playerSamples[rightId]) });
     }
     return { version: VERSION, seed, scenarios, week, playerSamples, playerSummaries, correlations };
@@ -559,7 +624,7 @@
       simulations,
       startWeek,
       endWeek,
-      summary: summarizeSamples(Array.from(seasonTotals)),
+      summary: summarizeSamples(seasonTotals),
       expectedLineups: Object.fromEntries(Object.entries(lineups).map(([week, rows]) => [week, rows.map((forecast) => String(forecast.player.id))])),
     };
   }

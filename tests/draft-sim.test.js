@@ -67,3 +67,21 @@ test("return-chance simulation honors the selected custom market board", () => {
   assert.ok(custom.availabilityById.p14 < normal.availabilityById.p14);
   assert.ok(custom.availabilityById.p14 >= 0 && custom.availabilityById.p14 <= 1);
 });
+
+test("Oracle draft policy recognizes rookie tail without changing CPU market behavior", () => {
+  const artifact = require("../data/rookies-2026.json");
+  const rookieApi = require("../src/engine/rookies.js");
+  const rookieMeta = artifact.players.find((row) => row.name === "Jeremiyah Love");
+  const base = players(40);
+  const rookiePlayer = { ...base[8], id: rookieMeta.id, name: rookieMeta.name, position: "RB", team: "ARI", rookie: rookieMeta, weeklyProjection: 11.5, projectedPoints: 195, pprRank: 9, adp: 9 };
+  const room = [rookiePlayer, ...base.filter((row) => row.id !== rookiePlayer.id)];
+  assert.ok(draft.rookieTailScore(rookiePlayer) > 0);
+  const recommendations = draft.adjustRecommendations([{ ...rookiePlayer, score: 50, reasons: [] }, { ...base[9], score: 50, reasons: [] }], 2);
+  assert.equal(recommendations[0].id, rookiePlayer.id);
+  const settings = core.cloneSettings({ teams: 8, rounds: 8, draftPosition: 4 });
+  const state = core.createDraftState(settings);
+  const withRookie = draft.cpuPick(room, state, settings, 1, { strategy: "espn-market", seed: "same-room" });
+  const stripped = draft.cpuPick(room.map((row) => ({ ...row, rookie: undefined })), state, settings, 1, { strategy: "espn-market", seed: "same-room" });
+  assert.equal(withRookie.id, stripped.id);
+  assert.ok(rookieApi.draftCapitalScore(rookieMeta) > 0.9);
+});

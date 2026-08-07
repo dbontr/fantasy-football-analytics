@@ -345,6 +345,12 @@
       bullets.push(`Live Sleeper status unavailable; availability still reflects the bootstrap/model prior (${health.status}).`);
     }
     if (health.depthChartOrder) bullets.push(`Depth chart: ${health.depthChartPosition || player.position} ${health.depthChartOrder}.`);
+    if (player?.rookie?.prior) {
+      const prior = player.rookie.prior;
+      const draft = player.rookie.draft || {};
+      const draftLabel = draft.overall ? `pick ${draft.overall}` : "undrafted";
+      bullets.push(`Rookie prior: ${draftLabel}; historical cohort P50 ${finite(prior.p50).toFixed(1)}, P90 ${finite(prior.p90).toFixed(1)} PPR points/game.`);
+    }
     const volatility = finite(summary?.season?.volatility);
     let risk = "LOW";
     if (active < 0.8 || ["DOUBTFUL", "OUT", "IR", "PUP"].includes(health.status)) risk = "HIGH";
@@ -356,7 +362,7 @@
     return {
       direction, risk, confidence, health, bullets,
       headline: `${direction} · ${risk} RISK · ${(confidence * 100).toFixed(0)}% CONFIDENCE`,
-      provenance: "Generated locally from Oracle forecast, nflverse game logs, and available Sleeper status fields.",
+      provenance: player?.rookie ? "Generated locally from Oracle forecast, historical rookie cohorts, structured draft/combine metadata, and available live role/status fields." : "Generated locally from Oracle forecast, nflverse game logs, and available Sleeper status fields.",
     };
   }
 

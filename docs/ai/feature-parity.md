@@ -92,3 +92,14 @@ A future addition qualifies only when all of the following hold:
 - Added current game total/team implied points as low-confidence fantasy scoring-environment evidence.
 - Added realistic CPU draft-room profiles, manual Live Helper mode, undo, pick history, custom external rank-board import, market disagreement, strategy-aware return chance, and paired Oracle-vs-market draft benchmarks.
 - Waivers default to ESPN-style priority/free-agency recommendations; FAAB dollars appear only when FAAB mode is selected.
+
+## 2026-08-07 rookie intelligence + optimization release
+
+- Added a reproducible ~47 KB 2026 rookie artifact for 74 fantasy-relevant players, built from 1,868 historical rookie records plus structured current draft/combine/identity metadata.
+- Corrected rookie cohort survivorship by retaining non-producing developmental players/UDFAs at zero production and using separate drafted-vs-all shrinkage baselines.
+- Added bounded rookie cohort, draft capital, prospect grade/rank, age, combine, live depth-chart, preseason, and development evidence with explicit rookie role/epistemic uncertainty floors.
+- Missing athletic/NFL-history data stays unavailable rather than becoming a false penalty; rookies skip impossible prior-season individual-history downloads.
+- Added a small capped rookie-tail term to Oracle draft recommendations only. Simulated market/value/need opponents do not inherit Oracle rookie intelligence.
+- Reused draft-room drafted sets/position counts across picks; production 500-room return simulation is ~80% faster and 100-room paired drafts ~43% faster than the prior published release.
+- Cached shared game/team Monte Carlo factors once per scenario; 64-player x 5,000 simulations are ~63% faster and x 10,000 ~65% faster while preserving deterministic player-specific availability/residual draws.
+- Replaced repeated 700-player UI lookup scans with an in-memory ID Map and narrowed live-intelligence Sleeper refreshes to the selected/relevant positions.

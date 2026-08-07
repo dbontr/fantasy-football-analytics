@@ -101,10 +101,27 @@ async function main() {
   const liveIntel = await evaluate(`(() => ({status:document.querySelector('#live-intelligence-status').textContent, news:document.querySelectorAll('#news-pulse .news-item').length, global:document.querySelector('#global-status').textContent}))()`);
   if (!liveIntel.status.includes('preseason games') || liveIntel.news < 1) throw new Error("Preseason/news intelligence did not sync");
 
+  await evaluate(`document.querySelector('#player-select').value='4870808'; document.querySelector('#player-scenarios').value='1500'; document.querySelector('#run-player').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#player-result .rookie-pill'))`, 15000);
+  const rookieLab = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, rookie:document.querySelector('#player-result .rookie-pill')?.textContent, rookieDriver:document.querySelector('#player-result').textContent.includes('historical rookie cohort') || document.querySelector('#player-result').textContent.includes('draft capital'), roleUncertainty:document.querySelector('#player-result').textContent.includes('role')}))()`);
+  if (rookieLab.rookie !== 'ROOKIE' || !rookieLab.rookieDriver || !rookieLab.roleUncertainty) throw new Error("Rookie Player Lab did not render rookie evidence + uncertainty");
+
+  await evaluate(`document.querySelector('#load-intelligence').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#player-intelligence .rookie-profile'))`, 30000);
+  const rookieIntel = await evaluate(`(() => ({status:document.querySelector('#global-status').textContent, source:document.querySelector('#intelligence-source').textContent, profile:document.querySelector('#player-intelligence .rookie-profile')?.textContent, noHistory:document.querySelector('#player-intelligence .rookie-history-note')?.textContent, historyRows:document.querySelectorAll('#player-intelligence tbody tr').length, currentRole:document.querySelector('#player-intelligence').textContent.includes('CURRENT ROOKIE ROLE')}))()`);
+  if (!rookieIntel.status.includes('Rookie intelligence loaded') || !rookieIntel.source.includes('Pick 3') || !rookieIntel.profile.includes('ROOKIE HIT RATE') || !rookieIntel.noHistory.includes('No prior NFL regular-season history') || rookieIntel.historyRows !== 0 || !rookieIntel.currentRole) throw new Error("Rookie Intelligence did not use compact rookie model / role UI");
+  const rookieDesktop = await snapshot("rookie-desktop", 1440, 1000);
+  if (rookieDesktop.horizontalOverflow) throw new Error("Rookie desktop layout overflow");
+  const rookieTablet = await snapshot("rookie-tablet", 768, 1024);
+  if (rookieTablet.horizontalOverflow) throw new Error("Rookie tablet layout overflow");
+  await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
+
   await evaluate(`document.querySelector('[data-panel-target="draft"]').click(); document.querySelector('#draft-reset').click(); document.querySelector('#draft-advance').click(); true`);
   await waitFor(`document.querySelector('#draft-meta')?.textContent.includes('YOUR PICK')`, 20000);
   const draftBoard = await evaluate(`(() => ({rows:document.querySelectorAll('#draft-table tr').length, manual:document.querySelectorAll('#draft-manual-player option').length, meta:document.querySelector('#draft-meta').textContent}))()`);
   if (draftBoard.rows < 10 || draftBoard.manual < 100) throw new Error("Draft simulator did not create a populated decision room");
+  const draftRookies = await evaluate(`document.querySelectorAll('#draft-table .rookie-pill').length`);
+  if (draftRookies < 1) throw new Error("Draft board did not surface rookie-aware recommendations");
   await evaluate(`document.querySelector('#draft-table [data-draft-player]').click(); true`);
   await waitFor(`document.querySelector('#draft-roster')?.textContent.includes('1/16')`, 8000);
   await evaluate(`document.querySelector('#draft-benchmark-count').value='40'; document.querySelector('#draft-benchmark').click(); true`);
@@ -139,11 +156,14 @@ async function main() {
   await evaluate(`document.querySelector('[data-panel-target="draft"]').click(); true`);
   const draftMobile = await snapshot("draft-mobile", 390, 844);
   if (draftMobile.horizontalOverflow) throw new Error("Draft mobile horizontal overflow");
+  await evaluate(`document.querySelector('[data-panel-target="player"]').click(); document.querySelector('#player-select').value='4870808'; true`);
+  const rookieMobile = await snapshot("rookie-mobile", 390, 844);
+  if (rookieMobile.horizontalOverflow) throw new Error("Rookie mobile horizontal overflow");
   await evaluate(`document.querySelector('[data-panel-target="overview"]').click(); true`);
   const mobile = await snapshot("mobile", 390, 844);
   if (mobile.horizontalOverflow) throw new Error(`Mobile horizontal overflow: ${mobile.documentWidth}/${mobile.viewportWidth}`);
 
-  const result = { desktop, playerLab, intelligence, liveIntel, draft, draftDesktop, lineup, waivers, trades, league, draftMobile, mobile, errors, screenshots: [".qa-desktop.png", ".qa-draft-desktop.png", ".qa-draft-mobile.png", ".qa-mobile.png"] };
+  const result = { desktop, playerLab, intelligence, liveIntel, rookieLab, rookieIntel, rookieDesktop, rookieTablet, draft, draftDesktop, lineup, waivers, trades, league, draftMobile, rookieMobile, mobile, errors, screenshots: [".qa-desktop.png", ".qa-rookie-desktop.png", ".qa-rookie-tablet.png", ".qa-draft-desktop.png", ".qa-draft-mobile.png", ".qa-rookie-mobile.png", ".qa-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) throw new Error(`Browser logged ${errors.length} error(s)`);

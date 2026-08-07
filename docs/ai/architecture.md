@@ -114,3 +114,21 @@ For a requested regular-season week, the browser can load ESPN's public scoreboa
 src/engine/draft-sim.js precomputes a room context (normalized players, replacement levels, market ranks and asset values) once. CPU opponents then sample deterministic seeded decisions from selectable market/value/need/positional profiles. A custom rank/name board can replace the committed ESPN-derived market ordering for Yahoo/NFL/other-room simulation without scraping. The live helper never fabricates real opponent picks: the user records them and Oracle recalculates from the exact board state. Return-probability simulation uses the same opponent strategy and custom market board as the room.
 
 The paired strategy benchmark reuses one room context and common seeds to compare Oracle's policy against an ordinary baseline over many rooms. Its output is a diagnostic in projected starter-season points, not a claim of realized wins.
+
+## Rookie intelligence plane (2026-08-07)
+
+The offline rookie plane is deliberately a prior-and-uncertainty system rather than a rookie hype multiplier. A manual build script joins the 2026 fantasy universe to nflverse identity/birth/college/combine data, ESPN's public structured draft round/pick/grade/rank fields, and 2016-2025 nflverse rookie outcomes. The deployed artifact contains only the 74 fantasy-relevant current rookies plus compact cohort priors; historical rows remain build-time inputs.
+
+Historical outcomes are stratified by QB/RB/WR/TE and draft-capital bucket. Non-producing rookies, including developmental UDFAs present in nflverse player data, remain in the cohort at zero production instead of being dropped. Drafted buckets shrink toward the drafted-player position baseline; UDFAs shrink toward the full rookie population. This reduces survivorship bias and prevents the much larger UDFA population from dominating early-round priors.
+
+At runtime, rookie cohort PPG, draft capital, structured prospect grade/rank, age, available position-relative combine context, live Sleeper depth chart, preseason usage, and a weak empirical season-development curve enter a dedicated capped evidence family. Missing combine/college/NFL-history data stays missing and increases uncertainty rather than becoming a zero-valued penalty. Market projection remains the anchor. Live depth/preseason evidence can narrow rookie role uncertainty but cannot remove it entirely.
+
+Rookies skip prior-season individual NFL-history fetches because those rows cannot exist. Player Intelligence explicitly renders a rookie profile/no-prior-NFL-history state instead of presenting empty veteran rolling-form tables.
+
+## 2026.4 compute hot paths
+
+Draft rooms maintain a reusable tracker containing drafted IDs and per-team position counts. CPU picks, full drafts, and return-window Monte Carlo update that tracker incrementally instead of repeatedly rebuilding sets/rosters from pick history. Oracle's own policy may apply the capped rookie-tail term; CPU market/value/need profiles do not, preserving the purpose of the comparison room.
+
+The correlated scenario engine now indexes unique NFL games and teams before simulation. On each scenario it generates each game-scoring/passing/rushing/pace/chaos factor and each team-performance factor once, then reuses those values across all players sharing the latent. Availability and residual draws stay player-specific. This preserves the factor model while cutting repeated hash/normal generation. Typed-array summaries and one-pass correlation statistics reduce temporary allocations further.
+
+The browser UI maintains an ID-to-player Map after bootstrap and each live status enrichment, replacing repeated linear scans across the 700-player universe in draft/roster/status operations.

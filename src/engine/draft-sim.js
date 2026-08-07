@@ -2,13 +2,16 @@
   const core = typeof module !== "undefined" && module.exports
     ? require("./core.js")
     : root.FantasyOracleCore;
-  const api = factory(core);
+  const rookies = typeof module !== "undefined" && module.exports
+    ? require("./rookies.js")
+    : root.OracleRookies;
+  const api = factory(core, rookies);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OracleDraftSim = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftSim(core) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftSim(core, rookies) {
   "use strict";
 
-  const VERSION = "oracle-draft-sim-2026.1";
+  const VERSION = "oracle-draft-sim-2026.2";
   const PROFILES = Object.freeze({
     "espn-market": { label: "ESPN market / ADP", market: 1.0, value: 0.05, need: 0.22, noise: 0.72 },
     balanced: { label: "Balanced market", market: 0.82, value: 0.18, need: 0.55, noise: 0.6 },
@@ -96,14 +99,16 @@
       return counts;
     }, {});
   }
-  function starterNeed(position, roster, settings) {
-    const counts = positionCounts(roster);
-    const direct = Math.max(0, finite(settings.slots?.[position]) - finite(counts[position]));
+  function starterNeedFromCounts(position, counts, settings) {
+    const direct = Math.max(0, finite(settings.slots?.[position]) - finite(counts?.[position]));
     if (!["RB", "WR", "TE"].includes(position)) return direct;
-    const skill = finite(counts.RB) + finite(counts.WR) + finite(counts.TE);
+    const skill = finite(counts?.RB) + finite(counts?.WR) + finite(counts?.TE);
     const directSkill = finite(settings.slots.RB) + finite(settings.slots.WR) + finite(settings.slots.TE);
     const flexNeed = Math.max(0, directSkill + finite(settings.slots.FLEX) - skill);
     return Math.max(direct, Math.min(1, flexNeed));
+  }
+  function starterNeed(position, roster, settings) {
+    return starterNeedFromCounts(position, positionCounts(roster), settings);
   }
   function effectiveProfile(strategy, seedKey) {
     const requested = PROFILES[strategy] || PROFILES["espn-market"];
@@ -124,16 +129,57 @@
     return { config, normalized, byId, replacement, market, board };
   }
 
-  function oraclePolicyPick(context, state, teamId) {
+  function createTracker(context, state) {
     const drafted = new Set((state?.picks || []).map((pick) => String(pick.playerId)));
-    const roster = rosterForTeam(state, teamId, context.byId);
+    const countsByTeam = {};
+    for (let teamId = 1; teamId <= context.config.teams; teamId += 1) {
+      const counts = {};
+      for (const id of state?.rosters?.[String(teamId)] || []) {
+        const player = context.byId.get(String(id));
+        if (player) counts[player.position] = finite(counts[player.position]) + 1;
+      }
+      countsByTeam[String(teamId)] = counts;
+    }
+    return { drafted, countsByTeam };
+  }
+  function trackPick(tracker, teamId, player) {
+    if (!tracker || !player) return;
+    tracker.drafted.add(String(player.id));
+    const counts = tracker.countsByTeam[String(teamId)] || (tracker.countsByTeam[String(teamId)] = {});
+    counts[player.position] = finite(counts[player.position]) + 1;
+  }
+  function rookieTailScore(player) {
+    if (!player?.rookie || !rookies) return 0;
+    const prior = player.rookie.prior || {};
+    const weekly = Math.max(3, finite(player.weeklyProjection, finite(player.projectedPoints) / 17));
+    const upside = clamp((finite(prior.p90, weekly) - weekly) / weekly, -0.45, 0.9);
+    const hitRate = clamp(finite(prior.hitRate, 0.12), 0, 0.75);
+    const capital = rookies.draftCapitalScore(player.rookie);
+    let score = upside * 2.2 + (capital - 0.45) * 2 + (hitRate - 0.15) * 3.2;
+    const depth = finite(player?.sleeper?.depthChartOrder, 0);
+    if (depth === 1) score += 0.55;
+    else if (depth === 2) score += 0.2;
+    else if (depth >= 4) score -= 0.4;
+    return clamp(score, -1.5, 4.5);
+  }
+  function adjustRecommendations(rows, limit = 18) {
+    return (rows || []).map((row) => {
+      const rookieEdge = rookieTailScore(row);
+      if (!rookieEdge) return row;
+      return { ...row, score: row.score + rookieEdge, rookieTailScore: rookieEdge, reasons: [...(row.reasons || []), `rookie tail +${rookieEdge.toFixed(1)}`] };
+    }).sort((a, b) => b.score - a.score).slice(0, Math.max(1, limit));
+  }
+
+  function oraclePolicyPick(context, state, teamId, tracker = null) {
+    const room = tracker || createTracker(context, state);
+    const counts = room.countsByTeam[String(teamId)] || {};
     const pick = (state?.picks || []).length + 1;
     let best = null, bestScore = -Infinity;
     for (const row of context.market) {
-      if (drafted.has(row.player.id)) continue;
-      const need = starterNeed(row.player.position, roster, context.config);
+      if (room.drafted.has(row.player.id)) continue;
+      const need = starterNeedFromCounts(row.player.position, counts, context.config);
       const pressure = clamp((pick - row.rank) * 0.32, -8, 11);
-      let score = row.asset + need * 16 + pressure - row.player.injuryRisk * 11;
+      let score = row.asset + need * 16 + pressure - row.player.injuryRisk * 11 + rookieTailScore(row.player);
       if (["K", "DST"].includes(row.player.position) && pick < context.config.teams * 10) score -= 18;
       if (score > bestScore) { best = row.player; bestScore = score; }
     }
@@ -143,24 +189,23 @@
   function cpuPick(players, state, settings, teamId, options = {}) {
     const context = options.context || createRoomContext(players, settings, options.board || null);
     const config = context.config;
-    const drafted = new Set((state?.picks || []).map((pick) => String(pick.playerId)));
-    const roster = rosterForTeam(state, teamId, context.byId);
+    const room = options.tracker || createTracker(context, state);
+    const counts = room.countsByTeam[String(teamId)] || {};
     const pickNumber = (state?.picks || []).length + 1;
-    const profile = effectiveProfile(options.strategy || "espn-market", `${options.seed}:${teamId}`);
-    const random = seededRandom(`${options.seed || 1}:${pickNumber}:${teamId}:${options.strategy || "market"}`);
-    const candidates = context.market.filter((row) => !drafted.has(row.player.id)).slice(0, 96);
-    let best = null;
-    let bestScore = -Infinity;
-    for (const candidate of candidates) {
+    const profile = effectiveProfile(options.strategy || "espn-market", String(options.seed) + ":" + teamId);
+    const random = seededRandom(String(options.seed || 1) + ":" + pickNumber + ":" + teamId + ":" + (options.strategy || "market"));
+    let best = null, bestScore = -Infinity, considered = 0;
+    for (const candidate of context.market) {
+      if (room.drafted.has(candidate.player.id)) continue;
+      considered += 1;
+      if (considered > 96) break;
       const player = candidate.player;
-      const rank = candidate.rank;
-      const need = starterNeed(player.position, roster, config);
-      const asset = candidate.asset;
-      let score = -rank * profile.market + asset * profile.value + need * 11 * profile.need;
+      const need = starterNeedFromCounts(player.position, counts, config);
+      let score = -candidate.rank * profile.market + candidate.asset * profile.value + need * 11 * profile.need;
       score += finite(profile[player.position]);
       if (profile.zeroRb && player.position === "RB" && pickNumber <= config.teams * 5) score -= 13;
       if (["K", "DST"].includes(player.position) && pickNumber <= config.teams * Math.max(8, config.rounds - 5)) score -= 22;
-      score += gumbel(random) * (3.2 + Math.sqrt(Math.max(1, rank)) * 0.35) * profile.noise;
+      score += gumbel(random) * (3.2 + Math.sqrt(Math.max(1, candidate.rank)) * 0.35) * profile.noise;
       if (score > bestScore) { best = player; bestScore = score; }
     }
     return best ? { ...best, roomStrategy: profile.label, roomScore: Number(bestScore.toFixed(2)) } : null;
@@ -178,27 +223,26 @@
     const context = options.context || createRoomContext(options.players || [], settings, options.board || null);
     const userTeamId = Number(options.userTeamId || settings.draftPosition);
     let state = cloneDraftState(options.state || core.createDraftState(settings));
+    const tracker = createTracker(context, state);
     const total = settings.teams * settings.rounds;
     let cpuPicks = 0;
     while (state.picks.length < total) {
       const summary = core.draftPickSummary(state, settings);
       if (Number(summary.teamId) === userTeamId) break;
       const selected = cpuPick(options.players || [], state, settings, summary.teamId, {
-        strategy: options.strategy || "mixed",
-        board: options.board || null,
-        seed: options.seed || 1,
-        context,
+        strategy: options.strategy || "mixed", board: options.board || null, seed: options.seed || 1, context, tracker,
       });
       if (!selected) break;
       state = core.applyDraftPick(state, selected.id, settings);
+      trackPick(tracker, summary.teamId, selected);
       cpuPicks += 1;
     }
     return { state, cpuPicks, summary: core.draftPickSummary(state, settings) };
   }
 
-  function chooseUserPick(players, state, settings, teamId, strategy, board, seed, context) {
-    if (strategy === "oracle") return oraclePolicyPick(context || createRoomContext(players, settings, board), state, teamId);
-    return cpuPick(players, state, settings, teamId, { strategy, board, seed, context });
+  function chooseUserPick(players, state, settings, teamId, strategy, board, seed, context, tracker = null) {
+    if (strategy === "oracle") return oraclePolicyPick(context || createRoomContext(players, settings, board), state, teamId, tracker);
+    return cpuPick(players, state, settings, teamId, { strategy, board, seed, context, tracker });
   }
 
   function simulatePickWindow(options = {}) {
@@ -213,27 +257,30 @@
       if (Number(core.snakeTeamForPick(pick, settings.teams)) === targetTeamId) { targetPick = pick; break; }
     }
     const picksBetween = Math.max(0, targetPick - startPick);
-    const tracked = context.market.filter((row) => !(state.picks || []).some((pick) => String(pick.playerId) === row.player.id)).slice(0, Math.min(150, context.market.length));
+    const baseTracker = createTracker(context, state);
+    const tracked = [];
+    for (const row of context.market) {
+      if (!baseTracker.drafted.has(row.player.id)) tracked.push(row);
+      if (tracked.length >= Math.min(150, context.market.length)) break;
+    }
     const counts = Object.fromEntries(tracked.map((row) => [row.player.id, 0]));
     const positionTaken = { QB: 0, RB: 0, WR: 0, TE: 0, DST: 0, K: 0 };
     const simulations = Math.round(clamp(options.simulations || 500, 20, 4000));
     for (let simulation = 0; simulation < simulations; simulation += 1) {
       let draftState = cloneDraftState(state);
-      const before = new Set((draftState.picks || []).map((pick) => String(pick.playerId)));
+      const tracker = createTracker(context, draftState);
       while (draftState.picks.length + 1 < targetPick) {
         const summary = core.draftPickSummary(draftState, settings);
-        const selected = cpuPick(options.players || [], draftState, settings, summary.teamId, { strategy: options.strategy || "mixed", board: options.board || null, seed: String(options.seed || "window") + ":" + simulation, context });
+        const selected = cpuPick(options.players || [], draftState, settings, summary.teamId, {
+          strategy: options.strategy || "mixed", board: options.board || null,
+          seed: String(options.seed || "window") + ":" + simulation, context, tracker,
+        });
         if (!selected) break;
         draftState = core.applyDraftPick(draftState, selected.id, settings);
+        trackPick(tracker, summary.teamId, selected);
+        if (positionTaken[selected.position] !== undefined) positionTaken[selected.position] += 1;
       }
-      const after = new Set((draftState.picks || []).map((pick) => String(pick.playerId)));
-      for (const row of tracked) if (!after.has(row.player.id)) counts[row.player.id] += 1;
-      for (const pick of draftState.picks || []) {
-        const id = String(pick.playerId);
-        if (before.has(id)) continue;
-        const player = context.byId.get(id);
-        if (player && positionTaken[player.position] !== undefined) positionTaken[player.position] += 1;
-      }
+      for (const row of tracked) if (!tracker.drafted.has(row.player.id)) counts[row.player.id] += 1;
     }
     return {
       simulations, targetPick, picksBetween,
@@ -279,25 +326,22 @@
     const userTeamId = Number(options.userTeamId || settings.draftPosition);
     const context = options.context || createRoomContext(options.players || [], settings, options.board || null);
     let state = core.createDraftState(settings);
+    const tracker = createTracker(context, state);
     const total = settings.teams * settings.rounds;
     while (state.picks.length < total) {
       const summary = core.draftPickSummary(state, settings);
       const isUser = Number(summary.teamId) === userTeamId;
       const selected = isUser
-        ? chooseUserPick(options.players || [], state, settings, userTeamId, options.userStrategy || "oracle", options.board, options.seed, context)
-        : cpuPick(options.players || [], state, settings, summary.teamId, { strategy: options.opponentStrategy || "mixed", board: options.board, seed: options.seed, context });
+        ? chooseUserPick(options.players || [], state, settings, userTeamId, options.userStrategy || "oracle", options.board, options.seed, context, tracker)
+        : cpuPick(options.players || [], state, settings, summary.teamId, { strategy: options.opponentStrategy || "mixed", board: options.board, seed: options.seed, context, tracker });
       if (!selected) break;
       state = core.applyDraftPick(state, selected.id, settings);
+      trackPick(tracker, summary.teamId, selected);
     }
     const userRoster = (state.rosters[String(userTeamId)] || []).map((id) => context.byId.get(String(id))).filter(Boolean);
     return {
-      version: VERSION,
-      state,
-      userTeamId,
-      userRoster,
-      summary: rosterSummary(userRoster, settings),
-      completed: state.picks.length,
-      total,
+      version: VERSION, state, userTeamId, userRoster,
+      summary: rosterSummary(userRoster, settings), completed: state.picks.length, total,
     };
   }
 
@@ -358,11 +402,13 @@
     PROFILES,
     advanceToUser,
     benchmarkStrategies,
+    adjustRecommendations,
     boardRank,
     cpuPick,
     createRoomContext,
     parseRankingBoard,
     projectedSeasonPoints,
+    rookieTailScore,
     rosterSummary,
     simulateDraft,
     simulatePickWindow,

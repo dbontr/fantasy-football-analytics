@@ -53,3 +53,15 @@ test("ESPN public web JSON is allowlisted without credential paths", () => {
   assert.equal(result.source.id, "espn");
   assert.throws(() => sources.assertFreeUrl("espn", "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news"));
 });
+
+test("Sleeper enrichment preserves rookie identity and live development context", () => {
+  const [player] = sources.enrichLocalPlayers(
+    [{ id: "r1", name: "Rookie Runner", position: "RB", team: "ARI", rookie: { id: "r1" } }],
+    { "s9": { full_name: "Rookie Runner", position: "RB", team: "ARI", status: "Active", active: true, age: 21, birth_date: "2005-05-31", college: "Notre Dame", years_exp: 0, search_rank: 20, depth_chart_order: 1, metadata: { rookie_year: "2026" } } },
+  );
+  assert.equal(player.rookie.id, "r1");
+  assert.equal(player.yearsExperience, 0);
+  assert.equal(player.rookieYear, 2026);
+  assert.equal(player.sleeper.depthChartOrder, 1);
+  assert.equal(player.sleeper.searchRank, 20);
+});

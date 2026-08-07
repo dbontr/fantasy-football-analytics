@@ -3,6 +3,7 @@
 
   const core = window.FantasyOracleCore;
   const engine = window.OracleBrowserEngine;
+  const rookieModel = window.OracleRookies;
   const evidenceApi = window.OracleEvidence;
   const sources = window.OracleSources;
   const context = window.OracleContext;
@@ -20,9 +21,12 @@
   const state = {
     dataset: null,
     players: [],
+    playerIndex: new Map(),
     schedule: {},
     coaches: null,
     healthCalibration: null,
+    rookieArtifact: null,
+    rookieIndex: null,
     contextByWeek: new Map(),
     intelligenceHistory: new Map(),
     decisionHistorySeason: 2025,
@@ -75,8 +79,12 @@
     node.className = `status-line ${kind}`.trim();
   }
 
+  function reindexPlayers() {
+    state.playerIndex = new Map(state.players.map((player) => [String(player.id), player]));
+  }
+
   function playerById(id) {
-    return state.players.find((player) => String(player.id) === String(id)) || null;
+    return state.playerIndex.get(String(id)) || null;
   }
 
   function rankedPlayers() {
@@ -134,6 +142,10 @@
     return intelligence.defenseMatchupEvidence(state.defenseProfiles, player, scheduledOpponent(player, week));
   }
 
+  function rookieEvidenceFor(player, week = 1) {
+    return rookieModel?.evidence?.(player, { week }) || {};
+  }
+
   function preseasonEvidenceFor(player) {
     const summary = state.preseasonByPlayer.get(String(player?.id));
     return summary ? liveIntelligence.preseasonEvidence(summary, player) : {};
@@ -170,7 +182,7 @@
     const base = { ...savedEvidence(player, week) };
     const priorMatchup = priorDefenseEvidence(player, week);
     if (Object.keys(priorMatchup).length) { delete base["matchup.pass_grade"]; delete base["matchup.rush_grade"]; }
-    return context.mergeEvidence(base, historyEvidenceFor(player), priorMatchup, marketEvidenceFor(player, week), preseasonEvidenceFor(player), trendEvidenceFor(player));
+    return context.mergeEvidence(base, historyEvidenceFor(player), priorMatchup, marketEvidenceFor(player, week), rookieEvidenceFor(player, week), preseasonEvidenceFor(player), trendEvidenceFor(player));
   }
 
   function staticDecisionEvidence(player) {
@@ -179,6 +191,7 @@
       context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
       context.healthEvidence(player, state.healthCalibration),
       context.absenceRedistributionEvidence(player, state.players),
+      rookieEvidenceFor(player, 1),
       preseasonEvidenceFor(player),
       trendEvidenceFor(player),
       state.ledger.evidenceFor("player", String(player.id)),
@@ -205,10 +218,29 @@
     };
   }
 
+  function emptyHistoryWindow() {
+    return { games: 0, ppr: null, opportunities: null, touches: null, targets: null, carries: null, receptions: null, scrimmageYards: null, passingYards: null, touchdowns: null, targetShare: null, carryShare: null, volatility: 0 };
+  }
+  function rookieHistoryResult(player, season) {
+    const window = emptyHistoryWindow();
+    return {
+      version: rookieModel?.VERSION || "rookie-model",
+      season,
+      source: { name: "Rookie cohort model", bytes: 0, rowCount: state.rookieArtifact?.meta?.historicalRookieCount || 0 },
+      summary: { games: 0, last3: { ...window }, last5: { ...window }, season: { ...window }, trend: { available: false, direction: "stable", delta: 0 }, consistency: 0 },
+      xfpSummary: { games: 0, last3: {}, last5: {}, season: {} },
+      evidence: {}, gameLog: [], rookie: true,
+    };
+  }
+
   async function ensureDecisionIntelligence(players, season = state.decisionHistorySeason) {
     const unique = [...new Map((players || []).filter((player) => player?.id).map((player) => [String(player.id), player])).values()];
-    const missing = unique.filter((player) => !state.intelligenceHistory.has(historyKey(player, season)));
-    if (!missing.length) return { loaded: 0, total: unique.length, cached: true };
+    const rookieRows = unique.filter((player) => player?.rookie);
+    for (const player of rookieRows) {
+      if (!state.intelligenceHistory.has(historyKey(player, season))) state.intelligenceHistory.set(historyKey(player, season), rookieHistoryResult(player, season));
+    }
+    const missing = unique.filter((player) => !player?.rookie && !state.intelligenceHistory.has(historyKey(player, season)));
+    if (!missing.length) return { loaded: 0, total: unique.length, rookiesSkipped: rookieRows.length, cached: true };
     try {
       const result = await runWorker("player-history-batch", { players: missing, season, targetSeason: Number(state.dataset?.meta?.season || 2026) });
       state.defenseProfiles = result.defenseProfiles || state.defenseProfiles;
@@ -249,6 +281,7 @@
       synced += 1;
     }
     if (synced) {
+      reindexPlayers();
       fillPlayerSelects();
       if (selectedPlayerId && playerById(selectedPlayerId)) $("#player-select").value = selectedPlayerId;
     }
@@ -294,7 +327,7 @@
     const drivers = forecast.drivers.length ? forecast.drivers : [{ label: "baseline projection", family: "baseline", impact: 0, confidence: forecast.baseline.reliability }];
     $("#player-result").className = "result-space";
     $("#player-result").innerHTML = `
-      <div class="player-banner"><div><span class="pos-pill">${esc(forecast.player.position)}</span><h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week} · ${pct(forecast.availability.probability)} active</p></div><div class="rank-note">EDGE ${forecast.edge.points >= 0 ? "+" : ""}${num(forecast.edge.points)} PTS</div></div>
+      <div class="player-banner"><div><span class="pos-pill">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week} · ${pct(forecast.availability.probability)} active</p></div><div class="rank-note">EDGE ${forecast.edge.points >= 0 ? "+" : ""}${num(forecast.edge.points)} PTS</div></div>
       <div class="metric-grid">
         <div class="metric"><span>MEAN</span><strong>${num(summary.mean)}</strong></div>
         <div class="metric"><span>MEDIAN</span><strong>${num(summary.p50)}</strong></div>
@@ -328,25 +361,37 @@
     }
   }
 
+  function rookieProfileMarkup(player) {
+    const summary = rookieModel?.summary?.(player);
+    if (!summary) return "";
+    const athletic = Number.isFinite(summary.athleticPercentile) ? pct(summary.athleticPercentile, 0) : "—";
+    const hit = Number.isFinite(summary.hitRate) ? pct(summary.hitRate, 0) : "—";
+    const depth = summary.depthChartOrder ? `#${summary.depthChartOrder}` : "—";
+    return `<section class="rookie-profile"><p class="control-title">ROOKIE PROFILE</p><div class="metric-grid compact-metrics"><div class="metric"><span>DRAFT</span><strong>${esc(summary.draftLabel)}</strong></div><div class="metric"><span>AGE</span><strong>${summary.age ?? "—"}</strong></div><div class="metric"><span>COHORT P50</span><strong>${summary.cohortP50 == null ? "—" : num(summary.cohortP50)}</strong></div><div class="metric"><span>COHORT P90</span><strong>${summary.cohortP90 == null ? "—" : num(summary.cohortP90)}</strong></div><div class="metric"><span>ROOKIE HIT RATE</span><strong>${hit}</strong></div><div class="metric"><span>ATHLETIC %ILE</span><strong>${athletic}</strong></div><div class="metric"><span>LIVE DEPTH</span><strong>${depth}</strong></div></div><p class="fineprint">${esc(summary.college || "College unavailable")} · Historical cohort is a prior, not a projection override.</p></section>`;
+  }
+
   function renderPlayerIntelligence(player, result, forecast) {
     const summary = result.summary;
     const xfp = result.xfpSummary || { last3: {}, last5: {} };
     const preseason = state.preseasonByPlayer.get(String(player.id)) || null;
+    const rookieProfile = rookieModel?.summary?.(player) || null;
     const outlook = intelligence.generateOutlook(player, forecast, summary);
     const health = outlook.health;
     const matchupPrior = priorDefenseEvidence(player, Number($("#player-week").value || 1))["matchup.position_grade"] || null;
     const healthParts = health.live ? [health.status, health.practice, health.bodyPart, health.notes].filter(Boolean) : [`Live status unavailable · bootstrap ${health.status}`];
     const games = [...result.gameLog].reverse().slice(0, 10);
     const directionClass = outlook.direction === "UP" ? "good" : outlook.direction === "DOWN" ? "warn" : "";
-    $("#intelligence-source").textContent = `${result.source.name} · ${(result.source.bytes / 1024 / 1024).toFixed(2)} MB · ${result.source.rowCount.toLocaleString()} rows`;
+    $("#intelligence-source").textContent = rookieProfile
+      ? `${rookieProfile.draftLabel} · ${rookieProfile.college || "rookie cohort"}`
+      : `${result.source.name} · ${(result.source.bytes / 1024 / 1024).toFixed(2)} MB · ${result.source.rowCount.toLocaleString()} rows`;
     $("#player-intelligence").className = "result-space";
     $("#player-intelligence").innerHTML = `
       <div class="intelligence-grid">
         <section class="outlook-card"><p class="control-title">ORACLE OUTLOOK</p><h3 class="${directionClass}">${esc(outlook.headline)}</h3>${outlook.bullets.map((item) => `<p>${esc(item)}</p>`).join("")}<small>${esc(outlook.provenance)}</small></section>
-        <section><p class="control-title">ROLLING FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 PPR</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>LAST 3 OPPS</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div>${Number.isFinite(xfp.last3?.xfp) ? `<div class="metric"><span>LAST 3 xFP</span><strong>${num(xfp.last3.xfp)}</strong></div>` : ""}${Number.isFinite(xfp.last5?.fpoe) ? `<div class="metric"><span>LAST 5 FPOE</span><strong>${xfp.last5.fpoe >= 0 ? "+" : ""}${num(xfp.last5.fpoe)}</strong></div>` : ""}<div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}${matchupPrior ? `<div class="metric"><span>PRIOR MATCHUP</span><strong>${matchupPrior.value >= 0 ? "+" : ""}${num(matchupPrior.value, 2)}</strong></div>` : ""}<div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}.${preseason ? ` Preseason: ${preseason.games} game(s), ${num(preseason.opportunitiesPerGame)} weighted opportunities/game.` : ""}</p></section>
+        ${rookieProfile ? `<section><p class="control-title">CURRENT ROOKIE ROLE</p><div class="metric-grid compact-metrics"><div class="metric"><span>MODEL MEAN</span><strong>${num(forecast.distribution.mean)}</strong></div><div class="metric"><span>P90 CEILING</span><strong>${num(forecast.distribution.p90)}</strong></div><div class="metric"><span>ACTIVE PROB.</span><strong>${pct(forecast.availability.probability)}</strong></div><div class="metric"><span>ROLE UNCERTAINTY</span><strong>${pct(forecast.uncertainty.role)}</strong></div>${preseason ? `<div class="metric"><span>PRESEASON OPPS</span><strong>${num(preseason.opportunitiesPerGame)}</strong></div>` : ""}${matchupPrior ? `<div class="metric"><span>PRIOR MATCHUP</span><strong>${matchupPrior.value >= 0 ? "+" : ""}${num(matchupPrior.value, 2)}</strong></div>` : ""}</div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}. Live depth/preseason evidence narrows uncertainty; absent NFL history is not treated as zero production.</p></section>` : `<section><p class="control-title">ROLLING FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 PPR</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>LAST 3 OPPS</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div>${Number.isFinite(xfp.last3?.xfp) ? `<div class="metric"><span>LAST 3 xFP</span><strong>${num(xfp.last3.xfp)}</strong></div>` : ""}${Number.isFinite(xfp.last5?.fpoe) ? `<div class="metric"><span>LAST 5 FPOE</span><strong>${xfp.last5.fpoe >= 0 ? "+" : ""}${num(xfp.last5.fpoe)}</strong></div>` : ""}<div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}${matchupPrior ? `<div class="metric"><span>PRIOR MATCHUP</span><strong>${matchupPrior.value >= 0 ? "+" : ""}${num(matchupPrior.value, 2)}</strong></div>` : ""}<div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "ACTIVE / no structured limitation reported")}.${preseason ? ` Preseason: ${preseason.games} game(s), ${num(preseason.opportunitiesPerGame)} weighted opportunities/game.` : ""}</p></section>`}
       </div>
-      <div class="table-header"><h3>${esc(player.name)} · ${result.season} actual game log</h3><span>${summary.games} regular-season games</span></div>
-      <div class="table-wrap"><table><thead><tr><th>Wk</th><th>Opp</th><th>PPR</th><th>Opps</th><th>Tgt</th><th>Car</th><th>Rec</th><th>Scrim Yd</th><th>Pass Yd</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div>`;
+      ${rookieProfileMarkup(player)}
+      ${rookieProfile ? `<div class="rookie-history-note"><strong>No prior NFL regular-season history.</strong><span>Oracle uses cohort priors, 2026 draft capital, age/combine context, live depth chart, preseason usage, and market projection while carrying extra uncertainty.</span></div>` : `<div class="table-header"><h3>${esc(player.name)} · ${result.season} actual game log</h3><span>${summary.games} regular-season games</span></div><div class="table-wrap"><table><thead><tr><th>Wk</th><th>Opp</th><th>PPR</th><th>Opps</th><th>Tgt</th><th>Car</th><th>Rec</th><th>Scrim Yd</th><th>Pass Yd</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div>`}`;
   }
 
   function renderNewsPulse(player = playerById($("#player-select")?.value)) {
@@ -362,7 +407,10 @@
     button.disabled = true;
     $("#live-intelligence-status").textContent = "Syncing preseason + news…";
     try {
-      if (!state.sleeperLoaded) { try { await syncSleeper(); } catch (_) { /* news/preseason still work */ } }
+      const selected = playerById($("#player-select")?.value);
+      if (selected && !state.sleeperLoaded && !state.sleeperPositions.has(selected.position)) {
+        try { await syncSleeperPosition(selected.position); } catch (_) { /* news/preseason still work */ }
+      }
       const playerRefs = state.players.map((player) => ({ id: String(player.id), name: player.name, team: player.team }));
       const [preseason, news] = await Promise.all([
         runWorker("preseason-sync", { options: { season: Number(state.dataset?.meta?.season || 2026), maxWeek: 5, maxGames: 20 } }),
@@ -400,14 +448,16 @@
         try { await syncSleeperPosition(player.position); } catch (_) { /* history remains usable if live status is unavailable */ }
       }
       player = playerById(selectedId) || player;
-      const result = await runWorker("player-history", { player, season, targetSeason: Number(state.dataset?.meta?.season || 2026) });
+      const result = player.rookie
+        ? rookieHistoryResult(player, season)
+        : await runWorker("player-history", { player, season, targetSeason: Number(state.dataset?.meta?.season || 2026) });
       state.defenseProfiles = result.defenseProfiles || state.defenseProfiles;
       state.intelligenceHistory.set(historyKey(player, season), result);
       const week = Number($("#player-week").value || 1);
       await ensureMarketWeek(week);
       const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
       renderPlayerIntelligence(player, result, forecast);
-      status("Player intelligence loaded. Recent history is now available as bounded model evidence.", "good");
+      status(player.rookie ? "Rookie intelligence loaded. Cohort, draft, live role, preseason, and uncertainty priors are active." : "Player intelligence loaded. Recent history is now available as bounded model evidence.", "good");
     } catch (error) {
       $("#intelligence-source").textContent = "History load failed";
       status(error.message, "error");
@@ -467,7 +517,7 @@
       const market = draftSim.boardRank(row, settings, state.draftBoard);
       const canRecord = mode === "live" || summary.isUserPick;
       const disagreement = Number.isFinite(row.pprRank) ? market - row.pprRank : 0;
-      return `<tr><td class="player-cell"><strong>${esc(row.name)}</strong><span>${esc(row.team)} · ${disagreement >= 0 ? "+" : ""}${num(disagreement, 0)} rank edge</span></td><td><span class="pos-pill">${esc(row.position)}</span></td><td>${num(market, 1)}</td><td>${esc(row.decision)}</td><td>${row.vona >= 0 ? "+" : ""}${num(row.vona)}</td><td>${pct(row.returnChance)}</td><td>${num(row.urgency, 0)}</td><td><button class="mini-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record" : "Draft"}</button></td></tr>`;
+      return `<tr><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><span>${esc(row.team)} · ${disagreement >= 0 ? "+" : ""}${num(disagreement, 0)} rank edge${row.rookieTailScore ? ` · rookie +${num(row.rookieTailScore, 1)}` : ""}</span></td><td><span class="pos-pill">${esc(row.position)}</span></td><td>${num(market, 1)}</td><td>${esc(row.decision)}</td><td>${row.vona >= 0 ? "+" : ""}${num(row.vona)}</td><td>${pct(row.returnChance)}</td><td>${num(row.urgency, 0)}</td><td><button class="mini-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record" : "Draft"}</button></td></tr>`;
     }).join("");
     $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => {
       state.draftState = core.applyDraftPick(state.draftState, button.dataset.draftPlayer, settings);
@@ -478,7 +528,7 @@
   function renderDraftPanels(settings) {
     const roster = draftUserRoster(settings);
     $("#draft-roster").className = "module result-space";
-    $("#draft-roster").innerHTML = `<div class="table-header"><h3>Your roster</h3><span>${roster.length}/${settings.rounds}</span></div><div class="roster-strip">${roster.map((player) => `<div class="roster-chip"><span>${esc(player.position)}</span>${esc(player.name)}</div>`).join("") || "<span class='fineprint'>No picks yet.</span>"}</div>`;
+    $("#draft-roster").innerHTML = `<div class="table-header"><h3>Your roster</h3><span>${roster.length}/${settings.rounds}</span></div><div class="roster-strip">${roster.map((player) => `<div class="roster-chip"><span>${esc(player.position)}</span>${esc(player.name)}${player.rookie ? '<b class="rookie-chip">R</b>' : ''}</div>`).join("") || "<span class='fineprint'>No picks yet.</span>"}</div>`;
     const recent = [...(state.draftState?.picks || [])].slice(-18).reverse();
     $("#draft-history").className = "module result-space";
     $("#draft-history").innerHTML = `<div class="table-header"><h3>Recent picks</h3><span>${state.draftState?.picks?.length || 0} total</span></div><div class="pick-history">${recent.map((pick) => { const player = playerById(pick.playerId); return `<div class="lineup-row"><span>${pick.pick}</span><strong>T${pick.teamId} · ${player ? esc(player.name) : esc(pick.playerId)}</strong><b>${player ? esc(player.position) : ""}</b></div>`; }).join("") || "<p class='fineprint'>No picks yet.</p>"}</div>`;
@@ -493,7 +543,7 @@
     $("#draft-manual-player").innerHTML = available.slice(0, 260).map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)} · market ${num(draftSim.boardRank(player, settings, state.draftBoard), 1)}</option>`).join("");
     $("#draft-next").textContent = summary.remaining > 0 ? `P${summary.pickNumber} / T${summary.teamId}` : "COMPLETE";
     $("#draft-meta").textContent = `${state.draftState.picks.length} picks · ${summary.isUserPick ? "YOUR PICK" : `team ${summary.teamId}`}`;
-    const initial = core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 18);
+    const initial = draftSim.adjustRecommendations(core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36), 18);
     renderDraftTable(initial, summary, settings);
     renderDraftPanels(settings);
     const token = ++state.draftRenderToken;
@@ -501,7 +551,7 @@
       try {
         const simulation = await runWorker("draft-room-window", { options: { players: state.players, state: state.draftState, settings, targetTeamId: settings.draftPosition, strategy: $("#draft-opponent-strategy").value || "mixed", board: draftBoardPayload(), simulations: 500, seed: `draft-window-${state.draftState.picks.length}` } });
         if (token !== state.draftRenderToken) return;
-        const refined = core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 18, simulation);
+        const refined = draftSim.adjustRecommendations(core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36, simulation), 18);
         renderDraftTable(refined, summary, settings);
       } catch (_) { /* analytical fallback is already rendered */ }
     }
@@ -572,7 +622,7 @@
 
   function renderRoster() {
     const roster = rosterPlayers();
-    $("#roster-strip").innerHTML = roster.length ? roster.map((player) => `<div class="roster-chip"><span>${esc(player.position)}</span>${esc(player.name)}<button type="button" aria-label="Remove ${esc(player.name)}" data-remove-roster="${esc(player.id)}">Ãƒ—</button></div>`).join("") : `<span class="fineprint">Roster is empty.</span>`;
+    $("#roster-strip").innerHTML = roster.length ? roster.map((player) => `<div class="roster-chip"><span>${esc(player.position)}</span>${esc(player.name)}<button type="button" aria-label="Remove ${esc(player.name)}" data-remove-roster="${esc(player.id)}">×</button></div>`).join("") : `<span class="fineprint">Roster is empty.</span>`;
     $$('[data-remove-roster]').forEach((button) => button.addEventListener("click", async () => {
       state.rosterIds = state.rosterIds.filter((id) => String(id) !== String(button.dataset.removeRoster));
       await persistRoster();
@@ -773,6 +823,7 @@
     const selectedPlayerId = $("#player-select").value;
     const sleeperPlayers = await sources.loadSleeperPlayers(position);
     state.players = sources.enrichLocalPlayers(state.players, sleeperPlayers);
+    reindexPlayers();
     state.sleeperPositions.add(String(position).toUpperCase());
     fillPlayerSelects();
     if (selectedPlayerId && playerById(selectedPlayerId)) $("#player-select").value = selectedPlayerId;
@@ -786,6 +837,7 @@
       const sleeperPlayers = await sources.loadSleeperPlayers();
       const selectedPlayerId = $("#player-select").value;
       state.players = sources.enrichLocalPlayers(state.players, sleeperPlayers);
+      reindexPlayers();
       state.sleeperLoaded = true;
       fillPlayerSelects();
       if (selectedPlayerId && playerById(selectedPlayerId)) $("#player-select").value = selectedPlayerId;
@@ -855,7 +907,7 @@
       const evidenceByPlayer = Object.fromEntries(leaguePlayers.map((player) => [String(player.id), staticDecisionEvidence(player)]));
       const evidenceByPlayerWeek = {};
       for (let week = 1; week <= championshipWeek; week += 1) {
-        const rows = leaguePlayers.map((player) => [String(player.id), context.mergeEvidence(priorDefenseEvidence(player, week), marketEvidenceFor(player, week))]).filter(([, evidence]) => Object.keys(evidence).length);
+        const rows = leaguePlayers.map((player) => [String(player.id), context.mergeEvidence(priorDefenseEvidence(player, week), marketEvidenceFor(player, week), rookieEvidenceFor(player, week))]).filter(([, evidence]) => Object.keys(evidence).length);
         if (rows.length) evidenceByPlayerWeek[week] = Object.fromEntries(rows);
       }
       $("#league-source-status").textContent = `Running ${scenarios.toLocaleString()} live + history-aware league seasons with matchup priors in the worker…`;
@@ -972,19 +1024,23 @@
     $("#engine-version").textContent = engine.VERSION.replace("oracle-browser-", "v");
     $("#worker-status").textContent = "Web Worker online";
     try {
-      const [response, coachResponse, healthResponse] = await Promise.all([
+      const [response, coachResponse, healthResponse, rookieResponse] = await Promise.all([
         fetch("./data/players-lite.json"),
         fetch("./data/coaches-2026.json"),
         fetch("./data/health-calibration-2026.json"),
+        fetch("./data/rookies-2026.json"),
       ]);
-      if (!response.ok || !coachResponse.ok || !healthResponse.ok) throw new Error("one or more bootstrap model artifacts failed to load");
+      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok) throw new Error("one or more bootstrap model artifacts failed to load");
       state.dataset = await response.json();
       state.coaches = await coachResponse.json();
       state.healthCalibration = await healthResponse.json();
-      state.players = state.dataset.players || [];
+      state.rookieArtifact = await rookieResponse.json();
+      state.rookieIndex = rookieModel.indexArtifact(state.rookieArtifact);
+      state.players = rookieModel.enrichPlayers(state.dataset.players || [], state.rookieIndex);
+      reindexPlayers();
       state.schedule = state.dataset.schedule || {};
       $("#player-count").textContent = state.players.length.toLocaleString();
-      $("#bootstrap-status").textContent = `${state.dataset.meta?.season || 2026} compact snapshot`;
+      $("#bootstrap-status").textContent = `${state.dataset.meta?.season || 2026} compact + ${state.rookieArtifact?.players?.length || 0} rookie priors`;
       fillPlayerSelects();
 
       const [savedLedger, savedRoster, savedWeights, savedBoard] = await Promise.all([
