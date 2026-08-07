@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createContextApi() {
   "use strict";
 
-  const VERSION = "oracle-context-browser-2026.1";
+  const VERSION = "oracle-context-browser-2026.2";
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -61,6 +61,35 @@
         samples,
       },
     };
+  }
+
+  function absenceRedistributionEvidence(player, players) {
+    const team = String(player?.team || "").toUpperCase();
+    const position = String(player?.position || "").toUpperCase();
+    if (!team || !["QB", "RB", "WR", "TE"].includes(position)) return {};
+    const teammates = (players || []).filter((row) => String(row?.team || "").toUpperCase() === team && String(row?.id) !== String(player?.id) && ["QB", "RB", "WR", "TE"].includes(String(row?.position || "").toUpperCase()));
+    const unavailable = (row) => {
+      const status = statusKey(row?.injuryStatus);
+      return row?.active === false || ["out", "ir", "pup", "suspended"].includes(status);
+    };
+    const absent = teammates.filter(unavailable);
+    if (!absent.length) return {};
+    const active = [player, ...teammates.filter((row) => !unavailable(row))];
+    const target = (row) => Math.max(0, finite(row?.opportunity?.targetShare));
+    const carry = (row) => Math.max(0, finite(row?.opportunity?.carryShare));
+    const vacatedTarget = absent.reduce((sum, row) => sum + target(row), 0);
+    const vacatedCarry = absent.reduce((sum, row) => sum + carry(row), 0);
+    const remainingTarget = active.reduce((sum, row) => sum + target(row), 0);
+    const remainingCarry = active.reduce((sum, row) => sum + carry(row), 0);
+    const baseTarget = target(player), baseCarry = carry(player);
+    const targetGain = remainingTarget > 0 ? vacatedTarget * baseTarget / remainingTarget : 0;
+    const carryGain = remainingCarry > 0 ? vacatedCarry * baseCarry / remainingCarry : 0;
+    const targetRelative = targetGain / Math.max(0.06, baseTarget);
+    const carryRelative = carryGain / Math.max(0.08, baseCarry);
+    let raw = position === "RB" ? targetRelative * 0.45 + carryRelative * 0.55 : position === "QB" ? carryRelative * 0.3 : targetRelative;
+    raw = clamp(raw * 0.55, 0, 0.22);
+    if (raw < 0.015) return {};
+    return { "role.redistribution_delta": { available: true, value: raw, confidence: 0.42, conflict: 0.14, source: "structured teammate absence redistribution", absent: absent.map((row) => row.name).slice(0, 4) } };
   }
 
   function coachingEvidence(player, profile) {
@@ -152,6 +181,7 @@
 
   return {
     VERSION,
+    absenceRedistributionEvidence,
     buildTeamContext,
     coachingEvidence,
     healthEvidence,

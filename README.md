@@ -26,15 +26,19 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 - Bounded health, coaching, role, weather, matchup, line, news, and market evidence families.
 - Correlated game/team/player Monte Carlo with deterministic paired scenarios.
 - Exact lineup assignment across normal, FLEX, and SUPERFLEX slots.
-- Draft VONA, replacement value, return probability, run pressure, and opponent-aware picks.
-- Waiver add/drop search with bounded FAAB ranges.
+- Interactive draft simulator + live draft helper: the user controls one team while CPU opponents use configurable market/value/need/positional strategies.
+- Draft VONA, replacement value, strategy-aware return probability, run pressure, market disagreement, custom external ranking-board import, and paired Oracle-vs-market strategy benchmarks.
+- Waiver add/drop search with ESPN-style waiver-priority/free-agency recommendations by default and bounded FAAB ranges only when FAAB mode is selected.
 - Bilateral trade package search through 2-for-2 combinations.
 - Full fantasy-league regular season, seeds, playoff byes, brackets, and title probability.
 - Robust action ranking with CVaR, expected regret, probability-best, Pareto frontiers, and reversal thresholds.
 - Temporal evidence ledger with effective/expiry timestamps, freshness decay, conflict resolution, as-of replay, and a SHA-256 chain.
 - Historical nflverse health calibration and 32-team coaching priors.
 - On-demand actual 2023-2025 nflverse weekly game logs with rolling PPR, opportunity, target-share, derived team carry-share, volatility, trend, and position-specific defense-allowed priors.
-- Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs.
+- On-demand ffopportunity expected-fantasy-points (xFP) and FPOE evidence, confidence-decayed across the offseason.
+- Optional live 2026 preseason boxscore usage, ESPN headline metadata, Sleeper add/drop momentum, and current game scoring-environment priors; all enter forecasts through bounded evidence families.
+- Conservative teammate-absence redistribution estimates vacated target/carry opportunity without treating it as guaranteed usage.
+- Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs or article bodies.
 - Shared history-aware decision evidence now feeds lineup optimization, waiver add/drop search, bilateral trades, and league/title simulation.
 - Decision workflows automatically attempt position-filtered Sleeper health/status refreshes; active reports clear stale bootstrap injury labels and any network failure is surfaced as a live-status fallback.
 - Lightweight matchup context derived from the free bootstrap universe and clearly marked as a proxy.
@@ -68,11 +72,12 @@ Heavy scenario work is moved off the UI thread. Player samples use `Float32Array
 
 The bootstrap is intentionally explicit about provenance instead of pretending every field comes from one feed:
 
-- `data/players-lite.json`: compacted from the prior Oracle's 2026 public ESPN fantasy player/schedule snapshot, merged with nflverse-derived opportunity profiles. ESPN is **not** a live runtime adapter in this repo.
+- `data/players-lite.json`: compacted from the prior Oracle's 2026 public ESPN fantasy player/schedule snapshot, merged with nflverse-derived opportunity profiles. It remains the offline baseline even when live adapters are unavailable.
 - `data/health-calibration-2026.json`: historical nflverse official injury/practice reports joined to nflverse weekly player outcomes with leakage controls recorded in the artifact metadata.
 - `data/history/stats_player_week_2023.csv.gz` through `2025.csv.gz`: compressed nflverse weekly player statistics, loaded on demand and never included in initial-page precache.
 - `data/coaches-2026.json`: 32-team Bayesian-shrunk Oracle coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
-- Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, and NOAA/NWS.
+- `data/intelligence/xfp_weekly_2025.csv.gz`: 153 KB compact ffopportunity expected-fantasy-points artifact (CC BY-SA 4.0), loaded only with player/decision intelligence.
+- Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, ESPN public keyless NFL web JSON, and NOAA/NWS. ESPN terms apply to ESPN-sourced metadata.
 
 The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists.
 
@@ -87,14 +92,14 @@ npm.cmd run serve
 
 Open `http://127.0.0.1:4173/` (or set `PORT` if that port is occupied).
 
-For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, player intelligence, history-aware lineup/waiver/trade decisions, league simulation, desktop/mobile overflow, and browser console errors.
+For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, xFP/history intelligence, preseason/news sync, realistic draft-room simulation + strategy benchmark, ESPN-style waivers, lineup/trades/league simulation, draft/overview desktop-mobile layouts, and browser console errors.
 
 ## GitHub Pages
 
 This repository is designed for branch-based Pages publishing from the repository root. Updating the site is intentionally manual: edit locally, run `npm.cmd run verify`, commit, and push. No project-owned Actions workflow is required.
 ## Deliberate limits
 
-This project does not fabricate precision when free evidence is unavailable. Route participation/TPRR, detailed red-zone role, offensive-line grades, true tracking data, and betting-market residuals are treated as optional future evidence families unless a defensible free/keyless source is available.
+This project does not fabricate precision when free evidence is unavailable. Route participation/TPRR, detailed red-zone role, offensive-line grades, true tracking data, premium prop feeds, and private-platform activity are treated as optional future evidence families unless a defensible free/keyless source is available. Public game totals/spreads are used only as a low-confidence fantasy scoring-environment prior, not as betting advice.
 
 The browser simulator is a lightweight statistical approximation, not a literal NFL play-by-play physics engine. Its value comes from calibrated distributions, correlated scenarios, exact fantasy decision logic, paired comparisons, and transparent uncertainty. New model complexity should be accepted only when it improves rolling historical validation.
 

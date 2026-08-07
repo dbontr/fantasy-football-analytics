@@ -33,3 +33,19 @@ Measured against the real 2025 nflverse weekly player release on Jupiter. The co
 Measured on the bundled 2025 nflverse weekly archive (19,399 rows) after adding team-relative carry share and position-specific defense-allowed profiles. Across seven warm Node runs on Jupiter, median CSV parse time was 83.7 ms and median index/aggregation time was 23.0 ms, for 106.7 ms combined. The worker builds this index once per loaded season and reuses it for subsequent player, lineup, waiver, trade, and league decisions.
 
 The defense index contains 32 defenses x 4 offensive positions (128 profiles). Each profile is shrunk toward the league position average with a four-game prior and capped at low prior-season confidence before entering forecasts.
+## Accuracy + draft intelligence benchmark
+
+Measured 2026-08-07 on Saturn (Windows x64, Node.js 24) using the production 700-player bootstrap, 12 teams, 16 rounds, PPR, draft slot 6. The draft workloads execute in the Web Worker in production.
+
+| New workload | Median / measured time |
+|---|---:|
+| Draft room context construction, 700 players | 8.4 ms |
+| Strategy-aware return window, 500 room simulations | 168.1 ms |
+| Paired Oracle-vs-market benchmark, 100 rooms | 1.73 s |
+| xFP gzip decode, 153,474-byte artifact | 2.5 ms |
+| xFP parse, 5,598 weekly rows | 11.4 ms |
+| xFP player index | 3.7 ms |
+
+The benchmark path was explicitly optimized before UI integration. An early prototype recomputed normalization/replacement levels on every CPU pick and took about 8.2 seconds for only twelve small paired rooms. Precomputing one immutable room context reduced the equivalent unit workload to about 141 ms, while the production-size 100-room benchmark remains around 1.7 seconds off the UI thread.
+
+The currently displayed Oracle-vs-market edge is a model-internal strategy diagnostic. It should not be interpreted as validated real-world superiority until the rolling as-of historical draft/backtest harness is complete.

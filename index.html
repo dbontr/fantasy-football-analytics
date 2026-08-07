@@ -44,7 +44,7 @@
           </div>
         </div>
         <div class="field-card" aria-label="Architecture overview">
-          <div class="field-line"><span>01</span><b>PUBLIC DATA</b><em>Sleeper / nflverse / NWS</em></div>
+          <div class="field-line"><span>01</span><b>PUBLIC DATA</b><em>Sleeper / nflverse / ESPN / NWS</em></div>
           <div class="field-line"><span>02</span><b>LOCAL EVIDENCE</b><em>temporal + conflict aware</em></div>
           <div class="field-line"><span>03</span><b>DISTRIBUTIONS</b><em>availability + uncertainty</em></div>
           <div class="field-line"><span>04</span><b>SCENARIOS</b><em>correlated Web Worker MC</em></div>
@@ -96,21 +96,47 @@
       </div>
       <article class="module intelligence-module">
         <div class="table-header"><div><p class="eyebrow">PLAYER INTELLIGENCE</p><h2>Game log + evidence-backed outlook</h2></div><span id="intelligence-source">On-demand · nflverse + Sleeper</span></div>
-        <div class="toolbar intelligence-toolbar"><label>History season<select id="history-season"><option selected>2025</option><option>2024</option><option>2023</option></select></label><button id="load-intelligence" class="secondary">Load game history + status</button></div>
+        <div class="toolbar intelligence-toolbar"><label>History season<select id="history-season"><option selected>2025</option><option>2024</option><option>2023</option></select></label><button id="load-intelligence" class="secondary">Load game history + status</button><button id="sync-live-intelligence" class="secondary">Sync preseason + news</button><span id="live-intelligence-status" class="toolbar-note">Optional · keyless</span></div>
+        <div id="news-pulse" class="news-pulse"></div>
         <div id="player-intelligence" class="result-space empty-state"><p>Load a player’s actual weekly stats, rolling usage, current health evidence, and locally generated outlook.</p></div>
       </article>
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
-      <div class="section-heading"><div><p class="eyebrow">DRAFT ROOM</p><h1>Value now versus value later.</h1></div><p>Opponent-aware recommendations expose replacement value, estimated return probability, run pressure, and VONA instead of a single rank.</p></div>
-      <div class="toolbar module">
+      <div class="section-heading"><div><p class="eyebrow">DRAFT ROOM + LIVE HELPER</p><h1>Draft against a realistic room, not clones of Oracle.</h1></div><p>You control your team. Opponents follow configurable market/roster strategies while Oracle exposes VONA, return probability, disagreement, run pressure, and roster construction.</p></div>
+      <div class="toolbar module draft-toolbar">
+        <label>Mode<select id="draft-mode"><option value="sim" selected>Draft simulator</option><option value="live">Live draft helper</option></select></label>
         <label>Teams<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
         <label>Your slot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
-        <button id="draft-reset" class="secondary">Reset draft</button>
-        <button id="draft-advance" class="primary">Advance to my pick</button>
+        <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
+        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>PPR / ESPN</option><option value="standard">Standard</option><option value="superflex">Superflex</option></select></label>
+        <label>Opponent room<select id="draft-opponent-strategy"></select></label>
+        <button id="draft-reset" class="secondary">Reset</button>
+        <button id="draft-advance" class="primary">Sim to my pick</button>
+        <button id="draft-undo" class="ghost">Undo</button>
         <div class="toolbar-stat"><span>NEXT</span><strong id="draft-next">—</strong></div>
       </div>
-      <div class="module table-module"><div class="table-header"><h2>Decision board</h2><span id="draft-meta"></span></div><div class="table-wrap"><table><thead><tr><th>Player</th><th>Pos</th><th>Decision</th><th>VONA</th><th>Return</th><th>Urgency</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div></div>
+      <div class="draft-layout">
+        <article class="module draft-side">
+          <div class="table-header"><div><p class="eyebrow">ROOM CONTROL</p><h2>Record picks + market board</h2></div><span id="draft-meta"></span></div>
+          <label>Available player<select id="draft-manual-player"></select></label>
+          <button id="draft-record-pick" class="secondary">Record next pick</button>
+          <p class="fineprint">In Live Helper mode, use this after any real-world pick. Oracle updates recommendations from the exact board state.</p>
+          <hr>
+          <label>Custom ranking board<textarea id="draft-custom-board" rows="7" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
+          <div class="action-row"><button id="draft-import-board" class="secondary">Use custom rankings</button><button id="draft-clear-board" class="ghost">Use ESPN market</button></div>
+          <p id="draft-board-status" class="fineprint">Built-in market order uses the committed ESPN-derived ADP/rank baseline. Paste Yahoo/NFL/other rankings to simulate that room instead.</p>
+        </article>
+        <article class="module draft-side">
+          <div class="table-header"><div><p class="eyebrow">STRATEGY LAB</p><h2>Does Oracle actually draft better?</h2></div><span>paired rooms</span></div>
+          <label>Benchmark rooms<select id="draft-benchmark-count"><option>40</option><option selected>100</option><option>200</option></select></label>
+          <label>Baseline<select id="draft-baseline-strategy"><option value="espn-market" selected>ESPN market / ADP</option><option value="balanced">Balanced market</option><option value="need-heavy">Need-heavy</option><option value="zero-rb">Zero-RB</option></select></label>
+          <button id="draft-benchmark" class="primary">Benchmark Oracle strategy</button>
+          <div id="draft-benchmark-result" class="result-space empty-state"><p>Run paired draft rooms to compare roster outcomes under the same opponent randomness.</p></div>
+        </article>
+      </div>
+      <div class="module table-module"><div class="table-header"><h2>Oracle decision board</h2><span>live recommendations</span></div><div class="table-wrap"><table><thead><tr><th>Player</th><th>Pos</th><th>Market</th><th>Decision</th><th>VONA</th><th>Return</th><th>Urgency</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div></div>
+      <div class="draft-layout"><div id="draft-roster" class="module result-space empty-state"><p>Your drafted roster will appear here.</p></div><div id="draft-history" class="module result-space empty-state"><p>Pick history will appear here.</p></div></div>
     </section>
 
     <section class="panel" data-panel="lineup" id="lineup">
@@ -121,8 +147,8 @@
     </section>
 
     <section class="panel" data-panel="waivers" id="waivers">
-      <div class="section-heading"><div><p class="eyebrow">WAIVER WIRE</p><h1>Marginal roster value, priced.</h1></div><p>Search legal add/drop pairs against the current roster, then translate lineup gain, depth, scarcity, and remaining budget into a bounded FAAB range.</p></div>
-      <div class="toolbar module"><label>FAAB remaining<input id="faab-budget" type="number" min="0" max="1000" value="100"></label><label>Week<select id="waiver-week"></select></label><button id="run-waivers" class="primary">Search waivers</button></div>
+      <div class="section-heading"><div><p class="eyebrow">WAIVER WIRE</p><h1>Marginal roster value, with the right claim mechanism.</h1></div><p>ESPN-style waiver priority/free agency is the default. FAAB pricing appears only when your league actually uses a budget.</p></div>
+      <div class="toolbar module"><label>Waiver system<select id="waiver-mode"><option value="priority" selected>Waiver priority / free agency</option><option value="faab">FAAB budget</option></select></label><label id="faab-budget-label" class="hidden">FAAB remaining<input id="faab-budget" type="number" min="0" max="1000" value="100"></label><label>Week<select id="waiver-week"></select></label><button id="run-waivers" class="primary">Search waivers</button></div>
       <div id="waiver-result" class="result-space empty-state"><p>Waiver analysis uses the roster from the Lineup tab.</p></div>
     </section>
 
@@ -170,6 +196,8 @@
   <script src="./src/engine/evidence.js"></script>
   <script src="./src/engine/context.js"></script>
   <script src="./src/engine/intelligence.js"></script>
+  <script src="./src/engine/live-intelligence.js"></script>
+  <script src="./src/engine/draft-sim.js"></script>
   <script src="./src/data/sources.js"></script>
   <script src="./src/storage/browser-store.js"></script>
   <script src="./src/app.js"></script>

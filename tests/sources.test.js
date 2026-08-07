@@ -46,3 +46,10 @@ test("Sleeper reserve status canonicalizes to model availability vocabulary", ()
   assert.equal(player.injuryStatus, "IR");
   assert.equal(player.active, false);
 });
+
+
+test("ESPN public web JSON is allowlisted without credential paths", () => {
+  const result = sources.assertFreeUrl("espn", "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=20");
+  assert.equal(result.source.id, "espn");
+  assert.throws(() => sources.assertFreeUrl("espn", "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news"));
+});

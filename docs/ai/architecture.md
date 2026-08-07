@@ -92,3 +92,25 @@ The history index aggregates each defense's weekly fantasy points allowed to QB/
 ### Offseason role decay
 
 Recent target/carry shares are treated as stronger evidence when history and target season match. When the latest game logs are from the prior season, their confidence is multiplied by 0.65 before entering the opportunity family. Older history decays further. The observed workload value is preserved; only confidence changes. This prevents December usage from being treated as equally fresh after an offseason with coaching, personnel, injury, and depth-chart changes.
+## Accuracy intelligence release (2026-08-07)
+
+### Expected fantasy opportunity
+
+The worker loads a 153 KB same-origin gzip derived from ffverse/ffopportunity only when historical intelligence is needed. It carries weekly expected fantasy points (xFP), component rushing/receiving/passing xFP, actual fantasy points, and FPOE for QB/RB/WR/TE. One-season-old xFP/FPOE is confidence-decayed before entering the existing opportunity/efficiency family caps; the observed value is not altered.
+
+### Preseason + change intelligence
+
+ESPN public keyless NFL web JSON is an optional runtime adapter for preseason boxscores and headline metadata. Preseason evidence is positive-only, aggressively downweighted for established high-ranked players, and capped below normal in-season role evidence. The application stores headline/link/time/player/team metadata only and does not ingest article bodies. Sleeper 24-hour add/drop momentum is a low-confidence change signal, not a projection on its own.
+### Absence redistribution
+
+Structured teammate OUT/IR/PUP/suspension states expose vacated target/carry share. Remaining teammates receive a conservative proportional redistribution prior capped at 22% relative role growth with 0.42 confidence and explicit conflict. It is intentionally weaker than actual observed usage after the injury.
+
+### Live game environment
+
+For a requested regular-season week, the browser can load ESPN's public scoreboard once and cache it. Game total and team implied points become bounded market evidence with confidence below 0.5. Weekly Player Lab/lineup/waiver/trade decisions may use this live environment; league simulation uses cached week-specific values only and does not fire seventeen network requests.
+
+### Draft room architecture
+
+src/engine/draft-sim.js precomputes a room context (normalized players, replacement levels, market ranks and asset values) once. CPU opponents then sample deterministic seeded decisions from selectable market/value/need/positional profiles. A custom rank/name board can replace the committed ESPN-derived market ordering for Yahoo/NFL/other-room simulation without scraping. The live helper never fabricates real opponent picks: the user records them and Oracle recalculates from the exact board state. Return-probability simulation uses the same opponent strategy and custom market board as the room.
+
+The paired strategy benchmark reuses one room context and common seeds to compare Oracle's policy against an ordinary baseline over many rooms. Its output is a diagnostic in projected starter-season points, not a claim of realized wins.

@@ -117,3 +117,17 @@ test("prior-season role evidence is confidence-decayed across the offseason", ()
   assert.ok(nextSeason["role.carry_share"].confidence < sameSeason["role.carry_share"].confidence);
   assert.match(nextSeason["role.target_share"].source, /prior-season/);
 });
+
+
+test("expected fantasy opportunity creates bounded xFP and FPOE evidence", () => {
+  const headers = ["season","posteam","week","player_id","full_name","position","pass_attempt","rec_attempt","rush_attempt","rec_air_yards","pass_fantasy_points_exp","rec_fantasy_points_exp","rush_fantasy_points_exp","pass_fantasy_points","rec_fantasy_points","rush_fantasy_points","total_fantasy_points","total_fantasy_points_exp","total_fantasy_points_diff","rec_attempt_team","rush_attempt_team","rec_air_yards_team"];
+  const rows = [1,2,3,4,5].map((week) => [2025,"DET",week,"p1","Test Runner","RB",0,4,15,20,0,5,9,0,6,10,16,14,2,30,28,150].join(","));
+  const parsed = intel.parseXfpWeeklyCsv([headers.join(","), ...rows].join("\n"));
+  const index = intel.indexXfpRows(parsed);
+  const history = intel.findXfpRows(index, { name: "Test Runner", position: "RB", team: "DET" });
+  const summary = intel.summarizeXfp(history);
+  const evidence = intel.xfpEvidence(summary, { position: "RB" }, { confidenceMultiplier: 0.65 });
+  assert.equal(summary.last3.xfp, 14);
+  assert.ok(evidence["opportunity.xfp"].confidence <= 0.325);
+  assert.equal(evidence["efficiency.fpoe"].value, 2);
+});

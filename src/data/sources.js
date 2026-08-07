@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createSources() {
   "use strict";
 
-  const VERSION = "oracle-free-sources-browser-2026.1";
+  const VERSION = "oracle-free-sources-browser-2026.2";
   const SOURCES = Object.freeze({
     sleeper: Object.freeze({
       id: "sleeper",
@@ -24,6 +24,15 @@
       attribution: "nflverse",
       terms: "https://github.com/nflverse/nflverse-data",
       license: "CC-BY-4.0 unless an individual release states otherwise",
+    }),
+    espn: Object.freeze({
+      id: "espn",
+      origins: ["https://site.web.api.espn.com"],
+      prefixes: ["/apis/site/v2/sports/football/nfl/"],
+      maxBytes: 10 * 1024 * 1024,
+      attribution: "ESPN",
+      terms: "https://www.espn.com/",
+      license: "Public keyless web JSON; ESPN terms apply",
     }),
     nws: Object.freeze({
       id: "nws",
@@ -109,6 +118,13 @@
   async function loadSleeperPlayers(position = null) {
     const suffix = position ? `?position=${encodeURIComponent(String(position).toUpperCase())}` : "";
     return fetchJson("sleeper", `https://api.sleeper.app/v1/players/nfl${suffix}`, { timeoutMs: 30_000 });
+  }
+
+  async function loadSleeperTrending(type = "add", lookbackHours = 24, limit = 50) {
+    const selectedType = type === "drop" ? "drop" : "add";
+    const hours = Math.round(Math.max(1, Math.min(168, Number(lookbackHours || 24))));
+    const count = Math.round(Math.max(1, Math.min(100, Number(limit || 50))));
+    return fetchJson("sleeper", `https://api.sleeper.app/v1/players/nfl/trending/${selectedType}?lookback_hours=${hours}&limit=${count}`);
   }
 
   async function loadSleeperLeague(leagueId) {
@@ -215,6 +231,30 @@
     return { season: selected, name: csvName, text: new TextDecoder().decode(result.bytes), bytes: result.bytes.byteLength, compressed: false, url: result.url };
   }
 
+  async function bundledXfpWeeklyText(season) {
+    const selected = Math.round(Number(season || 2025));
+    const url = `./data/intelligence/xfp_weekly_${selected}.csv.gz`;
+    const response = await fetch(url, { method: "GET", cache: "default", credentials: "omit" });
+    if (!response.ok) throw new Error(`Bundled xFP is unavailable for ${selected}`);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength > 4 * 1024 * 1024) throw new RangeError("Bundled xFP exceeds size limit");
+    return { season: selected, name: url.split("/").pop(), text: await decodeGzip(bytes), bytes: bytes.byteLength, url: response.url || url };
+  }
+
+  async function espnNflScoreboard(season, seasonType = 1, week = 1) {
+    const year = Math.round(Number(season));
+    const type = Math.round(Number(seasonType));
+    const selectedWeek = Math.round(Number(week));
+    if (year < 2000 || year > 2100 || type < 1 || type > 3 || selectedWeek < 1 || selectedWeek > 25) throw new RangeError("Invalid ESPN scoreboard request");
+    return fetchJson("espn", `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=${type}&week=${selectedWeek}&year=${year}&limit=100`, { timeoutMs: 20_000 });
+  }
+
+  async function espnNflSummary(eventId) {
+    const id = encodeURIComponent(String(eventId || "").trim());
+    if (!/^\d+$/.test(id)) throw new TypeError("Invalid ESPN event id");
+    return fetchJson("espn", `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${id}`, { timeoutMs: 20_000 });
+  }
+
   function parseCsv(text) {
     const rows = [];
     let row = [];
@@ -242,6 +282,11 @@
     return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""])));
   }
 
+  async function espnNflNews(limit = 40) {
+    const count = Math.round(Math.max(1, Math.min(100, Number(limit || 40))));
+    return fetchJson("espn", `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=${count}`, { timeoutMs: 20_000 });
+  }
+
   async function nwsForecast(latitude, longitude, kickoff = null) {
     const lat = Number(latitude).toFixed(4);
     const lon = Number(longitude).toFixed(4);
@@ -261,12 +306,17 @@
     VERSION,
     SOURCES,
     assertFreeUrl,
+    bundledXfpWeeklyText,
     enrichLocalPlayers,
+    espnNflNews,
+    espnNflScoreboard,
+    espnNflSummary,
     fetchBounded,
     fetchJson,
     fetchText,
     loadSleeperLeague,
     loadSleeperPlayers,
+    loadSleeperTrending,
     nflverseAssetText,
     nflversePlayerWeeklyText,
     nflverseRelease,

@@ -8,7 +8,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.2";
+  const VERSION = "oracle-browser-2026.3";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -155,7 +155,7 @@
     return rows;
   }
 
-  const FAMILY_CAPS = Object.freeze({ market: 0.3, opportunity: 0.28, health: 0.45, environment: 0.12, matchup: 0.12, line: 0.1, news: 0.18, coaching: 0.06 });
+  const FAMILY_CAPS = Object.freeze({ market: 0.3, opportunity: 0.28, efficiency: 0.08, health: 0.45, environment: 0.12, matchup: 0.12, line: 0.1, news: 0.18, coaching: 0.06 });
   function evidenceDrivers(player, baseline, evidence = {}) {
     const rows = [];
     const add = (feature, family, label, rawImpact) => {
@@ -165,6 +165,8 @@
       rows.push({ feature, family, label, impact: rawImpact(resolved) * confidence, confidence, conflict: clamp(resolved.conflict, 0, 1) });
     };
     add("market.player_points", "market", "market projection", (r) => (finite(r.value) - baseline.mean) * 0.65);
+    add("market.game_total", "market", "live game total", (r) => (finite(r.value) - 44) * baseline.mean * (player.position === "DST" ? -0.006 : 0.005));
+    add("market.team_implied_points", "market", "team scoring environment", (r) => ["QB", "RB", "WR", "TE", "K"].includes(player.position) ? (finite(r.value) - 22.5) * baseline.mean * 0.012 : 0);
     add("role.target_share", "opportunity", "live target share", (r) => {
       const prior = player.position === "WR" ? 0.2 : player.position === "TE" ? 0.17 : 0.1;
       return (finite(r.value) - prior) * baseline.mean * 1.05;
@@ -174,8 +176,12 @@
       return (finite(r.value) - prior) * baseline.mean * 0.62;
     });
     add("role.snap_share", "opportunity", "snap share", (r) => (finite(r.value) - (player.position === "RB" ? 0.56 : 0.74)) * baseline.mean * 0.32);
+    add("opportunity.xfp", "opportunity", "expected fantasy opportunity", (r) => (finite(r.value) - baseline.mean) * 0.38);
+    add("efficiency.fpoe", "efficiency", "fantasy points over expectation", (r) => clamp(finite(r.value), -8, 8) * 0.14);
+    add("role.redistribution_delta", "opportunity", "teammate absence redistribution", (r) => clamp(finite(r.value), -0.2, 0.3) * baseline.mean);
     add("health.snap_retention", "health", "health snap retention", (r) => (finite(r.value) - 1) * baseline.mean * 0.85);
     add("news.role_delta", "news", "reported role change", (r) => finite(r.value) * baseline.mean * 0.18);
+    add("preseason.usage_boost", "news", "preseason usage signal", (r) => clamp(finite(r.value), 0, 0.25) * baseline.mean * 0.6);
     add("environment.wind_mph", "environment", "wind", (r) => {
       const excess = Math.max(0, finite(r.value) - 15);
       return excess * baseline.mean * (["QB", "WR", "TE", "K"].includes(player.position) ? -0.006 : 0.0015);

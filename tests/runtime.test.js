@@ -109,3 +109,29 @@ test("position-specific matchup prior moves forecasts in the expected direction"
   assert.ok(difficult.distribution.mean < neutral.distribution.mean);
   assert.ok(favorable.drivers.some((row) => row.feature === "matchup.position_grade"));
 });
+
+
+test("xFP, redistribution, and preseason evidence remain bounded forecast drivers", () => {
+  const base = engine.forecastPlayer(player, { week: 1 });
+  const enhanced = engine.forecastPlayer(player, { week: 1, evidence: {
+    "opportunity.xfp": { available: true, value: 22, confidence: 0.32 },
+    "efficiency.fpoe": { available: true, value: 4, confidence: 0.22 },
+    "role.redistribution_delta": { available: true, value: 0.2, confidence: 0.42 },
+    "preseason.usage_boost": { available: true, value: 0.2, confidence: 0.2 },
+  } });
+  assert.ok(enhanced.distribution.mean > base.distribution.mean);
+  assert.ok(enhanced.drivers.some((row) => row.feature === "opportunity.xfp"));
+  assert.ok(enhanced.drivers.some((row) => row.feature === "preseason.usage_boost"));
+  assert.ok(enhanced.distribution.mean < base.distribution.mean * 1.7);
+});
+
+test("live scoring environment nudges offensive projections without dominating them", () => {
+  const base = engine.forecastPlayer(player, { week: 1 });
+  const high = engine.forecastPlayer(player, { week: 1, evidence: {
+    "market.game_total": { available: true, value: 52, confidence: 0.42 },
+    "market.team_implied_points": { available: true, value: 29, confidence: 0.46 },
+  } });
+  assert.ok(high.distribution.mean > base.distribution.mean);
+  assert.ok(high.drivers.some((row) => row.feature === "market.team_implied_points"));
+  assert.ok(high.distribution.mean < base.distribution.mean * 1.25);
+});

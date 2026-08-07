@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPlayerIntelligence() {
   "use strict";
 
-  const VERSION = "oracle-player-intelligence-2026.3";
+  const VERSION = "oracle-player-intelligence-2026.4";
   const REQUIRED_FIELDS = [
     "player_id", "player_display_name", "position", "season", "week", "season_type", "game_id",
     "team", "opponent_team", "attempts", "passing_yards", "passing_tds", "passing_interceptions",
@@ -247,6 +247,68 @@
       },
     };
   }
+  const XFP_FIELDS = ["season", "posteam", "week", "player_id", "full_name", "position", "pass_attempt", "rec_attempt", "rush_attempt", "rec_air_yards", "pass_fantasy_points_exp", "rec_fantasy_points_exp", "rush_fantasy_points_exp", "pass_fantasy_points", "rec_fantasy_points", "rush_fantasy_points", "total_fantasy_points", "total_fantasy_points_exp", "total_fantasy_points_diff", "rec_attempt_team", "rush_attempt_team", "rec_air_yards_team"];
+
+  function parseXfpWeeklyCsv(text) {
+    const lines = String(text || "").split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) return [];
+    const headers = parseCsvLine(lines[0]);
+    const columns = Object.fromEntries(headers.map((name, index) => [name, index]));
+    for (const field of XFP_FIELDS) if (!Number.isInteger(columns[field])) throw new Error(`xFP data missing field: ${field}`);
+    const rows = [];
+    for (let index = 1; index < lines.length; index += 1) {
+      const values = parseCsvLine(lines[index]);
+      const get = (name) => values[columns[name]] ?? "";
+      const row = {
+        season: finite(get("season")), team: canonicalTeam(get("posteam")), week: finite(get("week")), playerId: get("player_id"),
+        name: get("full_name"), position: String(get("position") || "").toUpperCase(), passAttempts: finite(get("pass_attempt")),
+        targets: finite(get("rec_attempt")), carries: finite(get("rush_attempt")), airYards: finite(get("rec_air_yards")),
+        passXfp: finite(get("pass_fantasy_points_exp")), recXfp: finite(get("rec_fantasy_points_exp")), rushXfp: finite(get("rush_fantasy_points_exp")),
+        passFp: finite(get("pass_fantasy_points")), recFp: finite(get("rec_fantasy_points")), rushFp: finite(get("rush_fantasy_points")),
+        fantasyPoints: finite(get("total_fantasy_points")), xfp: finite(get("total_fantasy_points_exp")), fpoe: finite(get("total_fantasy_points_diff")),
+        teamTargets: finite(get("rec_attempt_team")), teamCarries: finite(get("rush_attempt_team")), teamAirYards: finite(get("rec_air_yards_team")),
+      };
+      if (row.name && row.week > 0) rows.push(row);
+    }
+    return rows;
+  }
+
+  function indexXfpRows(rows) {
+    const byNamePosition = new Map();
+    for (const row of rows || []) {
+      const key = `${normalizeName(row.name)}|${row.position}`;
+      if (!byNamePosition.has(key)) byNamePosition.set(key, []);
+      byNamePosition.get(key).push(row);
+    }
+    return { byNamePosition, rows: rows?.length || 0 };
+  }
+
+  function findXfpRows(index, player) {
+    if (!index || !player) return [];
+    const key = `${normalizeName(player.name)}|${String(player.position || "").toUpperCase()}`;
+    let rows = index.byNamePosition?.get(key) || [];
+    const exact = rows.filter((row) => canonicalTeam(row.team) === canonicalTeam(player.team));
+    if (exact.length >= Math.min(3, rows.length)) rows = exact;
+    return [...rows].sort((a, b) => a.week - b.week);
+  }
+
+  function summarizeXfp(rows) {
+    const selected = rows || [];
+    const window = (count) => {
+      const slice = count ? selected.slice(-count) : selected;
+      return { games: slice.length, xfp: average(slice, "xfp"), fpoe: average(slice, "fpoe"), recXfp: average(slice, "recXfp"), rushXfp: average(slice, "rushXfp"), passXfp: average(slice, "passXfp"), targets: average(slice, "targets"), carries: average(slice, "carries") };
+    };
+    return { games: selected.length, last3: window(3), last5: window(5), season: window(null) };
+  }
+
+  function xfpEvidence(summary, player, options = {}) {
+    const evidence = {};
+    const decay = clamp(options.confidenceMultiplier ?? 1, 0.2, 1);
+    if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.xfp)) evidence["opportunity.xfp"] = { available: true, value: clamp(summary.last3.xfp, 0, 40), confidence: 0.5 * decay, conflict: 0.04, source: "ffopportunity expected fantasy points" };
+    if (summary?.last5?.games >= 3 && Number.isFinite(summary.last5.fpoe)) evidence["efficiency.fpoe"] = { available: true, value: clamp(summary.last5.fpoe, -15, 15), confidence: 0.36 * decay, conflict: 0.08, source: "ffopportunity fantasy points over expectation" };
+    return evidence;
+  }
+
   function currentHealth(player) {
     const sleeper = player?.sleeper || {};
     const live = Boolean(player?.sleeper);
@@ -299,7 +361,7 @@
   }
 
   return {
-    VERSION, currentHealth, defenseMatchupEvidence, findPlayerRows, generateOutlook, historyEvidence, indexWeeklyRows,
-    normalizeName, parseCsvLine, parseWeeklyStatsCsv, summarizeHistory, summarizeWindow,
+    VERSION, currentHealth, defenseMatchupEvidence, findPlayerRows, findXfpRows, generateOutlook, historyEvidence, indexWeeklyRows, indexXfpRows,
+    normalizeName, parseCsvLine, parseWeeklyStatsCsv, parseXfpWeeklyCsv, summarizeHistory, summarizeWindow, summarizeXfp, xfpEvidence,
   };
 });

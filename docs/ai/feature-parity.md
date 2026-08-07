@@ -84,3 +84,11 @@ A future addition qualifies only when all of the following hold:
 - Prior-season target-share and carry-share evidence is confidence-decayed before 2026 decisions.
 - Current-season history retains full bounded confidence; one-season-old history receives a 0.65 multiplier and older history a 0.45 multiplier.
 - The model keeps observed usage values intact and changes only evidence confidence.
+## 2026-08-07 accuracy + draft-room release
+
+- Added compact ffopportunity xFP/FPOE evidence with offseason confidence decay.
+- Added optional ESPN preseason boxscore usage and headline-only news metadata; no article-body ingestion.
+- Added Sleeper 24h add/drop momentum and bounded teammate-absence opportunity redistribution.
+- Added current game total/team implied points as low-confidence fantasy scoring-environment evidence.
+- Added realistic CPU draft-room profiles, manual Live Helper mode, undo, pick history, custom external rank-board import, market disagreement, strategy-aware return chance, and paired Oracle-vs-market draft benchmarks.
+- Waivers default to ESPN-style priority/free-agency recommendations; FAAB dollars appear only when FAAB mode is selected.
