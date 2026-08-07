@@ -23,4 +23,4 @@ Create a separate repository that preserves the Oracle's advanced fantasy decisi
 6. **Free-source adapters + local persistence** — complete.
 7. **Decision-room UI + Worker integration** — complete.
 8. **Unit/static/browser QA** — complete.
-9. **GitHub Pages branch publication** — pending final push/configuration.
+9. **GitHub Pages branch publication** — complete; repository Actions disabled, legacy Pages source `main` `/`, public deployment verified in Edge.

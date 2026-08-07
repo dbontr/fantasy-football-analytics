@@ -13,6 +13,9 @@ The original `fantasy-football-oracle` repository remains the feature/behavior r
 - Remote data enrichment is optional; the committed bootstrap is usable offline.
 - Runtime network access is restricted to allowlisted free/keyless HTTPS sources.
 - `.github/workflows` must remain absent; `npm run build` fails if workflows are added.
+- GitHub Actions is disabled in repository settings; branch-based Pages publishes the committed static root with `.nojekyll`.
+
+Production Pages site: <https://dbontr.github.io/fantasy-football-oracle-browser/>
 
 ## What is implemented
 
