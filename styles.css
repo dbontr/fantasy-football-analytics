@@ -1456,3 +1456,108 @@ footer {
   .league-connect-card { border-radius: 5px; box-shadow: 5px 5px 0 var(--accent); }
 }
 .draft-take, .trade-summary { color: #50596b; }
+
+/* SnapCount UI refinement pass */
+.primary, .secondary, .ghost, .mini-button, .tab {
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease, color .14s ease;
+}
+.primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.primary:active, .secondary:active, .ghost:active, .mini-button:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.secondary:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 #c8c4bb; }
+.tab:hover { transform: translateY(-1px); }
+.tab.active { transform: none; }
+.section-heading {
+  position: relative;
+  padding-left: 18px;
+}
+.section-heading::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  bottom: 28px;
+  width: 5px;
+  background: var(--accent);
+}
+.toolbar.module, .big-board-module, .trade-checker, .intelligence-module, .season-controls {
+  border-top: 3px solid var(--ink);
+}
+.table-header { background: #fcfaf5; }
+.scoreboard strong, .metric strong, .board-score strong, .toolbar-stat strong,
+.trade-verdict > strong, .lineup-row b, #league-result td {
+  font-variant-numeric: tabular-nums;
+}
+.scoreboard strong, .board-score strong, .toolbar-stat strong { letter-spacing: -.035em; }
+.quick-action {
+  position: relative;
+  overflow: hidden;
+  padding-right: 50px;
+}
+.quick-action::after {
+  content: "→";
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  color: var(--signal);
+  font: 900 20px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  transition: transform .14s ease, color .14s ease;
+}
+.quick-action:nth-child(odd)::after { color: #b8421a; }
+.quick-action:hover::after { transform: translateX(4px); }
+.big-board-row { transition: background .12s ease, box-shadow .12s ease; }
+.big-board-row:hover {
+  background: #f0f3ff;
+  box-shadow: inset 4px 0 0 var(--signal);
+}
+@media (max-width: 780px) {
+  .topbar {
+    padding: 8px 12px 0;
+    gap: 6px;
+  }
+  .brand { padding-bottom: 4px; }
+  .tabs {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 4px;
+    padding: 0 0 8px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+  }
+  .tab {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 9px 11px;
+    scroll-snap-align: start;
+  }
+  .section-heading { padding-left: 14px; }
+  .section-heading::before { bottom: 20px; width: 4px; }
+  .toolbar.module { padding: 16px; gap: 8px; }
+  .toolbar label { flex: 1 1 145px; }
+  .quick-actions { gap: 12px; }
+  .quick-action { min-height: 100px; }
+}
+@media (max-width: 480px) {
+  .brand-mark { width: 40px; height: 40px; }
+  .brand strong { font-size: 13px; }
+  .brand small { font-size: 8px; }
+  .hero-copy h1 {
+    font-size: clamp(44px, 13.2vw, 56px);
+    line-height: .93;
+  }
+  .quick-action {
+    min-height: 90px;
+    padding-right: 46px;
+  }
+  .quick-action::after { top: 15px; right: 14px; }
+  .quick-action > span { width: 30px; height: 30px; font-size: 13px; }
+  .section-heading { padding-bottom: 22px; }
+  .section-heading::before { bottom: 22px; }
+}

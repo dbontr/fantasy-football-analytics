@@ -63,6 +63,8 @@ async function main() {
       documentWidth: document.documentElement.scrollWidth,
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1,
       tabs: document.querySelectorAll('.tab').length,
+      tabRows: new Set([...document.querySelectorAll('.tab')].map((tab) => Math.round(tab.getBoundingClientRect().top))).size,
+      tabsScrollable: document.querySelector('.tabs')?.scrollWidth > document.querySelector('.tabs')?.clientWidth + 1,
       quickActions: document.querySelectorAll('.quick-action').length,
       background: getComputedStyle(document.body).backgroundColor,
       brand: document.querySelector('.brand strong')?.textContent,
@@ -236,13 +238,13 @@ async function main() {
 
   await evaluate(`document.querySelector('[data-panel-target="draft"]').click(); true`);
   const draftMobile = await snapshot("draft-mobile", 390, 844);
-  if (draftMobile.horizontalOverflow) throw new Error("Draft mobile overflow");
+  if (draftMobile.horizontalOverflow || draftMobile.tabRows !== 1 || !draftMobile.tabsScrollable) throw new Error("Draft mobile navigation/layout failed");
   await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
   const tradeMobile = await snapshot("trade-mobile", 390, 844);
-  if (tradeMobile.horizontalOverflow) throw new Error("Trade mobile overflow");
+  if (tradeMobile.horizontalOverflow || tradeMobile.tabRows !== 1) throw new Error("Trade mobile navigation/layout failed");
   await evaluate(`document.querySelector('[data-panel-target="overview"]').click(); true`);
   const homeMobile = await snapshot("home-mobile", 390, 844);
-  if (homeMobile.horizontalOverflow || homeMobile.quickActions !== 5) throw new Error("Home mobile layout failed");
+  if (homeMobile.horizontalOverflow || homeMobile.quickActions !== 5 || homeMobile.tabRows !== 1) throw new Error("Home mobile layout failed");
 
   const result = { home, espnSync, connectedHome, player, veteran, liveNews, rookie, rookieTablet, board, draftRoom, benchmark, draftDesktop, lineup, trade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, errors,
     screenshots: [".qa-home-desktop.png", ".qa-home-connected-desktop.png", ".qa-player-tablet.png", ".qa-draft-desktop.png", ".qa-trade-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };

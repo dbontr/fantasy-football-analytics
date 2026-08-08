@@ -133,8 +133,14 @@
   }
 
   function activatePanel(name) {
-    $$(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.panelTarget === name));
+    const activeTab = $$(".tab").find((tab) => tab.dataset.panelTarget === name) || null;
+    $$(".tab").forEach((tab) => tab.classList.toggle("active", tab === activeTab));
     $$(".panel").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
+    if (activeTab && window.matchMedia("(max-width: 780px)").matches) {
+      const tabs = activeTab.parentElement;
+      const left = activeTab.offsetLeft - Math.max(0, (tabs.clientWidth - activeTab.offsetWidth) / 2);
+      tabs.scrollTo({ left, behavior: "smooth" });
+    }
     status("");
     history.replaceState(null, "", `#${name}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
