@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.5.2-sportsdesk-layout";
+const CACHE = "snapcount-browser-v1.6.0-model-calibration";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -16,6 +16,7 @@ const STATIC_ASSETS = [
   "./src/engine/context.js",
   "./src/engine/intelligence.js",
   "./src/engine/live-intelligence.js",
+  "./src/engine/calibration.js",
   "./src/engine/draft-sim.js",
   "./src/data/sources.js",
   "./src/data/espn-fantasy.js",
