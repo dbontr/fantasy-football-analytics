@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#15171a">
   <meta name="description" content="SnapCount turns your fantasy football league into clear draft, lineup, trade, waiver, player, and season decisions.">
-  <title>SnapCount â€” Fantasy Football Decisions</title>
+  <title>SnapCount — Fantasy Football Decisions</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
@@ -51,7 +51,7 @@
           </header>
 
           <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
-            <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">â€”</strong><small id="home-team-record">â€”</small></div>
+            <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">—</strong><small id="home-team-record">—</small></div>
             <button data-jump="lineup"><span>START / SIT</span><strong>Set lineup</strong></button>
             <button data-jump="waivers"><span>WAIVERS</span><strong>Waiver targets</strong></button>
             <button data-jump="trades"><span>TRADES</span><strong>Trade analyzer</strong></button>
@@ -116,8 +116,8 @@
       <details class="system-details">
         <summary>Data, privacy & app status</summary>
         <div class="scoreboard system-scoreboard" aria-label="App status">
-          <article><span>PLAYER POOL</span><strong id="player-count">â€”</strong><small>2026 universe</small></article>
-          <article><span>ENGINE</span><strong id="engine-version">â€”</strong><small>local runtime</small></article>
+          <article><span>PLAYER POOL</span><strong id="player-count">—</strong><small>2026 universe</small></article>
+          <article><span>ENGINE</span><strong id="engine-version">—</strong><small>local runtime</small></article>
           <article><span>BACKEND</span><strong>NONE</strong><small>browser only</small></article>
           <article><span>WORKFLOWS</span><strong>0</strong><small>static Pages</small></article>
         </div>
@@ -130,10 +130,10 @@
           <article class="module">
             <header><p class="eyebrow">LOCAL APP</p><h2>Browser state</h2></header>
             <dl class="fact-list">
-              <div><dt>Dataset</dt><dd id="bootstrap-status">Loadingâ€¦</dd></div>
-              <div><dt>Evidence ledger</dt><dd id="evidence-status">â€”</dd></div>
+              <div><dt>Dataset</dt><dd id="bootstrap-status">Loading…</dd></div>
+              <div><dt>Evidence ledger</dt><dd id="evidence-status">—</dd></div>
               <div><dt>Persistent cache</dt><dd id="cache-status">IndexedDB</dd></div>
-              <div><dt>Worker</dt><dd id="worker-status">Startingâ€¦</dd></div>
+              <div><dt>Worker</dt><dd id="worker-status">Starting…</dd></div>
             </dl>
             <div class="action-row compact"><button id="sync-sleeper" class="secondary">Refresh player status</button><button id="clear-local" class="ghost">Reset saved data</button></div>
           </article>
@@ -142,10 +142,10 @@
     </section>
 
     <section class="panel" data-panel="player" id="player">
-      <div class="section-heading"><div><p class="eyebrow">PLAYER ANALYSIS</p><h1>Get the full read on any player.</h1></div><p>Projection, availability, recent form, matchup, role, and news â€” in one place.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">PLAYER ANALYSIS</p><h1>Get the full read on any player.</h1></div><p>Projection, availability, recent form, matchup, role, and news — in one place.</p></div>
       <div class="workbench">
         <aside class="controls module friendly-controls">
-          <label>Find a player<input id="player-search" type="search" placeholder="Start typing a nameâ€¦" autocomplete="off"></label>
+          <label>Find a player<input id="player-search" type="search" placeholder="Start typing a name…" autocomplete="off"></label>
           <label>Player<select id="player-select"></select></label>
           <label>Week<select id="player-week"></select></label>
           <button id="run-player" class="primary">Check this player</button>
@@ -168,7 +168,7 @@
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
-      <div class="section-heading"><div><p class="eyebrow">DRAFT CENTER</p><h1>Build your board. Own the room.</h1></div><p>Rankings, mock drafts, return odds, and live draft help â€” all built around your roster and draft position.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">DRAFT CENTER</p><h1>Build your board. Own the room.</h1></div><p>Rankings, mock drafts, return odds, and live draft help — all built around your roster and draft position.</p></div>
       <div class="toolbar module draft-toolbar">
         <label>What are you doing?<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
         <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
@@ -179,7 +179,7 @@
         <button id="draft-reset" class="secondary">Start over</button>
         <button id="draft-advance" class="primary">Sim to my pick</button>
         <button id="draft-undo" class="ghost">Undo last pick</button>
-        <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">â€”</strong></div>
+        <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
       </div>
       <article class="module big-board-module">
         <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>SnapCount Big Board</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
@@ -189,7 +189,7 @@
       <div class="draft-layout">
         <article class="module draft-side">
           <div class="table-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>Record the picks</h2></div><span id="draft-meta"></span></div>
-          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a nameâ€¦" autocomplete="off"></label>
+          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
           <label>Player picked<select id="draft-manual-player"></select></label>
           <button id="draft-record-pick" class="secondary">Record this pick</button>
           <p class="helper-copy">In Live Draft Helper, enter each real pick from your ESPN draft. SnapCount immediately updates who you should take next.</p>
@@ -213,7 +213,7 @@
 
     <section class="panel" data-panel="lineup" id="lineup">
       <div class="section-heading"><div><p class="eyebrow">LINEUP</p><h1>Set your best lineup.</h1></div><p>SnapCount handles FLEX decisions, injury risk, upside, and the close calls for the week.</p></div>
-      <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a nameâ€¦" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
+      <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
       <div id="roster-strip" class="roster-strip"></div>
       <div id="lineup-result" class="result-space empty-state"><p>Add your roster above. SnapCount will choose the starters for you.</p></div>
     </section>
@@ -228,8 +228,8 @@
       <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Does this trade make your team better?</h1></div><p>Compare what you give and get, then see the lineup impact, roster direction, and overall trade balance.</p></div>
       <article class="module trade-checker">
         <div class="trade-side"><strong>I GIVE</strong><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
-        <div class="trade-arrow" aria-hidden="true">â‡„</div>
-        <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a nameâ€¦" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
+        <div class="trade-arrow" aria-hidden="true">⇄</div>
+        <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Add your roster in <strong>Start / Sit</strong>, then choose the trade above.</p></div>
@@ -241,7 +241,7 @@
       <div class="league-grid">
         <article class="module controls season-controls">
           <p class="control-title">MY LEAGUE</p>
-          <div id="season-connection-summary" class="season-connection-summary hidden"><span class="provider-badge espn-badge">ESPN</span><strong id="season-connected-team">â€”</strong><small id="season-connected-league">â€”</small></div>
+          <div id="season-connection-summary" class="season-connection-summary hidden"><span class="provider-badge espn-badge">ESPN</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
           <button id="season-connect-espn" class="secondary" data-jump="overview">Connect or change ESPN league</button>
           <button id="build-demo-league" class="ghost">Try a demo league</button>
           <details class="advanced-details other-provider"><summary>Use Sleeper instead</summary>
@@ -271,7 +271,7 @@
     </section>
   </main>
 
-  <footer><span>SNAPCOUNT Â· FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
+  <footer><span>SNAPCOUNT · FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
 
   <script src="./src/engine/core.js"></script>
   <script src="./src/engine/rookies.js"></script>
