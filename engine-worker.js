@@ -6,6 +6,7 @@ importScripts(
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/intelligence.js",
+  "./src/engine/calibration.js",
   "./src/engine/live-intelligence.js",
   "./src/engine/draft-sim.js",
   "./src/data/sources.js",
