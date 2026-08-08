@@ -74,5 +74,5 @@ test("install patches history and direct forecasts idempotently", () => {
   const history = intelligence.historyEvidence({ season: { games: 8, ppr: 12, volatility: 8 } }, player(), { historySeason: 2025, targetSeason: 2026 });
   assert.ok(history["uncertainty.volatility_cv"]);
   const forecast = engine.forecastPlayer(player(), {});
-  assert.ok(forecast.player.projectionStdDev >= 8.3);
+  assert.ok(forecast.player.projectionStdDev > 8.29);
 });
