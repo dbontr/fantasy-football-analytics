@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#15171a">
   <meta name="description" content="SnapCount turns your fantasy football league into clear draft, lineup, trade, waiver, player, and season decisions.">
-  <title>SnapCount — Fantasy Football Decisions</title>
+  <title>SnapCount â€” Fantasy Football Decisions</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
-      <span class="brand-mark" aria-hidden="true">SC</span>
-      <span><strong>SNAPCOUNT</strong><small>FANTASY FOOTBALL</small></span>
-    </a>
+    <div class="network-row">
+      <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
+        <span class="brand-mark" aria-hidden="true">SC</span>
+        <span><strong>SNAPCOUNT</strong><small>FANTASY</small></span>
+      </a>
+      <div class="network-meta" aria-label="Current fantasy league context">
+        <span>FANTASY FOOTBALL</span>
+        <strong id="masthead-team">League not connected</strong>
+        <small id="masthead-week">2026 season</small>
+      </div>
+    </div>
     <nav class="tabs" aria-label="Fantasy football tools">
       <button class="tab active" data-panel-target="overview">Home</button>
       <button class="tab" data-panel-target="draft">Draft</button>
@@ -30,94 +37,115 @@
 
   <main>
     <section class="panel active" data-panel="overview" id="overview">
-      <div class="hero-grid friendly-hero">
-        <div class="hero-copy">
-          <p class="eyebrow">FANTASY FOOTBALL HQ</p>
-          <h1>Your league.<br>Your lineup. Your edge.</h1>
-          <p id="hero-lede" class="lede">Sync ESPN or jump straight into the tools. SnapCount turns projections, injuries, matchups, news, and simulations into a clear fantasy decision.</p>
-          <div class="action-row">
-            <button class="primary" data-jump="lineup">Set my lineup</button>
-            <button class="secondary" data-jump="draft">Open Draft Center</button>
-          </div>
-          <div class="trust-row"><span>League data stays local</span><span>No account required</span><span>Free data sources</span></div>
+      <div class="home-dashboard">
+        <div class="home-feed">
+          <header class="desk-headline">
+            <p class="eyebrow">FANTASY FOOTBALL DESK</p>
+            <h1>Your week starts here.</h1>
+            <p id="hero-lede" class="lede">Connect ESPN or jump into a tool. SnapCount turns projections, injuries, matchups, news, and simulations into the next move for your team.</p>
+            <div class="action-row">
+              <button class="primary" data-jump="lineup">Set my lineup</button>
+              <button class="secondary" data-jump="waivers">Check waivers</button>
+              <button class="ghost" data-jump="draft">Draft Center</button>
+            </div>
+          </header>
+
+          <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
+            <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">â€”</strong><small id="home-team-record">â€”</small></div>
+            <button data-jump="lineup"><span>START / SIT</span><strong>Set lineup</strong></button>
+            <button data-jump="waivers"><span>WAIVERS</span><strong>Waiver targets</strong></button>
+            <button data-jump="trades"><span>TRADES</span><strong>Trade analyzer</strong></button>
+            <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
+          </section>
+
+          <aside class="league-connect-card" aria-label="Connect ESPN fantasy league">
+            <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
+            <div id="espn-connect-empty">
+              <h2>Connect ESPN Fantasy</h2>
+              <p>Load your real roster, opponents, record, current week, and league context.</p>
+              <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
+              <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Load my league</button></div>
+            </div>
+            <div id="espn-team-step" class="hidden">
+              <h2>Which team is yours?</h2>
+              <p id="espn-league-found">League found.</p>
+              <label>My team<select id="espn-team-select"></select></label>
+              <button id="use-espn-team" class="primary">Use this team</button>
+            </div>
+            <div id="espn-auth-step" class="hidden">
+              <p class="connection-kicker">PRIVATE LEAGUE</p>
+              <h2>Use your ESPN sign-in</h2>
+              <p>If you're already signed into ESPN in this browser, SnapCount can ask ESPN for the league using that browser session. The cookie goes directly to ESPN and is never exposed to or stored by SnapCount.</p>
+              <a class="espn-login-link" href="https://fantasy.espn.com/football/" target="_blank" rel="noopener noreferrer">Open ESPN to sign in</a>
+              <button id="connect-espn-session" class="primary">Try my ESPN sign-in</button>
+              <button id="cancel-espn-session" class="ghost">Use a different league</button>
+            </div>
+            <div id="espn-connected" class="hidden">
+              <p class="connection-kicker">CONNECTED LEAGUE</p>
+              <h2 id="espn-connected-team">My team</h2>
+              <p id="espn-connected-meta">ESPN Fantasy</p>
+              <div class="connect-actions"><button id="refresh-espn" class="secondary">Refresh ESPN</button><button id="disconnect-espn" class="ghost">Disconnect</button></div>
+            </div>
+            <p class="privacy-note">SnapCount never asks for your ESPN password or cookie values. Private-league sign-in uses your existing browser session directly with ESPN.</p>
+          </aside>
         </div>
-        <aside class="league-connect-card" aria-label="Connect ESPN fantasy league">
-          <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
-          <div id="espn-connect-empty">
-            <h2>Connect ESPN Fantasy</h2>
-            <p>Paste your league link or ID to load your roster, opponents, record, scoring week, and league context.</p>
-            <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
-            <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Load my ESPN league</button></div>
-          </div>
-          <div id="espn-team-step" class="hidden">
-            <h2>Which team is yours?</h2>
-            <p id="espn-league-found">League found.</p>
-            <label>My team<select id="espn-team-select"></select></label>
-            <button id="use-espn-team" class="primary">Use this team</button>
-          </div>
-          <div id="espn-auth-step" class="hidden">
-            <p class="connection-kicker">PRIVATE LEAGUE</p>
-            <h2>Use your ESPN sign-in</h2>
-            <p>If you're already signed into ESPN in this browser, SnapCount can ask ESPN for the league using that browser session. The cookie goes directly to ESPN and is never exposed to or stored by SnapCount.</p>
-            <a class="espn-login-link" href="https://fantasy.espn.com/football/" target="_blank" rel="noopener noreferrer">Open ESPN to sign in</a>
-            <button id="connect-espn-session" class="primary">Try my ESPN sign-in</button>
-            <button id="cancel-espn-session" class="ghost">Use a different league</button>
-          </div>
-          <div id="espn-connected" class="hidden">
-            <p class="connection-kicker">CONNECTED LEAGUE</p>
-            <h2 id="espn-connected-team">My team</h2>
-            <p id="espn-connected-meta">ESPN Fantasy</p>
-            <div class="connect-actions"><button id="refresh-espn" class="secondary">Refresh ESPN</button><button id="disconnect-espn" class="ghost">Disconnect</button></div>
-          </div>
-          <p class="privacy-note">SnapCount never asks for your ESPN password or cookie values. If you choose browser sign-in for a private league, your existing session goes directly from your browser to ESPN and is never exposed to or stored by SnapCount.</p>
+
+        <aside class="home-rail" aria-label="Fantasy tools">
+          <section class="rail-panel">
+            <div class="rail-heading"><span>QUICK TOOLS</span><small>Jump straight to the decision</small></div>
+            <div class="quick-actions" aria-label="Choose what you need help with">
+              <button class="quick-action" data-jump="draft"><span>D</span><strong>Draft Center</strong><small>Board, mocks, live help</small></button>
+              <button class="quick-action" data-jump="lineup"><span>S</span><strong>Start / Sit</strong><small>Best lineup this week</small></button>
+              <button class="quick-action" data-jump="trades"><span>T</span><strong>Trade Analyzer</strong><small>Does the deal help?</small></button>
+              <button class="quick-action" data-jump="waivers"><span>W</span><strong>Waiver Wire</strong><small>Best add and drop</small></button>
+              <button class="quick-action" data-jump="player"><span>P</span><strong>Player Analysis</strong><small>Projection, news, risk</small></button>
+            </div>
+          </section>
+
+          <section class="rail-panel rail-context" aria-label="Current league context">
+            <div class="rail-heading"><span>LEAGUE DESK</span><small>Your current context</small></div>
+            <div class="rail-context-body">
+              <span id="rail-context-kicker">NOT CONNECTED</span>
+              <strong id="rail-context-team">Connect ESPN Fantasy</strong>
+              <small id="rail-context-week">Manual tools are available anytime.</small>
+              <button class="secondary" data-jump="overview">Manage league</button>
+            </div>
+          </section>
         </aside>
       </div>
-      <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
-        <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">—</strong><small id="home-team-record">—</small></div>
-        <button data-jump="lineup"><span>START / SIT</span><strong>Set lineup</strong></button>
-        <button data-jump="waivers"><span>WAIVERS</span><strong>Waiver targets</strong></button>
-        <button data-jump="trades"><span>TRADES</span><strong>Trade analyzer</strong></button>
-        <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
-      </section>
-      <div class="quick-actions" aria-label="Choose what you need help with">
-        <button class="quick-action" data-jump="draft"><span>D</span><strong>Draft Center</strong><small>Big board, mock draft, and live draft help</small></button>
-        <button class="quick-action" data-jump="lineup"><span>S</span><strong>Start / Sit</strong><small>Set the best lineup for this week</small></button>
-        <button class="quick-action" data-jump="trades"><span>T</span><strong>Trade Analyzer</strong><small>See whether the deal improves your team</small></button>
-        <button class="quick-action" data-jump="waivers"><span>W</span><strong>Waiver Wire</strong><small>Best adds, drops, and claim priority</small></button>
-        <button class="quick-action" data-jump="player"><span>P</span><strong>Player Analysis</strong><small>Projection, news, matchup, risk, and recent form</small></button>
-      </div>
-
-      <div class="scoreboard" aria-label="Engine status">
-        <article><span>PLAYERS</span><strong id="player-count">—</strong><small>bootstrap universe</small></article>
-        <article><span>ENGINE</span><strong id="engine-version">—</strong><small>client runtime</small></article>
-        <article><span>BACKEND</span><strong>NONE</strong><small>static Pages</small></article>
-        <article><span>WORKFLOWS</span><strong>0</strong><small>no custom Actions</small></article>
-      </div>
-
-      <div class="two-column">
-        <article class="module">
-          <header><p class="eyebrow">DATA PLANE</p><h2>Free-source boundary</h2></header>
-          <div id="source-catalog" class="source-list"></div>
-          <p class="fineprint">Remote enrichment is optional and isolated. The committed bootstrap artifact is sufficient for offline analysis.</p>
-        </article>
-        <article class="module">
-          <header><p class="eyebrow">RUNTIME</p><h2>Local state</h2></header>
-          <dl class="fact-list">
-            <div><dt>Dataset</dt><dd id="bootstrap-status">Loading…</dd></div>
-            <div><dt>Evidence ledger</dt><dd id="evidence-status">—</dd></div>
-            <div><dt>Persistent cache</dt><dd id="cache-status">IndexedDB</dd></div>
-            <div><dt>Worker</dt><dd id="worker-status">Starting…</dd></div>
-          </dl>
-          <div class="action-row compact"><button id="sync-sleeper" class="secondary">Refresh player status</button><button id="clear-local" class="ghost">Reset saved data</button></div>
-        </article>
-      </div>
+      <details class="system-details">
+        <summary>Data, privacy & app status</summary>
+        <div class="scoreboard system-scoreboard" aria-label="App status">
+          <article><span>PLAYER POOL</span><strong id="player-count">â€”</strong><small>2026 universe</small></article>
+          <article><span>ENGINE</span><strong id="engine-version">â€”</strong><small>local runtime</small></article>
+          <article><span>BACKEND</span><strong>NONE</strong><small>browser only</small></article>
+          <article><span>WORKFLOWS</span><strong>0</strong><small>static Pages</small></article>
+        </div>
+        <div class="two-column">
+          <article class="module">
+            <header><p class="eyebrow">DATA SOURCES</p><h2>Free-source boundary</h2></header>
+            <div id="source-catalog" class="source-list"></div>
+            <p class="fineprint">Remote enrichment is optional. The committed player data is enough for offline analysis.</p>
+          </article>
+          <article class="module">
+            <header><p class="eyebrow">LOCAL APP</p><h2>Browser state</h2></header>
+            <dl class="fact-list">
+              <div><dt>Dataset</dt><dd id="bootstrap-status">Loadingâ€¦</dd></div>
+              <div><dt>Evidence ledger</dt><dd id="evidence-status">â€”</dd></div>
+              <div><dt>Persistent cache</dt><dd id="cache-status">IndexedDB</dd></div>
+              <div><dt>Worker</dt><dd id="worker-status">Startingâ€¦</dd></div>
+            </dl>
+            <div class="action-row compact"><button id="sync-sleeper" class="secondary">Refresh player status</button><button id="clear-local" class="ghost">Reset saved data</button></div>
+          </article>
+        </div>
+      </details>
     </section>
 
     <section class="panel" data-panel="player" id="player">
-      <div class="section-heading"><div><p class="eyebrow">PLAYER ANALYSIS</p><h1>Get the full read on any player.</h1></div><p>Projection, availability, recent form, matchup, role, and news — in one place.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">PLAYER ANALYSIS</p><h1>Get the full read on any player.</h1></div><p>Projection, availability, recent form, matchup, role, and news â€” in one place.</p></div>
       <div class="workbench">
         <aside class="controls module friendly-controls">
-          <label>Find a player<input id="player-search" type="search" placeholder="Start typing a name…" autocomplete="off"></label>
+          <label>Find a player<input id="player-search" type="search" placeholder="Start typing a nameâ€¦" autocomplete="off"></label>
           <label>Player<select id="player-select"></select></label>
           <label>Week<select id="player-week"></select></label>
           <button id="run-player" class="primary">Check this player</button>
@@ -140,7 +168,7 @@
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
-      <div class="section-heading"><div><p class="eyebrow">DRAFT CENTER</p><h1>Build your board. Own the room.</h1></div><p>Rankings, mock drafts, return odds, and live draft help — all built around your roster and draft position.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">DRAFT CENTER</p><h1>Build your board. Own the room.</h1></div><p>Rankings, mock drafts, return odds, and live draft help â€” all built around your roster and draft position.</p></div>
       <div class="toolbar module draft-toolbar">
         <label>What are you doing?<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
         <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
@@ -151,7 +179,7 @@
         <button id="draft-reset" class="secondary">Start over</button>
         <button id="draft-advance" class="primary">Sim to my pick</button>
         <button id="draft-undo" class="ghost">Undo last pick</button>
-        <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
+        <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">â€”</strong></div>
       </div>
       <article class="module big-board-module">
         <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>SnapCount Big Board</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
@@ -161,7 +189,7 @@
       <div class="draft-layout">
         <article class="module draft-side">
           <div class="table-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>Record the picks</h2></div><span id="draft-meta"></span></div>
-          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
+          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a nameâ€¦" autocomplete="off"></label>
           <label>Player picked<select id="draft-manual-player"></select></label>
           <button id="draft-record-pick" class="secondary">Record this pick</button>
           <p class="helper-copy">In Live Draft Helper, enter each real pick from your ESPN draft. SnapCount immediately updates who you should take next.</p>
@@ -185,7 +213,7 @@
 
     <section class="panel" data-panel="lineup" id="lineup">
       <div class="section-heading"><div><p class="eyebrow">LINEUP</p><h1>Set your best lineup.</h1></div><p>SnapCount handles FLEX decisions, injury risk, upside, and the close calls for the week.</p></div>
-      <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
+      <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a nameâ€¦" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
       <div id="roster-strip" class="roster-strip"></div>
       <div id="lineup-result" class="result-space empty-state"><p>Add your roster above. SnapCount will choose the starters for you.</p></div>
     </section>
@@ -200,8 +228,8 @@
       <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Does this trade make your team better?</h1></div><p>Compare what you give and get, then see the lineup impact, roster direction, and overall trade balance.</p></div>
       <article class="module trade-checker">
         <div class="trade-side"><strong>I GIVE</strong><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
-        <div class="trade-arrow" aria-hidden="true">⇄</div>
-        <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
+        <div class="trade-arrow" aria-hidden="true">â‡„</div>
+        <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a nameâ€¦" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Add your roster in <strong>Start / Sit</strong>, then choose the trade above.</p></div>
@@ -213,7 +241,7 @@
       <div class="league-grid">
         <article class="module controls season-controls">
           <p class="control-title">MY LEAGUE</p>
-          <div id="season-connection-summary" class="season-connection-summary hidden"><span class="provider-badge espn-badge">ESPN</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
+          <div id="season-connection-summary" class="season-connection-summary hidden"><span class="provider-badge espn-badge">ESPN</span><strong id="season-connected-team">â€”</strong><small id="season-connected-league">â€”</small></div>
           <button id="season-connect-espn" class="secondary" data-jump="overview">Connect or change ESPN league</button>
           <button id="build-demo-league" class="ghost">Try a demo league</button>
           <details class="advanced-details other-provider"><summary>Use Sleeper instead</summary>
@@ -243,7 +271,7 @@
     </section>
   </main>
 
-  <footer><span>SNAPCOUNT · FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
+  <footer><span>SNAPCOUNT Â· FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
 
   <script src="./src/engine/core.js"></script>
   <script src="./src/engine/rookies.js"></script>

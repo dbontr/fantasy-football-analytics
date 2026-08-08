@@ -177,9 +177,14 @@
     const team = espnTeamById(state.espnConnection?.teamId);
     const authNeeded = state.espnNeedsSession && !league;
     $("#overview").classList.toggle("league-connected", Boolean(team));
+    $("#masthead-team").textContent = team ? team.name : league ? league.name : "League not connected";
+    $("#masthead-week").textContent = team && league ? `${team.recordLabel} · Week ${league.currentWeek}` : league ? `${league.teams.length} teams · ${league.scoringLabel}` : "2026 season";
+    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "LEAGUE LOADED" : "NOT CONNECTED";
+    $("#rail-context-team").textContent = team ? team.name : league ? league.name : "Connect ESPN Fantasy";
+    $("#rail-context-week").textContent = team && league ? `${team.recordLabel} · ${league.name}` : league ? `${league.teams.length} teams · choose your team` : "Manual tools are available anytime.";
     $("#hero-lede").textContent = team
-      ? `${team.name} is synced. Your roster and league context are ready for lineup, waiver, trade, and season decisions.`
-      : "Sync ESPN or jump straight into the tools. SnapCount turns projections, injuries, matchups, news, and simulations into a clear fantasy decision.";
+      ? `${team.name} is synced. Start with your lineup, the waiver wire, a trade, or your season outlook.`
+      : "Connect ESPN or jump into a tool. SnapCount turns projections, injuries, matchups, news, and simulations into the next move for your team.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);

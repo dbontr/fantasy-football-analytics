@@ -2003,3 +2003,296 @@ footer {
   margin-top: 14px;
   background: #fff;
 }
+
+/* Sports desk layout redesign */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: block;
+  padding: 0;
+  border-bottom: 0;
+  background: #111316;
+}
+.network-row {
+  max-width: 1320px;
+  min-height: 62px;
+  margin: 0 auto;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.network-row .brand { padding: 0; }
+.network-meta {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: baseline;
+  gap: 10px;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.network-meta span {
+  color: #9aa2ad;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.network-meta strong { font-size: 13px; }
+.network-meta small { color: #c7cdd4; font-size: 11px; }
+.tabs {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 calc((100vw - min(1320px, 100vw)) / 2 + 18px);
+  display: flex;
+  justify-content: flex-start;
+  gap: 0;
+  border-top: 1px solid #2a2e33;
+  border-bottom: 4px solid var(--signal);
+  background: #1b1e22;
+}
+.tab {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-right: 1px solid #2d3137;
+  border-radius: 0;
+  color: #d7dbe0;
+  background: transparent;
+}
+.tab:hover { transform: none; background: #24282d; color: #fff; }
+.tab.active {
+  background: #fff;
+  color: #111316;
+  box-shadow: inset 0 -4px 0 var(--signal);
+}
+.app-status:not(:empty) {
+  position: sticky;
+  top: 106px;
+  z-index: 30;
+  margin: 0;
+  padding: 8px max(18px, calc((100vw - 1320px) / 2 + 18px));
+  border-bottom: 1px solid #cfd6dd;
+  background: #eef4fb;
+}
+main { max-width: 1320px; padding: 0 18px 56px; }
+.panel { padding-top: 26px; }
+.home-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(290px, .72fr);
+  gap: 22px;
+  align-items: start;
+}
+.home-feed { display: grid; gap: 16px; }
+.desk-headline {
+  padding: 26px 28px 28px;
+  border-top: 5px solid var(--signal);
+  border-bottom: 1px solid #c7ced6;
+  background: #fff;
+}
+.desk-headline h1 {
+  margin: 6px 0 10px;
+  max-width: 760px;
+  font-size: clamp(42px, 4.7vw, 66px);
+  line-height: .96;
+}
+.desk-headline .lede {
+  max-width: 780px;
+  margin: 0 0 20px;
+  color: #4e5863;
+  font-size: 16px;
+  line-height: 1.55;
+}
+.desk-headline .action-row { margin-top: 0; }
+.home-feed .league-connect-card {
+  width: auto;
+  min-height: 0;
+  padding: 22px 24px 20px;
+}
+.home-feed .league-connect-card .connect-card-head { margin: -22px -24px 18px; }
+.home-rail {
+  position: sticky;
+  top: 132px;
+  display: grid;
+  gap: 16px;
+}
+.rail-panel {
+  border: 1px solid #c6cdd5;
+  border-top: 4px solid #202328;
+  background: #fff;
+}
+.rail-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #d7dce2;
+  background: #f4f5f7;
+}
+.rail-heading span { color: #16191d; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+.rail-heading small { color: #6d7680; font-size: 10px; }
+.home-rail .quick-actions {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.home-rail .quick-action {
+  min-height: 76px;
+  padding: 13px 38px 13px 14px;
+  border: 0;
+  border-bottom: 1px solid #d7dce2;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+}
+.home-rail .quick-action:last-child { border-bottom: 0; }
+.home-rail .quick-action:hover {
+  transform: none;
+  box-shadow: inset 4px 0 0 var(--signal);
+  background: #fafbfc;
+}
+.home-rail .quick-action > span,
+.home-rail .quick-action:nth-child(odd) > span,
+.home-rail .quick-action:nth-child(even) > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  background: var(--signal);
+  color: #fff;
+}
+.home-rail .quick-action strong { font-size: 14px; }
+.home-rail .quick-action small { font-size: 11px; }
+.home-rail .quick-action::after { top: 27px; right: 14px; color: #7b838d; font-size: 15px; }
+.rail-scoreboard .scoreboard {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 0;
+}
+.rail-scoreboard .scoreboard article {
+  min-height: 84px;
+  padding: 13px 14px;
+  border: 0;
+  border-right: 1px solid #d7dce2;
+  border-bottom: 1px solid #d7dce2;
+  background: #fff;
+}
+.rail-scoreboard .scoreboard article:nth-child(2n) { border-right: 0; }
+.rail-scoreboard .scoreboard article:nth-last-child(-n+2) { border-bottom: 0; }
+.rail-scoreboard .scoreboard strong { font-size: 20px; }
+.rail-scoreboard .scoreboard small { color: #747d87; }
+.league-command-strip {
+  margin: 0;
+  grid-template-columns: minmax(180px, 1.3fr) repeat(4, 1fr);
+}
+.league-command-strip > div,
+.league-command-strip > button { min-height: 76px; }
+.system-details {
+  margin-top: 24px;
+  border-top: 1px solid #c7ced6;
+}
+.system-details > summary {
+  padding: 12px 0;
+  color: #626b75;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.section-heading {
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, .7fr);
+  gap: 36px;
+  padding: 18px 0 18px 14px;
+  margin-bottom: 20px;
+}
+.section-heading h1 {
+  margin-top: 4px;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: .98;
+}
+.section-heading > p { align-self: end; max-width: 470px; font-size: 14px; line-height: 1.5; }
+.toolbar.module,
+.trade-checker,
+.big-board-module,
+.intelligence-module,
+.season-controls { border-top-width: 4px; }
+@media (max-width: 980px) {
+  .home-dashboard { grid-template-columns: 1fr; }
+  .home-rail { position: static; grid-template-columns: 1.25fr .75fr; }
+  .home-rail .quick-actions { grid-template-columns: 1fr 1fr; }
+  .home-rail .quick-action:nth-child(5) { grid-column: 1 / -1; }
+  .league-command-strip { overflow-x: auto; grid-template-columns: repeat(5, minmax(170px, 1fr)); }
+}
+@media (max-width: 780px) {
+  .topbar { padding-top: 0; }
+  .network-row { min-height: 56px; padding: 0 12px; }
+  .network-meta { display: none; }
+  .tabs {
+    padding: 0;
+    border-top-color: #2a2e33;
+    border-bottom-width: 4px;
+  }
+  .tab { min-height: 42px; padding: 0 14px; }
+  .app-status:not(:empty) { position: static; padding: 8px 12px; }
+  main { padding: 0 12px 44px; }
+  .panel { padding-top: 20px; }
+  .desk-headline { padding: 22px 18px 24px; }
+  .desk-headline h1 { font-size: clamp(38px, 10vw, 54px); }
+  .home-feed .league-connect-card { padding: 18px; }
+  .home-feed .league-connect-card .connect-card-head { margin: -18px -18px 16px; }
+}
+@media (max-width: 560px) {
+  .brand-mark { width: 34px; height: 34px; }
+  .brand strong { font-size: 12px; }
+  .brand small { font-size: 8px; }
+  .home-rail { grid-template-columns: 1fr; }
+  .home-rail .quick-actions { grid-template-columns: 1fr; }
+  .home-rail .quick-action:nth-child(5) { grid-column: auto; }
+  .rail-scoreboard .scoreboard { grid-template-columns: 1fr 1fr; }
+  .desk-headline .action-row { display: grid; grid-template-columns: 1fr 1fr; }
+  .desk-headline .action-row .ghost { grid-column: 1 / -1; }
+  .desk-headline .action-row button { width: 100%; }
+  .section-heading {
+    display: block;
+    padding: 14px 0 16px 12px;
+  }
+  .section-heading h1 { font-size: clamp(32px, 9.2vw, 42px); }
+  .section-heading > p { margin-top: 10px; }
+  .league-command-strip > div,
+  .league-command-strip > button { min-width: 160px; }
+  .system-details .two-column { grid-template-columns: 1fr; }
+}
+.rail-context-body {
+  display: grid;
+  gap: 6px;
+  padding: 16px 14px 14px;
+}
+.rail-context-body > span {
+  color: var(--signal);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+.rail-context-body > strong { font-size: 19px; line-height: 1.15; }
+.rail-context-body > small { color: #66717c; line-height: 1.45; }
+.rail-context-body > button { margin-top: 8px; justify-self: stretch; }
+.system-scoreboard { margin: 8px 0 18px; }
+.system-scoreboard article { min-height: 86px; }
+@media (max-width: 560px) {
+  .league-command-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: visible;
+  }
+  .league-command-strip > div {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .league-command-strip > button { min-width: 0; }
+}

@@ -101,6 +101,8 @@ async function main() {
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
   if (home.brand !== "SNAPCOUNT" || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
   if (home.primaryBackground !== "rgb(200, 16, 46)") throw new Error("Primary action is not using the sports-red SnapCount palette");
+  const homeStructure = await evaluate(`(() => ({network:Boolean(document.querySelector('.network-row')),dashboard:Boolean(document.querySelector('.home-dashboard')),rail:Boolean(document.querySelector('.home-rail')),systemDetails:Boolean(document.querySelector('.system-details')),columns:getComputedStyle(document.querySelector('.home-dashboard')).gridTemplateColumns}))()`);
+  if (!homeStructure.network || !homeStructure.dashboard || !homeStructure.rail || !homeStructure.systemDetails || homeStructure.columns.split(' ').length < 2) throw new Error("Sports desk information architecture did not render on desktop");
   const connectCard = await evaluate(`Boolean(document.querySelector('.league-connect-card') && document.querySelector('#connect-espn'))`);
   if (!connectCard) throw new Error("ESPN league connection card did not render");
 
@@ -120,6 +122,8 @@ async function main() {
   await waitFor(`!document.querySelector('#league-command-strip').classList.contains('hidden') && document.querySelectorAll('#roster-strip .roster-chip').length===3`, 10000);
   const espnSync = await evaluate(`(() => ({team:document.querySelector('#espn-connected-team').textContent,league:document.querySelector('#home-league-label').textContent,roster:document.querySelectorAll('#roster-strip .roster-chip').length,week:document.querySelector('#lineup-week').value}))()`);
   if (espnSync.team !== 'QA Champions' || espnSync.league !== 'QA Sunday League' || espnSync.roster !== 3 || espnSync.week !== '3') throw new Error("ESPN league sync flow failed");
+  const masthead = await evaluate(`({team:document.querySelector('#masthead-team')?.textContent,week:document.querySelector('#masthead-week')?.textContent})`);
+  if (masthead.team !== 'QA Champions' || !masthead.week.includes('Week 3')) throw new Error("Persistent league masthead did not hydrate");
   const connectedHome = await snapshot("home-connected-desktop", 1440, 1000);
   if (connectedHome.horizontalOverflow) throw new Error("Connected ESPN home layout overflow");
 
