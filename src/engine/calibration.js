@@ -123,12 +123,12 @@
   function calibrateAction(action, evidenceByPlayer = {}) {
     if (!action || typeof action !== "object") return action;
     const next = { ...action };
-    for (const key of ["player", "add", "drop", "give", "get"]) {
+    for (const key of ["player", "add", "drop", "give", "get", "addPlayer"]) {
       if (next[key] && typeof next[key] === "object" && next[key].position) {
         next[key] = calibratePlayer(next[key], evidenceByPlayer[String(next[key].id)] || {});
       }
     }
-    for (const key of ["players", "adds", "drops", "givePlayers", "getPlayers"]) {
+    for (const key of ["players", "adds", "drops", "givePlayers", "getPlayers", "receivePlayers"]) {
       if (Array.isArray(next[key])) next[key] = next[key].map((player) => calibratePlayer(player, evidenceByPlayer[String(player?.id)] || {}));
     }
     return next;
