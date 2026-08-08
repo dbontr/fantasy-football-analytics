@@ -4,6 +4,7 @@ importScripts(
   "./src/engine/core.js",
   "./src/engine/rookies.js",
   "./src/engine/correlation.js",
+  "./src/engine/mean-calibration.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/intelligence.js",
@@ -142,7 +143,10 @@ self.addEventListener("message", async (event) => {
       case "player-history": result = await playerHistory(message.player, message.season, message.targetSeason); break;
       case "player-history-batch": result = await playerHistoryBatch(message.players || [], message.season, message.targetSeason); break;
       case "waivers":
-        result = core.waiverRecommendations(message.roster || [], message.freeAgents || [], message.settings || {}, message.limit || 12, message.week || null);
+        result = core.waiverRecommendations(
+          message.roster || [], message.freeAgents || [], message.settings || {},
+          message.limit || 12, message.week || null, message.policy || {},
+        );
         break;
       case "draft-window": result = core.simulatePickWindow(message.options || {}); break;
       case "draft-room-advance": result = draftSim.advanceToUser(message.options || {}); break;

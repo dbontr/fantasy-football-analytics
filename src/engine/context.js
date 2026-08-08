@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createContextApi() {
   "use strict";
 
-  const VERSION = "oracle-context-browser-2026.3";
+  const VERSION = "oracle-context-browser-2026.4";
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -56,11 +56,11 @@
       practice && `practice:${practice}`,
     ].filter(Boolean);
     const match = keys.map((key) => ({ key, row: groups[key] })).find((entry) => entry.row && finite(entry.row.samples) >= 10);
-    if (!match) return {};
-    const samples = finite(match.row.samples);
-    const confidence = clamp(samples / (samples + 80), 0.2, 0.96);
-    return {
-      "health.active_probability": {
+    const evidence = {};
+    if (match) {
+      const samples = finite(match.row.samples);
+      const confidence = clamp(samples / (samples + 80), 0.2, 0.96);
+      evidence["health.active_probability"] = {
         available: true,
         value: clamp(match.row.rate, 0, 1),
         confidence,
@@ -68,6 +68,22 @@
         model: "historical-nflverse-availability",
         group: match.key,
         samples,
+      };
+    }
+    if (practice === "dnp") evidence["health.practice_dnp"] = {
+      available: true, value: 1, confidence: 1, conflict: 0,
+      source: "current practice participation",
+    };
+    return evidence;
+  }
+
+  function baselineRoleEvidence(player) {
+    const snap = Number(player?.opportunity?.snapShare);
+    if (!Number.isFinite(snap)) return {};
+    return {
+      "role.snap_share": {
+        available: true, value: clamp(snap, 0, 1), confidence: 1, conflict: 0,
+        source: "nflverse prior-season weighted offensive snap share",
       },
     };
   }
@@ -98,6 +114,7 @@
   }
 
   function quarterbackContextEvidence(player, players, week = 1) {
+    if (player?.projectionSource === "espn-live-ppr") return {};
     const position = String(player?.position || "").toUpperCase();
     const calibration = QB_CONTEXT_CALIBRATION[position];
     const team = String(player?.team || "").toUpperCase();
@@ -202,6 +219,7 @@
     VERSION,
     QB_CONTEXT_CALIBRATION,
     absenceRedistributionEvidence,
+    baselineRoleEvidence,
     buildTeamContext,
     coachingEvidence,
     healthEvidence,

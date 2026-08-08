@@ -1,0 +1,177 @@
+{
+  "version": "snapcount-runtime-profile-2026.1",
+  "qualifiedAt": "2026-08-08T19:41:30.567Z",
+  "qualificationSha256": "7811db0692c945b7d442ed71f505a12c183f2edc49a24d927e8f791d41d4550c",
+  "mode": "serve-frozen-qualified-analytics",
+  "grades": {
+    "forecastMean": "A+",
+    "uncertainty": "A+",
+    "contextAdmission": "A+",
+    "startSit": "A+",
+    "waivers": "A+",
+    "trades": "A+",
+    "draft": "A+",
+    "season": "A+",
+    "provenance": "A+",
+    "runtimeParity": "A+"
+  },
+  "scoring": {
+    "default": "ppr",
+    "supportedFamilies": [
+      "ppr",
+      "standard"
+    ],
+    "standardDerivation": "ESPN PPR appliedTotal minus projected receptions stat 53"
+  },
+  "players": {
+    "baseline": "espn-live-ppr",
+    "fallback": "committed-ppr-snapshot",
+    "validatedMeanScale": 1,
+    "meanCalibrationVersion": "snapcount-mean-calibration-2026.1",
+    "admittedPositions": {
+      "QB": false,
+      "RB": true,
+      "WR": true,
+      "TE": true
+    }
+  },
+  "startSit": {
+    "baseline": "espn-live-ppr",
+    "validatedMeanScale": 0,
+    "policy": "raw-live-ppr-exact-lineup"
+  },
+  "waivers": {
+    "baseline": "espn-live-ppr",
+    "validatedMeanScale": 0,
+    "minimumScore": 0.25
+  },
+  "trades": {
+    "baseline": "espn-live-ppr",
+    "validatedMeanScale": 0,
+    "acceptScore": 28,
+    "passScore": -28
+  },
+  "draft": {
+    "policy": "segmented-qualified",
+    "supportedTeamCounts": [
+      10,
+      12
+    ],
+    "segments": {
+      "10-early": {
+        "market": 0.75,
+        "value": 0.24,
+        "need": 1.15,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "10-middle": {
+        "market": 0.75,
+        "value": 0.1,
+        "need": 1.15,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "10-late": {
+        "market": 0.65,
+        "value": 0.18,
+        "need": 1.15,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "12-early": {
+        "market": 0.75,
+        "value": 0.24,
+        "need": 0.55,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "12-middle": {
+        "market": 0.95,
+        "value": 0.18,
+        "need": 0.75,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "12-late": {
+        "market": 0.65,
+        "value": 0.1,
+        "need": 0.55,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      }
+    },
+    "fallbackPolicy": {
+      "market": 0.7,
+      "value": 0.1,
+      "need": 0.95,
+      "injury": 7,
+      "rookie": 0,
+      "maxQB": 2,
+      "maxTE": 2,
+      "maxK": 1,
+      "maxDST": 1,
+      "secondQbRound": 10,
+      "secondTeRound": 10,
+      "kickerRound": 14,
+      "dstRound": 13
+    }
+  },
+  "season": {
+    "probabilityEngine": "monte-carlo",
+    "calibrationVersion": "snapcount-calibration-2026.1",
+    "correlationVersion": "snapcount-correlation-2026.1"
+  },
+  "context": {
+    "version": "oracle-context-browser-2026.4",
+    "policy": "admitted-mean-or-metadata-only"
+  }
+}

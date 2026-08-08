@@ -85,13 +85,20 @@
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), Math.max(1_000, Number(options.timeoutMs || 15_000)));
     try {
+      const extraHeaders = {};
+      for (const [key, value] of Object.entries(options.headers || {})) {
+        const normalized = String(key).toLowerCase();
+        if (/authorization|cookie|token|secret|password|credential/.test(normalized)) throw new Error("Secret-bearing request headers are forbidden");
+        if (normalized !== "x-fantasy-filter") throw new Error(`Header ${key} is not allowlisted for public sources`);
+        extraHeaders[key] = String(value);
+      }
       const response = await fetch(url, {
         method: "GET",
         cache: options.cache || "default",
         credentials: credentialMode,
         redirect: "follow",
         signal: controller.signal,
-        headers: { Accept: options.accept || "*/*" },
+        headers: { Accept: options.accept || "*/*", ...extraHeaders },
       });
       if (!response.ok) throw new Error(`${sourceId} returned HTTP ${response.status}`);
       const finalUrl = response.url || url.href;
@@ -310,6 +317,67 @@
     return fetchJson("espn", `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=${count}`, { timeoutMs: 20_000 });
   }
 
+  async function espnPprPlayerSnapshot(season) {
+    const selected = Math.round(Number(season || new Date().getFullYear()));
+    const filter = { players: { limit: 700, sortPercOwned: { sortPriority: 1, sortAsc: false } } };
+    const url = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${selected}/segments/0/leaguedefaults/3?view=kona_player_info`;
+    return fetchJson("espnFantasy", url, { timeoutMs: 20_000, headers: { "x-fantasy-filter": JSON.stringify(filter) } });
+  }
+  function espnProjectedPoints(item, scoring = "ppr") {
+    const total = Number(item?.appliedTotal);
+    if (!Number.isFinite(total)) return null;
+    if (scoring !== "standard") return Math.max(0, total);
+    const receptions = Number(item?.stats?.["53"] || 0);
+    return Math.max(0, total - (Number.isFinite(receptions) ? receptions : 0));
+  }
+  function espnProjectionTotal(stats, season, scoring = "ppr") {
+    const row = (stats || []).find((item) => Number(item.seasonId) === season && Number(item.scoringPeriodId) === 0 && Number(item.statSourceId) === 1 && Number(item.statSplitTypeId) === 0);
+    return row ? espnProjectedPoints(row, scoring) : null;
+  }
+  function espnWeeklyProjections(stats, season, scoring = "ppr") {
+    const weekly = Array(18).fill(null);
+    for (const item of stats || []) {
+      const week = Number(item.scoringPeriodId);
+      if (Number(item.seasonId) === season && Number(item.statSourceId) === 1 && Number(item.statSplitTypeId) === 1 && week >= 1 && week <= 18) weekly[week - 1] = espnProjectedPoints(item, scoring);
+    }
+    return weekly;
+  }
+
+  function enrichPprProjectionBaseline(localPlayers, snapshot, season) {
+    const selected = Math.round(Number(season));
+    const byId = new Map((snapshot?.players || []).map((wrapper) => [String(wrapper.player?.id || wrapper.id), wrapper.player || null]));
+    return (localPlayers || []).map((player) => {
+      const match = byId.get(String(player.id));
+      if (!match) return player;
+      const weekly = espnWeeklyProjections(match.stats, selected, "ppr");
+      const standardWeekly = espnWeeklyProjections(match.stats, selected, "standard");
+      const active = weekly.filter(Number.isFinite);
+      if (!active.length) return player;
+      const positive = active.filter((value) => value > 0);
+      const standardPositive = standardWeekly.filter((value) => Number.isFinite(value) && value > 0);
+      const weeklyMean = positive.length ? positive.reduce((sum, value) => sum + value, 0) / positive.length : 0;
+      const standardWeeklyMean = standardPositive.length ? standardPositive.reduce((sum, value) => sum + value, 0) / standardPositive.length : 0;
+      const seasonProjection = espnProjectionTotal(match.stats, selected, "ppr");
+      const standardSeasonProjection = espnProjectionTotal(match.stats, selected, "standard");
+      const ratio = weeklyMean > 0 ? weeklyMean / Math.max(0.5, Number(player.weeklyProjection || weeklyMean)) : 1;
+      return {
+        ...player,
+        projectedPoints: seasonProjection ?? active.reduce((sum, value) => sum + value, 0),
+        weeklyProjection: weeklyMean,
+        weeklyProjections: weekly.map((value, index) => Number.isFinite(value) ? value : Number(player.weeklyProjections?.[index] || 0)),
+        standardProjectedPoints: standardSeasonProjection ?? standardPositive.reduce((sum, value) => sum + value, 0),
+        standardWeeklyProjection: standardWeeklyMean,
+        standardWeeklyProjections: standardWeekly.map((value, index) => Number.isFinite(value) ? value : Number(player.standardWeeklyProjections?.[index] ?? player.weeklyProjections?.[index] ?? 0)),
+        floorProjection: Number(player.floorProjection || 0) * ratio,
+        ceilingProjection: Number(player.ceilingProjection || 0) * ratio,
+        projectionStdDev: Number(player.projectionStdDev || 0) * ratio,
+        injuryStatus: match.injuryStatus || player.injuryStatus,
+        active: match.active === false ? false : player.active,
+        projectionSource: "espn-live-ppr",
+      };
+    });
+  }
+
   async function nwsForecast(latitude, longitude, kickoff = null) {
     const lat = Number(latitude).toFixed(4);
     const lon = Number(longitude).toFixed(4);
@@ -331,7 +399,9 @@
     assertFreeUrl,
     bundledXfpWeeklyText,
     enrichLocalPlayers,
+    enrichPprProjectionBaseline,
     espnNflNews,
+    espnPprPlayerSnapshot,
     espnNflScoreboard,
     espnNflSummary,
     fetchBounded,

@@ -14,6 +14,7 @@ const required = [
   "src/engine/runtime.js",
   "src/engine/rookies.js",
   "src/engine/correlation.js",
+  "src/engine/mean-calibration.js",
   "src/engine/evidence.js",
   "src/engine/context.js",
   "src/engine/intelligence.js",
@@ -21,6 +22,7 @@ const required = [
   "src/engine/calibration.js",
   "src/data/sources.js",
   "data/players-lite.json",
+  "data/analytics-runtime-profile.json",
   "data/coaches-2026.json",
   "data/health-calibration-2026.json",
   "data/rookies-2026.json",
@@ -37,6 +39,14 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"))
 if (pkg.dependencies && Object.keys(pkg.dependencies).length) throw new Error("Runtime dependency budget must remain zero");
 const dataset = JSON.parse(fs.readFileSync(path.join(root, "data", "players-lite.json"), "utf8"));
 if (!Array.isArray(dataset.players) || dataset.players.length < 500) throw new Error("Bootstrap player dataset is incomplete");
+if (dataset.meta?.scoringBaseline !== "PPR" || Number(dataset.meta?.espnLeagueDefault) !== 3) throw new Error("Bootstrap projection baseline must be ESPN PPR league default 3");
+const snapShareCount = dataset.players.filter((player) => Number.isFinite(Number(player?.opportunity?.snapShare))).length;
+if (snapShareCount < 300) throw new Error(`Bootstrap snap-share coverage is incomplete: ${snapShareCount}`);
+const standardCount = dataset.players.filter((player) => Number.isFinite(Number(player?.standardProjectedPoints))).length;
+if (standardCount < 650) throw new Error(`Bootstrap Standard-scoring coverage is incomplete: ${standardCount}`);
+const runtimeProfile = JSON.parse(fs.readFileSync(path.join(root, "data", "analytics-runtime-profile.json"), "utf8"));
+if (runtimeProfile.mode !== "serve-frozen-qualified-analytics") throw new Error("Runtime analytics profile is not in frozen serving mode");
+if (Object.values(runtimeProfile.grades || {}).some((grade) => grade !== "A+")) throw new Error("Runtime analytics profile contains an unqualified surface");
 const rookieArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "rookies-2026.json"), "utf8"));
 if (!Array.isArray(rookieArtifact.players) || rookieArtifact.players.length < 50) throw new Error("Rookie artifact is incomplete");
 if (Number(rookieArtifact.meta?.historicalRookieCount || 0) < 1500) throw new Error("Rookie historical cohort support is incomplete");

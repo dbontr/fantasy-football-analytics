@@ -8,13 +8,16 @@
   const correlationModel = typeof module !== "undefined" && module.exports
     ? require("./correlation.js")
     : root.SnapCountCorrelation;
-  const api = factory(core, rookies, correlationModel);
+  const meanCalibration = typeof module !== "undefined" && module.exports
+    ? require("./mean-calibration.js")
+    : root.SnapCountMeanCalibration;
+  const api = factory(core, rookies, correlationModel, meanCalibration);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OracleBrowserEngine = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel, meanCalibration) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.6";
+  const VERSION = "oracle-browser-2026.7";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -270,12 +273,20 @@
       };
     }
     const availability = resolveAvailability(baseline, evidence);
-    const drivers = applyFamilyCaps([
-      ...opportunityDrivers(baseline.player, baseline),
-      ...evidenceDrivers(baseline.player, baseline, evidence),
-    ], baseline.mean);
-    const correction = drivers.reduce((sum, row) => sum + row.impact, 0);
-    const activeMean = Math.max(0, baseline.mean + correction);
+    const livePprAnchor = baseline.player.projectionSource === "espn-live-ppr";
+    const validatedMeanScale = livePprAnchor ? clamp(options.validatedMeanScale ?? 1, 0, 1) : 1;
+    const drivers = livePprAnchor
+      ? (meanCalibration?.drivers?.(baseline.player, baseline, evidence) || []).map((row) => ({ ...row, impact: row.impact * validatedMeanScale }))
+      : applyFamilyCaps([
+        ...opportunityDrivers(baseline.player, baseline),
+        ...evidenceDrivers(baseline.player, baseline, evidence),
+      ], baseline.mean);
+    let correction = drivers.reduce((sum, row) => sum + row.impact, 0);
+    if (livePprAnchor) correction = clamp(correction, -baseline.mean, Math.max(3, baseline.mean * 0.65));
+    const expectedMeanTarget = Math.max(0, baseline.mean + correction);
+    const activeMean = livePprAnchor && availability.probability > 0
+      ? expectedMeanTarget / Math.max(0.05, availability.probability)
+      : expectedMeanTarget;
     const opportunity = baseline.player.opportunity || {};
     let roleUncertainty = clamp(1 - finite(opportunity.volumeStability, baseline.reliability), 0, 1);
     const conflict = clamp(mean(drivers.map((row) => row.conflict || 0)), 0, 1);

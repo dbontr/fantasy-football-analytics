@@ -1077,8 +1077,9 @@
     return [...deduped.values()].slice(0, Math.max(1, Math.round(finite(options.limit, 12))));
   }
 
-  function waiverRecommendations(roster, freeAgents, settings = {}, limit = 12, week = null) {
+  function waiverRecommendations(roster, freeAgents, settings = {}, limit = 12, week = null, options = {}) {
     const selectedWeek = week ? Math.round(clamp(week, 1, 18)) : null;
+    const minimumScore = Math.max(0, finite(options.minimumScore, 0.25));
     const evaluation = (rawPlayer) => {
       const player = normalizePlayer(rawPlayer);
       return {
@@ -1115,7 +1116,7 @@
         const assetGain = add.projectedPoints - drop.projectedPoints;
         const reliabilityGain = add.reliability - drop.reliability;
         const score = lineupGain * 9 + depthGain * 2 + assetGain * 0.055 + reliabilityGain * 3;
-        if (score <= 0.25) return;
+        if (score <= minimumScore) return;
         suggestions.push({
           add,
           drop,

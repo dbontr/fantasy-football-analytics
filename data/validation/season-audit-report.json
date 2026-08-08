@@ -1,0 +1,58 @@
+{
+  "version": "season-history-audit-2026.1",
+  "generatedAt": "2026-08-08T19:15:49.415Z",
+  "split": {
+    "development": [
+      2021,
+      2022
+    ],
+    "selection": 2023,
+    "frozenTest": 2024,
+    "consistencyOnly": 2025
+  },
+  "development": {
+    "n": 12,
+    "modelBrier": 0.06197724537037037,
+    "strengthBrier": 0.07245990690979971,
+    "uniformBrier": 0.08319444444444442,
+    "modelLogLoss": 1.3754678108304856,
+    "strengthLogLoss": 1.8400801420816926,
+    "uniformLogLoss": 2.3937458713910233,
+    "championProbability": 0.26958333333333334,
+    "strengthChampionProbability": 0.16276826224653732
+  },
+  "selection": {
+    "n": 6,
+    "modelBrier": 0.07395774691358023,
+    "strengthBrier": 0.07604689836236649,
+    "uniformBrier": 0.08319444444444443,
+    "modelLogLoss": 1.7221049151638084,
+    "strengthLogLoss": 1.9761142385974406,
+    "uniformLogLoss": 2.393745871391023,
+    "championProbability": 0.1988888888888889,
+    "strengthChampionProbability": 0.1426890395803926
+  },
+  "frozen2024": {
+    "n": 10,
+    "modelBrier": 0.059786324074074096,
+    "strengthBrier": 0.0710550810313372,
+    "uniformBrier": 0.08319444444444443,
+    "modelLogLoss": 1.341377588220158,
+    "strengthLogLoss": 1.7774838998276223,
+    "uniformLogLoss": 2.3937458713910233,
+    "championProbability": 0.28583333333333333,
+    "strengthChampionProbability": 0.17317643142318578
+  },
+  "consistency2025": {
+    "n": 10,
+    "modelBrier": 0.07309494444444445,
+    "strengthBrier": 0.07555183777328066,
+    "uniformBrier": 0.08319444444444443,
+    "modelLogLoss": 1.7102944134533797,
+    "strengthLogLoss": 1.9179745982688843,
+    "uniformLogLoss": 2.3937458713910233,
+    "championProbability": 0.2345,
+    "strengthChampionProbability": 0.1556945414384655
+  },
+  "admitted": true
+}

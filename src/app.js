@@ -21,6 +21,7 @@
 
   const state = {
     dataset: null,
+    analyticsProfile: null,
     players: [],
     playerIndex: new Map(),
     schedule: {},
@@ -300,6 +301,7 @@
     return context.mergeEvidence(
       context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
       context.healthEvidence(player, state.healthCalibration),
+      context.baselineRoleEvidence(player),
       context.absenceRedistributionEvidence(player, state.players),
       context.quarterbackContextEvidence(player, state.players, week),
       context.matchupEvidence(player, state.contextByWeek.get(week)),
@@ -367,6 +369,7 @@
       historyEvidenceFor(player),
       context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
       context.healthEvidence(player, state.healthCalibration),
+      context.baselineRoleEvidence(player),
       context.absenceRedistributionEvidence(player, state.players),
       context.quarterbackContextEvidence(player, state.players, 1),
       rookieEvidenceFor(player, 1),
@@ -376,14 +379,34 @@
     );
   }
 
+  function servingPolicy(surface) {
+    return state.analyticsProfile?.[surface] || {};
+  }
+  function servingMeanScale(surface) {
+    const value = Number(servingPolicy(surface).validatedMeanScale);
+    return Number.isFinite(value) ? clamp(value, 0, 1) : 0;
+  }
+  function draftPolicyForSettings(settings) {
+    const profile = servingPolicy("draft");
+    if (profile.policy !== "segmented-qualified" || !profile.segments) return profile.fallbackPolicy || null;
+    if (!(profile.supportedTeamCounts || []).includes(Number(settings.teams))) return profile.fallbackPolicy || null;
+    const anchors = [
+      { bucket: "early", pick: 1 },
+      { bucket: "middle", pick: Math.ceil(settings.teams / 2) },
+      { bucket: "late", pick: settings.teams },
+    ];
+    anchors.sort((left, right) => Math.abs(left.pick - settings.draftPosition) - Math.abs(right.pick - settings.draftPosition));
+    return profile.segments[`${settings.teams}-${anchors[0].bucket}`] || profile.fallbackPolicy || null;
+  }
+
   function baselineWeekProjection(player, week) {
     const value = Number(player?.weeklyProjections?.[Math.max(0, week - 1)]);
     if (Number.isFinite(value)) return value;
     return Number(player?.weeklyProjection || 0);
   }
 
-  function decisionPlayerForWeek(player, week) {
-    const forecast = engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week) });
+  function decisionPlayerForWeek(player, week, surface = "startSit") {
+    const forecast = engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week), validatedMeanScale: servingMeanScale(surface) });
     const weekly = Array.isArray(player.weeklyProjections)
       ? [...player.weeklyProjections]
       : Array.from({ length: 18 }, () => Number(player.weeklyProjection || 0));
@@ -775,7 +798,10 @@
     renderDraftManualOptions(settings);
     $("#draft-next").textContent = summary.remaining > 0 ? `P${summary.pickNumber} / T${summary.teamId}` : "COMPLETE";
     $("#draft-meta").textContent = `${state.draftState.picks.length} picks · ${summary.isUserPick ? "YOUR PICK" : `team ${summary.teamId}`}`;
-    const initial = draftSim.adjustRecommendations(core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36), 18);
+    const initial = draftSim.qualifyRecommendations(
+      core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36),
+      state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
+    );
     renderDraftTable(initial, summary, settings);
     renderDraftPanels(settings);
     const token = ++state.draftRenderToken;
@@ -783,7 +809,10 @@
       try {
         const simulation = await runWorker("draft-room-window", { options: { players: state.players, state: state.draftState, settings, targetTeamId: settings.draftPosition, strategy: $("#draft-opponent-strategy").value || "mixed", board: draftBoardPayload(), simulations: 500, seed: `draft-window-${state.draftState.picks.length}` } });
         if (token !== state.draftRenderToken) return;
-        const refined = draftSim.adjustRecommendations(core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36, simulation), 18);
+        const refined = draftSim.qualifyRecommendations(
+          core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36, simulation),
+          state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
+        );
         renderDraftTable(refined, summary, settings);
       } catch (_) { /* analytical fallback is already rendered */ }
     }
@@ -910,7 +939,7 @@
     status("Checking your roster and the latest player updates…");
     const contextState = await prepareDecisionContext(roster, week);
     roster = contextState.players;
-    const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week) }));
+    const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week), validatedMeanScale: servingMeanScale("startSit") }));
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({ ...forecast.player, weekProjection: forecast.distribution.mean }));
     const lineup = core.optimizeLineup(prepared, core.DEFAULT_SETTINGS, "weekProjection");
@@ -971,10 +1000,10 @@
       roster = refreshDecisionPlayers(roster);
       freeAgents = state.players.filter((player) => !rosterSet.has(String(player.id)));
       const intelligenceIds = new Set(intelligencePool.map((player) => String(player.id)));
-      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week));
-      const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week) : player);
+      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week, "waivers"));
+      const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week, "waivers") : player);
       status("Finding the pickups that help you most…");
-      const suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week });
+      const suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week, policy: { minimumScore: Number(servingPolicy("waivers").minimumScore || 0.25) } });
       $("#waiver-result").className = "result-space";
       $("#waiver-result").innerHTML = suggestions.length ? `<div class="decision-list">${suggestions.map((row) => {
         const bid = mode === "faab" ? faabRange(row, budget, week) : null;
@@ -1020,11 +1049,13 @@
     try {
       const contextState = await prepareDecisionContext(selected, week);
       roster = refreshDecisionPlayers(roster);
-      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week));
-      const give = giveIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week));
-      const receive = getIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week));
+      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week, "trades"));
+      const give = giveIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
+      const receive = getIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
       const analysis = core.analyzeTrade({ roster: decisionRoster, give, receive, players: state.players, settings: core.DEFAULT_SETTINGS, week });
-      const verdict = analysis.score >= 4 ? "ACCEPT" : analysis.score <= -4 ? "PASS" : "CLOSE CALL";
+      const tradePolicy = servingPolicy("trades");
+      const acceptScore = Number(tradePolicy.acceptScore || 28), passScore = Number(tradePolicy.passScore || -28);
+      const verdict = analysis.score >= acceptScore ? "ACCEPT" : analysis.score <= passScore ? "PASS" : "CLOSE CALL";
       const tone = verdict === "ACCEPT" ? "good" : verdict === "PASS" ? "bad" : "neutral";
       const longTerm = analysis.assetGain >= 5 ? "Better" : analysis.assetGain <= -5 ? "Worse" : "About even";
       $("#trade-check-result").className = "result-space";
@@ -1049,10 +1080,10 @@
       contextState = await prepareDecisionContext([...userRoster, ...opponentRoster], week);
       userRoster = refreshDecisionPlayers(userRoster);
       opponentRoster = refreshDecisionPlayers(opponentRoster);
-      const decisionUserRoster = userRoster.map((player) => decisionPlayerForWeek(player, week));
-      const decisionOpponentRoster = opponentRoster.map((player) => decisionPlayerForWeek(player, week));
+      const decisionUserRoster = userRoster.map((player) => decisionPlayerForWeek(player, week, "trades"));
+      const decisionOpponentRoster = opponentRoster.map((player) => decisionPlayerForWeek(player, week, "trades"));
       status("Comparing trade ideas…");
-      const proposals = await runWorker("trade-proposals", { options: {
+      const rawProposals = await runWorker("trade-proposals", { options: {
         userRoster: decisionUserRoster,
         opponentRoster: decisionOpponentRoster,
         players: state.players,
@@ -1062,6 +1093,8 @@
         maxEvaluations: 700,
         limit: 10,
       } });
+      const acceptScore = Number(servingPolicy("trades").acceptScore || 28);
+      const proposals = rawProposals.filter((row) => Number(row.userAnalysis?.score) >= acceptScore);
       $("#trade-result").className = "result-space";
       $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">TRADE IDEA</span><strong>Give ${esc(row.give.map((p) => p.name).join(" + "))}</strong></div><b>Get ${esc(row.receive.map((p) => p.name).join(" + "))}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>Your lineup: ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)} pts</span><span>Trade balance: ${row.fairness}/100</span></div></article>`).join("")}</div>` : `<div class="empty-answer"><strong>No strong trade idea found right now.</strong><p>SnapCount did not find a package that clearly helps you without becoming unrealistic for the other side.</p></div>`;
       status(`Trade ideas are ready. ${decisionContextLabel(contextState)}.`, "good");
@@ -1328,23 +1361,39 @@
     $("#engine-version").textContent = engine.VERSION.replace("oracle-browser-", "v");
     $("#worker-status").textContent = "Web Worker online";
     try {
-      const [response, coachResponse, healthResponse, rookieResponse] = await Promise.all([
+      const [response, coachResponse, healthResponse, rookieResponse, profileResponse] = await Promise.all([
         fetch("./data/players-lite.json"),
         fetch("./data/coaches-2026.json"),
         fetch("./data/health-calibration-2026.json"),
         fetch("./data/rookies-2026.json"),
+        fetch("./data/analytics-runtime-profile.json"),
       ]);
-      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok) throw new Error("one or more bootstrap model artifacts failed to load");
+      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !profileResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
       state.dataset = await response.json();
+      state.analyticsProfile = await profileResponse.json();
+      if (state.analyticsProfile?.mode !== "serve-frozen-qualified-analytics") throw new Error("qualified analytics profile is invalid");
       state.coaches = await coachResponse.json();
       state.healthCalibration = await healthResponse.json();
       state.rookieArtifact = await rookieResponse.json();
       state.rookieIndex = rookieModel.indexArtifact(state.rookieArtifact);
-      state.players = rookieModel.enrichPlayers(state.dataset.players || [], state.rookieIndex);
+      const season = Number(state.dataset.meta?.season || 2026);
+      let baselinePlayers = state.dataset.players || [];
+      let livePpr = false;
+      try {
+        const snapshot = await sources.espnPprPlayerSnapshot(season);
+        baselinePlayers = sources.enrichPprProjectionBaseline(baselinePlayers, snapshot, season);
+        livePpr = baselinePlayers.some((player) => player.projectionSource === "espn-live-ppr");
+      } catch (error) {
+        console.warn("Live ESPN PPR projection refresh unavailable; using committed PPR fallback.", error);
+      }
+      state.players = rookieModel.enrichPlayers(baselinePlayers, state.rookieIndex);
       reindexPlayers();
       state.schedule = state.dataset.schedule || {};
       $("#player-count").textContent = state.players.length.toLocaleString();
-      $("#bootstrap-status").textContent = `${state.dataset.meta?.season || 2026} compact + ${state.rookieArtifact?.players?.length || 0} rookie priors`;
+      const qualified = Object.values(state.analyticsProfile?.grades || {}).every((grade) => grade === "A+") ? "A+ qualified" : state.analyticsProfile?.version || "qualified";
+      $("#bootstrap-status").textContent = livePpr
+        ? `${season} live ESPN PPR · ${qualified} · ${state.rookieArtifact?.players?.length || 0} rookie priors`
+        : `${season} committed PPR fallback · ${qualified} · ${state.rookieArtifact?.players?.length || 0} rookie priors`;
       fillPlayerSelects();
 
       const [savedLedger, savedRoster, savedWeights, savedBoard, savedEspnConnection, savedEspnSnapshot] = await Promise.all([

@@ -85,3 +85,47 @@ test("Oracle draft policy recognizes rookie tail without changing CPU market beh
   assert.equal(withRookie.id, stripped.id);
   assert.ok(rookieApi.draftCapitalScore(rookieMeta) > 0.9);
 });
+
+
+test("standard draft context uses the standard projection family", () => {
+  const row = players(20)[0];
+  const standardWeekly = row.weeklyProjection - 2;
+  row.standardProjectedPoints = standardWeekly * 17;
+  row.standardWeeklyProjection = standardWeekly;
+  row.standardWeeklyProjections = Array(18).fill(standardWeekly);
+  const ppr = draft.createRoomContext([row], core.cloneSettings({ scoring: "ppr" }));
+  const standard = draft.createRoomContext([row], core.cloneSettings({ scoring: "standard" }));
+  assert.equal(ppr.byId.get(row.id).projectedPoints, row.projectedPoints);
+  assert.equal(standard.byId.get(row.id).projectedPoints, row.standardProjectedPoints);
+  assert.equal(standard.byId.get(row.id).weeklyProjection, row.standardWeeklyProjection);
+});
+
+
+test("live qualified recommendation matches the historically replayed Oracle pick", () => {
+  const rows = players(160);
+  const settings = core.cloneSettings({ teams: 8, rounds: 8, draftPosition: 1, scoring: "ppr" });
+  const state = core.createDraftState(settings);
+  const explanations = core.advancedDraftRecommendations(rows, state, settings, 1, 36);
+  const live = draft.qualifyRecommendations(explanations, rows, state, settings, 1, null, null, 1)[0];
+  const replay = draft.simulateDraft({
+    players: rows, settings, userTeamId: 1, userStrategy: "oracle", opponentStrategy: "mixed", seed: "policy-parity",
+  });
+  assert.ok(live);
+  assert.equal(replay.state.picks[0].playerId, live.id);
+});
+
+
+test("qualified live ranking stays policy-identical across a full draft", () => {
+  const rows = players(160);
+  const settings = core.cloneSettings({ teams: 8, rounds: 8, draftPosition: 1, scoring: "ppr" });
+  let state = core.createDraftState(settings);
+  while (state.picks.length < settings.teams * settings.rounds) {
+    const summary = core.draftPickSummary(state, settings);
+    const selected = summary.teamId === 1
+      ? draft.qualifyRecommendations(core.advancedDraftRecommendations(rows, state, settings, 1, 36), rows, state, settings, 1, null, null, 1)[0]
+      : draft.cpuPick(rows, state, settings, summary.teamId, { strategy: "mixed", seed: "full-policy-parity" });
+    state = core.applyDraftPick(state, selected.id, settings);
+  }
+  const replay = draft.simulateDraft({ players: rows, settings, userTeamId: 1, userStrategy: "oracle", opponentStrategy: "mixed", seed: "full-policy-parity" });
+  assert.deepEqual(state.rosters["1"], replay.state.rosters["1"]);
+});

@@ -1,0 +1,284 @@
+{
+  "version": "uncertainty-history-audit-2026.1",
+  "generatedAt": "2026-08-08T18:34:22.301Z",
+  "training": [
+    2021,
+    2022,
+    2023
+  ],
+  "frozenTest": 2024,
+  "consistencyOnly": 2025,
+  "bins": [
+    2,
+    6,
+    10,
+    14,
+    18,
+    null
+  ],
+  "shrinkage": 120,
+  "table": {
+    "QB": [
+      {
+        "samples": 26,
+        "absoluteRelativeQ80": 0.6660779751870938,
+        "cv": 0.5197434056459845
+      },
+      {
+        "samples": 14,
+        "absoluteRelativeQ80": 0.6455654889351011,
+        "cv": 0.503737427577302
+      },
+      {
+        "samples": 349,
+        "absoluteRelativeQ80": 0.7332743526882135,
+        "cv": 0.572177017611153
+      },
+      {
+        "samples": 766,
+        "absoluteRelativeQ80": 0.5599882891974161,
+        "cv": 0.4369611838127222
+      },
+      {
+        "samples": 474,
+        "absoluteRelativeQ80": 0.5316019480951124,
+        "cv": 0.4148112041587699
+      }
+    ],
+    "RB": [
+      {
+        "samples": 1333,
+        "absoluteRelativeQ80": 0.9978876156973365,
+        "cv": 0.7786558438429126
+      },
+      {
+        "samples": 846,
+        "absoluteRelativeQ80": 0.9115496559568865,
+        "cv": 0.7112859758940093
+      },
+      {
+        "samples": 831,
+        "absoluteRelativeQ80": 0.7903533577465517,
+        "cv": 0.6167160019118606
+      },
+      {
+        "samples": 582,
+        "absoluteRelativeQ80": 0.6898575592431323,
+        "cv": 0.538298713676788
+      },
+      {
+        "samples": 161,
+        "absoluteRelativeQ80": 0.7350365231666067,
+        "cv": 0.5735520465415296
+      }
+    ],
+    "WR": [
+      {
+        "samples": 2231,
+        "absoluteRelativeQ80": 1,
+        "cv": 0.7803041460723791
+      },
+      {
+        "samples": 1663,
+        "absoluteRelativeQ80": 1,
+        "cv": 0.7803041460723791
+      },
+      {
+        "samples": 1238,
+        "absoluteRelativeQ80": 0.7772213989117616,
+        "cv": 0.606469079987022
+      },
+      {
+        "samples": 636,
+        "absoluteRelativeQ80": 0.7607763698405683,
+        "cv": 0.5936369556204891
+      },
+      {
+        "samples": 238,
+        "absoluteRelativeQ80": 0.7294927134323377,
+        "cv": 0.5692261888208431
+      }
+    ],
+    "TE": [
+      {
+        "samples": 1437,
+        "absoluteRelativeQ80": 1,
+        "cv": 0.7803041460723791
+      },
+      {
+        "samples": 826,
+        "absoluteRelativeQ80": 0.8724710140075381,
+        "cv": 0.6807927495580548
+      },
+      {
+        "samples": 341,
+        "absoluteRelativeQ80": 0.8252212067206873,
+        "cv": 0.6439235290310041
+      },
+      {
+        "samples": 87,
+        "absoluteRelativeQ80": 0.8713176670844318,
+        "cv": 0.6798927881720951
+      },
+      {
+        "samples": 17,
+        "absoluteRelativeQ80": 0.9693431529690633,
+        "cv": 0.7563824812286325
+      }
+    ]
+  },
+  "positions": {
+    "QB": {
+      "frozen2024": {
+        "legacy": {
+          "n": 549,
+          "coverage": 0.785063752276867,
+          "meanWidth": 18.968936177582236,
+          "quantileLoss": 2.681388350956308
+        },
+        "empirical": {
+          "n": 549,
+          "coverage": 0.7832422586520947,
+          "meanWidth": 18.753044835184454,
+          "quantileLoss": 2.6883629884863254
+        }
+      },
+      "consistency2025": {
+        "legacy": {
+          "n": 544,
+          "coverage": 0.7628676470588235,
+          "meanWidth": 19.222104157371234,
+          "quantileLoss": 2.767952009744888
+        },
+        "empirical": {
+          "n": 544,
+          "coverage": 0.7573529411764706,
+          "meanWidth": 19.03757266541197,
+          "quantileLoss": 2.774473141340703
+        }
+      }
+    },
+    "RB": {
+      "frozen2024": {
+        "legacy": {
+          "n": 1215,
+          "coverage": 0.837037037037037,
+          "meanWidth": 14.997817496045775,
+          "quantileLoss": 2.089951570158351
+        },
+        "empirical": {
+          "n": 1215,
+          "coverage": 0.7917695473251029,
+          "meanWidth": 15.184939414459702,
+          "quantileLoss": 2.113986547876399
+        }
+      },
+      "consistency2025": {
+        "legacy": {
+          "n": 1211,
+          "coverage": 0.8315441783649876,
+          "meanWidth": 15.230521606071227,
+          "quantileLoss": 2.1741411650009357
+        },
+        "empirical": {
+          "n": 1211,
+          "coverage": 0.7853014037985137,
+          "meanWidth": 15.469367942075875,
+          "quantileLoss": 2.1937616661914836
+        }
+      }
+    },
+    "WR": {
+      "frozen2024": {
+        "legacy": {
+          "n": 1957,
+          "coverage": 0.7996934082779765,
+          "meanWidth": 14.46218745428969,
+          "quantileLoss": 2.2087757877153527
+        },
+        "empirical": {
+          "n": 1957,
+          "coverage": 0.7705671946857435,
+          "meanWidth": 14.84224593598052,
+          "quantileLoss": 2.2311270719254432
+        }
+      },
+      "consistency2025": {
+        "legacy": {
+          "n": 1992,
+          "coverage": 0.8127510040160643,
+          "meanWidth": 14.03366811849853,
+          "quantileLoss": 2.051451098616022
+        },
+        "empirical": {
+          "n": 1992,
+          "coverage": 0.768574297188755,
+          "meanWidth": 14.312965894624519,
+          "quantileLoss": 2.0840216698819862
+        }
+      }
+    },
+    "TE": {
+      "frozen2024": {
+        "legacy": {
+          "n": 925,
+          "coverage": 0.8302702702702702,
+          "meanWidth": 11.56178655953467,
+          "quantileLoss": 1.714095799040851
+        },
+        "empirical": {
+          "n": 925,
+          "coverage": 0.7513513513513513,
+          "meanWidth": 11.252608890394711,
+          "quantileLoss": 1.732272491734463
+        }
+      },
+      "consistency2025": {
+        "legacy": {
+          "n": 964,
+          "coverage": 0.8454356846473029,
+          "meanWidth": 12.079147434506472,
+          "quantileLoss": 1.7899364868033512
+        },
+        "empirical": {
+          "n": 964,
+          "coverage": 0.7531120331950207,
+          "meanWidth": 11.772456633201983,
+          "quantileLoss": 1.8027012296852385
+        }
+      }
+    }
+  },
+  "overall": {
+    "frozen2024": {
+      "legacy": {
+        "n": 4646,
+        "coverage": 0.8138183383555747,
+        "meanWidth": 14.557349899871456,
+        "quantileLoss": 2.135059447500892
+      },
+      "empirical": {
+        "n": 4646,
+        "coverage": 0.7737839001291433,
+        "meanWidth": 14.679307258591004,
+        "quantileLoss": 2.155202899475085
+      }
+    },
+    "consistency2025": {
+      "legacy": {
+        "n": 4711,
+        "coverage": 0.818509870515814,
+        "meanWidth": 14.540511854272026,
+        "quantileLoss": 2.1122140110037964
+      },
+      "empirical": {
+        "n": 4711,
+        "coverage": 0.768414349395033,
+        "meanWidth": 14.635941491050067,
+        "quantileLoss": 2.1343948033259923
+      }
+    }
+  },
+  "selected": "production-existing",
+  "admitted": true
+}

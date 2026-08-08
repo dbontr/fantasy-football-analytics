@@ -1,0 +1,365 @@
+{
+  "version": "waiver-history-audit-2026.1",
+  "generatedAt": "2026-08-08T19:09:59.089Z",
+  "split": {
+    "development": [
+      2021,
+      2022
+    ],
+    "selection": 2023,
+    "frozenTest": 2024,
+    "consistencyOnly": 2025
+  },
+  "selectedThreshold": 0.25,
+  "selected": {
+    "threshold": 0.25,
+    "development": {
+      "threshold": 0.25,
+      "opportunities": 168,
+      "claims": 168,
+      "claimRate": 1,
+      "meanGainPerOpportunity": 31.125476190476228,
+      "meanGainPerClaim": 31.125476190476228,
+      "meanNaiveGain": 21.617142857142863,
+      "meanEdgeVsNaive": 9.508333333333333,
+      "positiveClaimRate": 0.9523809523809523,
+      "beatNaiveRate": 0.5952380952380952
+    },
+    "selection": {
+      "threshold": 0.25,
+      "opportunities": 84,
+      "claims": 84,
+      "claimRate": 1,
+      "meanGainPerOpportunity": 35.01880952380953,
+      "meanGainPerClaim": 35.01880952380953,
+      "meanNaiveGain": 18.454761904761902,
+      "meanEdgeVsNaive": 16.564047619047624,
+      "positiveClaimRate": 0.9523809523809523,
+      "beatNaiveRate": 0.6785714285714286
+    }
+  },
+  "frozen2024": {
+    "threshold": 0.25,
+    "opportunities": 168,
+    "claims": 168,
+    "claimRate": 1,
+    "meanGainPerOpportunity": 39.079642857142844,
+    "meanGainPerClaim": 39.079642857142844,
+    "meanNaiveGain": 22.18416666666666,
+    "meanEdgeVsNaive": 16.895476190476177,
+    "positiveClaimRate": 0.9821428571428571,
+    "beatNaiveRate": 0.6785714285714286
+  },
+  "consistency2025": {
+    "threshold": 0.25,
+    "opportunities": 168,
+    "claims": 168,
+    "claimRate": 1,
+    "meanGainPerOpportunity": 45.456785714285736,
+    "meanGainPerClaim": 45.456785714285736,
+    "meanNaiveGain": 35.63976190476194,
+    "meanEdgeVsNaive": 9.817023809523805,
+    "positiveClaimRate": 0.9880952380952381,
+    "beatNaiveRate": 0.5416666666666666
+  },
+  "admitted": true,
+  "candidates": [
+    {
+      "threshold": 0.25,
+      "development": {
+        "threshold": 0.25,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 0.25,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 2,
+      "development": {
+        "threshold": 2,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 2,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 4,
+      "development": {
+        "threshold": 4,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 4,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 6,
+      "development": {
+        "threshold": 6,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 6,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 8,
+      "development": {
+        "threshold": 8,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 8,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 10,
+      "development": {
+        "threshold": 10,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 10,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 12,
+      "development": {
+        "threshold": 12,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 12,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 16,
+      "development": {
+        "threshold": 16,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 16,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 20,
+      "development": {
+        "threshold": 20,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 20,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 28,
+      "development": {
+        "threshold": 28,
+        "opportunities": 168,
+        "claims": 168,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 31.125476190476228,
+        "meanGainPerClaim": 31.125476190476228,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.508333333333333,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 28,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    },
+    {
+      "threshold": 36,
+      "development": {
+        "threshold": 36,
+        "opportunities": 168,
+        "claims": 166,
+        "claimRate": 0.9880952380952381,
+        "meanGainPerOpportunity": 31.031428571428613,
+        "meanGainPerClaim": 31.40530120481932,
+        "meanNaiveGain": 21.617142857142863,
+        "meanEdgeVsNaive": 9.414285714285715,
+        "positiveClaimRate": 0.9578313253012049,
+        "beatNaiveRate": 0.5952380952380952
+      },
+      "selection": {
+        "threshold": 36,
+        "opportunities": 84,
+        "claims": 84,
+        "claimRate": 1,
+        "meanGainPerOpportunity": 35.01880952380953,
+        "meanGainPerClaim": 35.01880952380953,
+        "meanNaiveGain": 18.454761904761902,
+        "meanEdgeVsNaive": 16.564047619047624,
+        "positiveClaimRate": 0.9523809523809523,
+        "beatNaiveRate": 0.6785714285714286
+      }
+    }
+  ]
+}

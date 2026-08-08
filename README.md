@@ -58,31 +58,43 @@ The interface uses a major-sports-site fantasy-desk layout rather than a boutiqu
 
 ## Architecture
 
+SnapCount separates analytics **qualification** from live **serving**, analogous to training a model once and then running inference many times. Historical reconstruction, feature/policy selection, calibration checks, and frozen tests run only in the offline qualification command. That command writes a compact `data/analytics-runtime-profile.json`. Normal browser sessions load that frozen profile and current live inputs; they do not refit coefficients, tune thresholds, or replay history.
+
 ```text
-static bootstrap + optional free sources
-               |
-               v
-       temporal evidence
-               |
-      context + calibration
-               |
-     player distributions
-               |
-   correlated scenario engine  <---- Web Worker
-               |
-  exact roster decision logic
-               |
- season / playoff / title equity
-               |
-        browser-only UI
+offline historical sources
+        |
+        v
+qualify:analytics (training / frozen tests)
+        |
+        v
+analytics-runtime-profile.json
+        |
+        +-------------------------------+
+                                        v
+                         live ESPN + free current inputs
+                                        |
+                                        v
+                              temporal evidence
+                                        |
+                             frozen qualified policy
+                                        |
+                           player distributions / decisions
+                                        |
+                       correlated scenario engine <--- Worker
+                                        |
+                              browser-only UI
 ```
+
+`npm run verify` is intentionally different from `npm run qualify:analytics`: verification checks code/tests/static assets plus the hashes and versions of the already-qualified profile, while qualification is the heavier historical research operation.
 
 Heavy scenario work is moved off the UI thread. Player samples use `Float32Array`; league simulations stream standings/title counters instead of retaining entire season tensors. The scenario engine caps one player scenario run at 192 players × 50,000 simulations.
 ## Data provenance
 
 The bootstrap is intentionally explicit about provenance instead of pretending every field comes from one feed:
 
-- `data/players-lite.json`: compacted from the prior reference engine's 2026 public ESPN fantasy player/schedule snapshot, merged with nflverse-derived opportunity profiles. It remains the offline baseline even when live adapters are unavailable.
+- `data/players-lite.json`: committed 2026 ESPN PPR fallback refreshed from league-default 3, merged with nflverse-derived opportunity/snap-share priors. The same ESPN payload carries a derived Standard projection family (`PPR - projected receptions`) so Standard drafts do not reuse PPR point values.
+- `data/analytics-runtime-profile.json`: compact frozen serving artifact generated only after offline qualification. It contains admitted policy parameters/versions/grades and a qualification hash, not historical player-week training data.
+- `data/validation/`: offline-only qualification snapshots and audit reports. These files are not loaded or precached by the deployed app.
 - `data/health-calibration-2026.json`: historical nflverse official injury/practice reports joined to nflverse weekly player outcomes with leakage controls recorded in the artifact metadata.
 - `data/history/stats_player_week_2023.csv.gz` through `2025.csv.gz`: compressed nflverse weekly player statistics, loaded on demand and never included in initial-page precache.
 - `data/coaches-2026.json`: 32-team Bayesian-shrunk coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
@@ -97,8 +109,10 @@ The runtime source policy rejects arbitrary origins, credential-bearing URLs, an
 Requires Node 20+ only for tests/dev serving; the deployed application itself has no Node requirement.
 
 ```powershell
-npm.cmd run verify
-npm.cmd run refresh:rookies   # manual reproducible rookie-artifact refresh
+npm.cmd run verify              # fast release/runtime integrity; no historical retraining
+npm.cmd run qualify:analytics   # offline historical qualification/training; run when analytics change
+npm.cmd run refresh:ppr         # refresh committed PPR + derived Standard fallback
+npm.cmd run refresh:rookies     # manual reproducible rookie-artifact refresh
 npm.cmd run serve
 ```
 

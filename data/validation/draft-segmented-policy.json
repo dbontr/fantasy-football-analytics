@@ -1,0 +1,241 @@
+{
+  "version": "draft-segmented-policy-2026.1",
+  "generatedAt": "2026-08-08T19:41:15.210Z",
+  "training": [
+    2021,
+    2022
+  ],
+  "selection": 2023,
+  "freshTest": 2020,
+  "segments": {
+    "10-early": {
+      "policy": {
+        "market": 0.75,
+        "value": 0.24,
+        "need": 1.15,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "seasonMeans": {
+        "2021": 1877.29,
+        "2022": 2118.92,
+        "2023": 2185.17
+      },
+      "score": 2051.4962499999997
+    },
+    "10-middle": {
+      "policy": {
+        "market": 0.75,
+        "value": 0.1,
+        "need": 1.15,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "seasonMeans": {
+        "2021": 2305.54,
+        "2022": 2148.88,
+        "2023": 2299.6000000000004
+      },
+      "score": 2244.7135000000003
+    },
+    "10-late": {
+      "policy": {
+        "market": 0.65,
+        "value": 0.18,
+        "need": 1.15,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "seasonMeans": {
+        "2021": 2267.33,
+        "2022": 2224.1000000000004,
+        "2023": 2508.17
+      },
+      "score": 2335.41275
+    },
+    "12-early": {
+      "policy": {
+        "market": 0.75,
+        "value": 0.24,
+        "need": 0.55,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "seasonMeans": {
+        "2021": 2026.9700000000003,
+        "2022": 2053.98,
+        "2023": 2030.1299999999999
+      },
+      "score": 2035.5037500000003
+    },
+    "12-middle": {
+      "policy": {
+        "market": 0.95,
+        "value": 0.18,
+        "need": 0.75,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "seasonMeans": {
+        "2021": 1890.9499999999998,
+        "2022": 2077.58,
+        "2023": 2311.7799999999997
+      },
+      "score": 2089.56375
+    },
+    "12-late": {
+      "policy": {
+        "market": 0.65,
+        "value": 0.1,
+        "need": 0.55,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "seasonMeans": {
+        "2021": 1877.31,
+        "2022": 1987.4799999999998,
+        "2023": 2353.26
+      },
+      "score": 2074.1892500000004
+    }
+  },
+  "fresh2020": {
+    "meanRealized": 2151.8004166666665,
+    "controls": {
+      "espn-market": {
+        "n": 48,
+        "edge": 445.96000000000004,
+        "winRate": 0.9583333333333334
+      },
+      "balanced": {
+        "n": 48,
+        "edge": 88.87999999999998,
+        "winRate": 0.7083333333333334
+      },
+      "value": {
+        "n": 48,
+        "edge": 269.5883333333332,
+        "winRate": 0.7916666666666666
+      },
+      "need-heavy": {
+        "n": 48,
+        "edge": 0.18124999999996305,
+        "winRate": 0.5
+      },
+      "zero-rb": {
+        "n": 48,
+        "edge": 81.59291666666662,
+        "winRate": 0.6666666666666666
+      }
+    }
+  },
+  "consistency2024": {
+    "meanRealized": 2069.0988888888887,
+    "controls": {
+      "espn-market": {
+        "n": 36,
+        "edge": 275.2594444444445,
+        "winRate": 0.8611111111111112
+      },
+      "balanced": {
+        "n": 36,
+        "edge": 31.76111111111117,
+        "winRate": 0.5555555555555556
+      },
+      "value": {
+        "n": 36,
+        "edge": 267.876111111111,
+        "winRate": 0.8888888888888888
+      },
+      "need-heavy": {
+        "n": 36,
+        "edge": -107.59999999999988,
+        "winRate": 0.3333333333333333
+      },
+      "zero-rb": {
+        "n": 36,
+        "edge": 75.26111111111112,
+        "winRate": 0.4722222222222222
+      }
+    }
+  },
+  "consistency2025": {
+    "meanRealized": 2102.4261111111105,
+    "controls": {
+      "espn-market": {
+        "n": 36,
+        "edge": 425.095,
+        "winRate": 0.9444444444444444
+      },
+      "balanced": {
+        "n": 36,
+        "edge": 42.43388888888893,
+        "winRate": 0.6111111111111112
+      },
+      "value": {
+        "n": 36,
+        "edge": 188.47722222222228,
+        "winRate": 0.8333333333333334
+      },
+      "need-heavy": {
+        "n": 36,
+        "edge": -40.41833333333324,
+        "winRate": 0.4166666666666667
+      },
+      "zero-rb": {
+        "n": 36,
+        "edge": 164.91055555555556,
+        "winRate": 0.75
+      }
+    }
+  },
+  "admitted": true
+}

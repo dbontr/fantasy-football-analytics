@@ -1,0 +1,311 @@
+{
+  "version": "trade-history-audit-2026.1",
+  "generatedAt": "2026-08-08T19:12:12.368Z",
+  "split": {
+    "development": [
+      2021,
+      2022
+    ],
+    "selection": 2023,
+    "frozenTest": 2024,
+    "consistencyOnly": 2025
+  },
+  "selectedThreshold": 28,
+  "selected": {
+    "threshold": 28,
+    "development": {
+      "threshold": 28,
+      "samples": 834,
+      "accepts": 247,
+      "passes": 157,
+      "acceptMeanGain": 21.704048582995934,
+      "acceptPositiveRate": 0.7449392712550608,
+      "passMeanGain": -20.45643312101913,
+      "passCorrectRate": 0.7707006369426752,
+      "naiveAcceptMeanGain": 18.03042780748661,
+      "naiveAcceptPositiveRate": 0.7272727272727273
+    },
+    "selection": {
+      "threshold": 28,
+      "samples": 561,
+      "accepts": 150,
+      "passes": 118,
+      "acceptMeanGain": 45.17333333333331,
+      "acceptPositiveRate": 0.84,
+      "passMeanGain": -8.58525423728814,
+      "passCorrectRate": 0.5932203389830508,
+      "naiveAcceptMeanGain": 33.42585365853658,
+      "naiveAcceptPositiveRate": 0.7735191637630662
+    }
+  },
+  "frozen2024": {
+    "threshold": 28,
+    "samples": 1047,
+    "accepts": 323,
+    "passes": 215,
+    "acceptMeanGain": 41.540061919504666,
+    "acceptPositiveRate": 0.848297213622291,
+    "passMeanGain": -28.86353488372092,
+    "passCorrectRate": 0.7953488372093023,
+    "naiveAcceptMeanGain": 28.526628131021212,
+    "naiveAcceptPositiveRate": 0.7591522157996147
+  },
+  "consistency2025": {
+    "threshold": 28,
+    "samples": 972,
+    "accepts": 353,
+    "passes": 169,
+    "acceptMeanGain": 38.35150141643058,
+    "acceptPositiveRate": 0.7818696883852692,
+    "passMeanGain": -27.067337278106493,
+    "passCorrectRate": 0.8461538461538461,
+    "naiveAcceptMeanGain": 30.915813953488367,
+    "naiveAcceptPositiveRate": 0.7255813953488373
+  },
+  "admitted": true,
+  "candidates": [
+    {
+      "threshold": 28,
+      "development": {
+        "threshold": 28,
+        "samples": 834,
+        "accepts": 247,
+        "passes": 157,
+        "acceptMeanGain": 21.704048582995934,
+        "acceptPositiveRate": 0.7449392712550608,
+        "passMeanGain": -20.45643312101913,
+        "passCorrectRate": 0.7707006369426752,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 28,
+        "samples": 561,
+        "accepts": 150,
+        "passes": 118,
+        "acceptMeanGain": 45.17333333333331,
+        "acceptPositiveRate": 0.84,
+        "passMeanGain": -8.58525423728814,
+        "passCorrectRate": 0.5932203389830508,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 20,
+      "development": {
+        "threshold": 20,
+        "samples": 834,
+        "accepts": 307,
+        "passes": 198,
+        "acceptMeanGain": 19.534136807817564,
+        "acceptPositiveRate": 0.7361563517915309,
+        "passMeanGain": -19.250101010101023,
+        "passCorrectRate": 0.7777777777777778,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 20,
+        "samples": 561,
+        "accepts": 175,
+        "passes": 145,
+        "acceptMeanGain": 42.00605714285712,
+        "acceptPositiveRate": 0.8171428571428572,
+        "passMeanGain": -7.083724137931043,
+        "passCorrectRate": 0.5655172413793104,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 16,
+      "development": {
+        "threshold": 16,
+        "samples": 834,
+        "accepts": 339,
+        "passes": 213,
+        "acceptMeanGain": 19.01038348082593,
+        "acceptPositiveRate": 0.7463126843657817,
+        "passMeanGain": -18.48093896713617,
+        "passCorrectRate": 0.7605633802816901,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 16,
+        "samples": 561,
+        "accepts": 197,
+        "passes": 163,
+        "acceptMeanGain": 41.23736040609134,
+        "acceptPositiveRate": 0.817258883248731,
+        "passMeanGain": -5.775460122699395,
+        "passCorrectRate": 0.558282208588957,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 12,
+      "development": {
+        "threshold": 12,
+        "samples": 834,
+        "accepts": 376,
+        "passes": 238,
+        "acceptMeanGain": 18.381755319148912,
+        "acceptPositiveRate": 0.7446808510638298,
+        "passMeanGain": -17.15327731092438,
+        "passCorrectRate": 0.7394957983193278,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 12,
+        "samples": 561,
+        "accepts": 224,
+        "passes": 176,
+        "acceptMeanGain": 37.71464285714285,
+        "acceptPositiveRate": 0.7946428571428571,
+        "passMeanGain": -4.654772727272736,
+        "passCorrectRate": 0.5454545454545454,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 10,
+      "development": {
+        "threshold": 10,
+        "samples": 834,
+        "accepts": 391,
+        "passes": 251,
+        "acceptMeanGain": 17.807519181585647,
+        "acceptPositiveRate": 0.7391304347826086,
+        "passMeanGain": -16.49952191235061,
+        "passCorrectRate": 0.7330677290836654,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 10,
+        "samples": 561,
+        "accepts": 234,
+        "passes": 181,
+        "acceptMeanGain": 37.546837606837606,
+        "acceptPositiveRate": 0.7948717948717948,
+        "passMeanGain": -4.516795580110505,
+        "passCorrectRate": 0.5469613259668509,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 8,
+      "development": {
+        "threshold": 8,
+        "samples": 834,
+        "accepts": 408,
+        "passes": 274,
+        "acceptMeanGain": 17.31132352941174,
+        "acceptPositiveRate": 0.7303921568627451,
+        "passMeanGain": -14.657007299270088,
+        "passCorrectRate": 0.708029197080292,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 8,
+        "samples": 561,
+        "accepts": 252,
+        "passes": 187,
+        "acceptMeanGain": 36.99150793650794,
+        "acceptPositiveRate": 0.7976190476190477,
+        "passMeanGain": -5.133903743315517,
+        "passCorrectRate": 0.5561497326203209,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 6,
+      "development": {
+        "threshold": 6,
+        "samples": 834,
+        "accepts": 424,
+        "passes": 294,
+        "acceptMeanGain": 16.223962264150924,
+        "acceptPositiveRate": 0.714622641509434,
+        "passMeanGain": -14.22088435374151,
+        "passCorrectRate": 0.6972789115646258,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 6,
+        "samples": 561,
+        "accepts": 271,
+        "passes": 192,
+        "acceptMeanGain": 35.30760147601475,
+        "acceptPositiveRate": 0.7896678966789668,
+        "passMeanGain": -5.461041666666676,
+        "passCorrectRate": 0.5572916666666666,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 4,
+      "development": {
+        "threshold": 4,
+        "samples": 834,
+        "accepts": 450,
+        "passes": 308,
+        "acceptMeanGain": 15.187066666666658,
+        "acceptPositiveRate": 0.7,
+        "passMeanGain": -13.514025974025985,
+        "passCorrectRate": 0.6948051948051948,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 4,
+        "samples": 561,
+        "accepts": 292,
+        "passes": 210,
+        "acceptMeanGain": 34.48842465753424,
+        "acceptPositiveRate": 0.7842465753424658,
+        "passMeanGain": -5.3712380952381045,
+        "passCorrectRate": 0.5523809523809524,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    },
+    {
+      "threshold": 2,
+      "development": {
+        "threshold": 2,
+        "samples": 834,
+        "accepts": 468,
+        "passes": 334,
+        "acceptMeanGain": 15.02277777777776,
+        "acceptPositiveRate": 0.6944444444444444,
+        "passMeanGain": -12.654550898203606,
+        "passCorrectRate": 0.6856287425149701,
+        "naiveAcceptMeanGain": 18.03042780748661,
+        "naiveAcceptPositiveRate": 0.7272727272727273
+      },
+      "selection": {
+        "threshold": 2,
+        "samples": 561,
+        "accepts": 312,
+        "passes": 224,
+        "acceptMeanGain": 33.62108974358974,
+        "acceptPositiveRate": 0.782051282051282,
+        "passMeanGain": -4.502857142857154,
+        "passCorrectRate": 0.53125,
+        "naiveAcceptMeanGain": 33.42585365853658,
+        "naiveAcceptPositiveRate": 0.7735191637630662
+      }
+    }
+  ]
+}

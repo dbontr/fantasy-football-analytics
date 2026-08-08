@@ -63,3 +63,17 @@ test("healthy incumbent QB does not create replacement context", () => {
   ];
   assert.deepEqual(context.quarterbackContextEvidence(players[2], players, 1), {});
 });
+test("baseline snap share becomes explicit role evidence", () => {
+  const evidence = context.baselineRoleEvidence({ opportunity: { snapShare: 0.82 } });
+  assert.equal(evidence["role.snap_share"].value, 0.82);
+  assert.match(evidence["role.snap_share"].source, /nflverse/i);
+});
+
+test("live PPR anchor suppresses legacy QB replacement mean evidence", () => {
+  const players = [
+    { id: "wr", team: "DET", position: "WR", projectionSource: "espn-live-ppr" },
+    { id: "qb1", name: "Starter", team: "DET", position: "QB", injuryStatus: "OUT", active: false, weeklyProjection: 22 },
+    { id: "qb2", name: "Backup", team: "DET", position: "QB", injuryStatus: "ACTIVE", active: true, weeklyProjection: 14 },
+  ];
+  assert.deepEqual(context.quarterbackContextEvidence(players[0], players, 1), {});
+});

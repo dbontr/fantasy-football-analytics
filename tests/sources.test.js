@@ -84,3 +84,55 @@ test("browser-session credentials are restricted to the ESPN Fantasy adapter", a
     global.fetch = originalFetch;
   }
 });
+test("ESPN PPR snapshot uses only the allowlisted fantasy filter header", async () => {
+  const originalFetch = global.fetch;
+  let seen = null;
+  global.fetch = async (url, options = {}) => {
+    seen = { url: String(url), headers: options.headers };
+    return new Response('{"players":[]}', { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const result = await sources.espnPprPlayerSnapshot(2026);
+    assert.deepEqual(result.players, []);
+    assert.match(seen.url, /leaguedefaults\/3/);
+    assert.ok(seen.headers["x-fantasy-filter"]);
+    await assert.rejects(
+      () => sources.fetchJson("espnFantasy", seen.url, { headers: { Authorization: "secret" } }),
+      /secret-bearing request headers are forbidden/i,
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test("PPR snapshot enrichment replaces mean projections but preserves local context", () => {
+  const local = [{ id: "1", name: "Test WR", position: "WR", team: "DET", weeklyProjection: 10, weeklyProjections: Array(18).fill(10), projectedPoints: 170, floorProjection: 5, ceilingProjection: 18, projectionStdDev: 4, opportunity: { targetShare: 0.2 } }];
+  const snapshot = { players: [{ player: { id: 1, active: true, injuryStatus: "ACTIVE", stats: [
+    { seasonId: 2026, statSourceId: 1, statSplitTypeId: 1, scoringPeriodId: 1, appliedTotal: 19 },
+    { seasonId: 2026, statSourceId: 1, statSplitTypeId: 1, scoringPeriodId: 2, appliedTotal: 21 },
+    { seasonId: 2026, statSourceId: 1, statSplitTypeId: 0, scoringPeriodId: 0, appliedTotal: 330 },
+  ] } }] };
+  const [player] = sources.enrichPprProjectionBaseline(local, snapshot, 2026);
+  assert.equal(player.weeklyProjection, 20);
+  assert.equal(player.weeklyProjections[0], 19);
+  assert.equal(player.projectedPoints, 330);
+  assert.equal(player.projectionSource, "espn-live-ppr");
+  assert.equal(player.opportunity.targetShare, 0.2);
+});
+
+
+test("PPR enrichment also derives ESPN standard projections from receptions", () => {
+  const snapshot = { players: [{ player: { id: "p3", stats: [
+    { seasonId: 2026, scoringPeriodId: 0, statSourceId: 1, statSplitTypeId: 0, appliedTotal: 170, stats: { 53: 50 } },
+    { seasonId: 2026, scoringPeriodId: 1, statSourceId: 1, statSplitTypeId: 1, appliedTotal: 10, stats: { 53: 3 } },
+    { seasonId: 2026, scoringPeriodId: 2, statSourceId: 1, statSplitTypeId: 1, appliedTotal: 12, stats: { 53: 4 } },
+  ] } }] };
+  const [player] = sources.enrichPprProjectionBaseline([
+    { id: "p3", name: "Receiver", position: "WR", projectedPoints: 150, weeklyProjection: 9, weeklyProjections: Array(18).fill(9), floorProjection: 5, ceilingProjection: 14, projectionStdDev: 4 },
+  ], snapshot, 2026);
+  assert.equal(player.projectedPoints, 170);
+  assert.equal(player.standardProjectedPoints, 120);
+  assert.equal(player.weeklyProjections[0], 10);
+  assert.equal(player.standardWeeklyProjections[0], 7);
+  assert.equal(player.standardWeeklyProjections[1], 8);
+});

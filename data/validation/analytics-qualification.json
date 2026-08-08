@@ -1,0 +1,245 @@
+{
+  "version": "snapcount-analytics-qualification-2026.1",
+  "qualifiedAt": "2026-08-08T19:41:30.567Z",
+  "architecture": "offline-qualification-live-serving",
+  "dataset": {
+    "file": "historical-ppr-2020-2025.json.gz",
+    "sha256": "7598098a7742335382ddda16c8e32fae3cb36fb19e02a95bedd2d3f82e7c5435",
+    "seasons": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ]
+  },
+  "reports": {
+    "forecast-audit-report.json": "ec3cd9baed10f54faba7d707359acc063aa0d582916242092cb39d25a0841c87",
+    "uncertainty-audit-report.json": "f60b3d957d0e7c1eb120ea013980e08e3bcae9c03c305942f9b74a3699aac93c",
+    "decision-audit-report.json": "4f8e83792184fe7db2ee9e5b04b1bea6f5babb81091a4bd849d17e8ca01b2fa1",
+    "waiver-audit-report.json": "d1a4af803d32915a10c8fe4d4eb5e12eb901fc2c89b3a9341d2efd4dbc1dd29b",
+    "trade-audit-report.json": "46a0819b5bfeeb163ded2357489f5968485eb08a71f80f6f88bb625ce906ad37",
+    "season-audit-report.json": "54fc0d2fbabc0b5ecf7730c44cc8c09871c964999e8fd80f65f0592e7a9e7fb0",
+    "draft-segmented-policy.json": "cfb94af7ee33634e07c8da5663c96945acfb51e108c725f14fd1f4a93d09cf17"
+  },
+  "grades": {
+    "forecastMean": "A+",
+    "uncertainty": "A+",
+    "contextAdmission": "A+",
+    "startSit": "A+",
+    "waivers": "A+",
+    "trades": "A+",
+    "draft": "A+",
+    "season": "A+",
+    "provenance": "A+",
+    "runtimeParity": "A+"
+  },
+  "evidence": {
+    "forecast2024": {
+      "raw": {
+        "n": 4646,
+        "mae": 4.9200795326926485,
+        "rmse": 6.441991380777801,
+        "bias": 0.3068272295975031,
+        "rank": 0.6598106046231647
+      },
+      "corrected": {
+        "n": 4646,
+        "mae": 4.827931710535811,
+        "rmse": 6.414026335132118,
+        "bias": -0.018068987503117865,
+        "rank": 0.6638221825085078
+      }
+    },
+    "forecast2025": {
+      "raw": {
+        "n": 4711,
+        "mae": 4.904944429889615,
+        "rmse": 6.405538436128817,
+        "bias": 0.5890989832880495,
+        "rank": 0.6460596343306148
+      },
+      "corrected": {
+        "n": 4711,
+        "mae": 4.815164958645953,
+        "rmse": 6.386205758343418,
+        "bias": 0.2625306434607481,
+        "rank": 0.6481704348818879
+      }
+    },
+    "uncertainty2024": {
+      "n": 4646,
+      "coverage": 0.8138183383555747,
+      "meanWidth": 14.557349899871456,
+      "quantileLoss": 2.135059447500892
+    },
+    "uncertainty2025": {
+      "n": 4711,
+      "coverage": 0.818509870515814,
+      "meanWidth": 14.540511854272026,
+      "quantileLoss": 2.1122140110037964
+    },
+    "startSitPolicy": "raw-live-ppr",
+    "waiver2024": {
+      "threshold": 0.25,
+      "opportunities": 168,
+      "claims": 168,
+      "claimRate": 1,
+      "meanGainPerOpportunity": 39.079642857142844,
+      "meanGainPerClaim": 39.079642857142844,
+      "meanNaiveGain": 22.18416666666666,
+      "meanEdgeVsNaive": 16.895476190476177,
+      "positiveClaimRate": 0.9821428571428571,
+      "beatNaiveRate": 0.6785714285714286
+    },
+    "waiver2025": {
+      "threshold": 0.25,
+      "opportunities": 168,
+      "claims": 168,
+      "claimRate": 1,
+      "meanGainPerOpportunity": 45.456785714285736,
+      "meanGainPerClaim": 45.456785714285736,
+      "meanNaiveGain": 35.63976190476194,
+      "meanEdgeVsNaive": 9.817023809523805,
+      "positiveClaimRate": 0.9880952380952381,
+      "beatNaiveRate": 0.5416666666666666
+    },
+    "trade2024": {
+      "threshold": 28,
+      "samples": 1047,
+      "accepts": 323,
+      "passes": 215,
+      "acceptMeanGain": 41.540061919504666,
+      "acceptPositiveRate": 0.848297213622291,
+      "passMeanGain": -28.86353488372092,
+      "passCorrectRate": 0.7953488372093023,
+      "naiveAcceptMeanGain": 28.526628131021212,
+      "naiveAcceptPositiveRate": 0.7591522157996147
+    },
+    "trade2025": {
+      "threshold": 28,
+      "samples": 972,
+      "accepts": 353,
+      "passes": 169,
+      "acceptMeanGain": 38.35150141643058,
+      "acceptPositiveRate": 0.7818696883852692,
+      "passMeanGain": -27.067337278106493,
+      "passCorrectRate": 0.8461538461538461,
+      "naiveAcceptMeanGain": 30.915813953488367,
+      "naiveAcceptPositiveRate": 0.7255813953488373
+    },
+    "season2024": {
+      "n": 10,
+      "modelBrier": 0.059786324074074096,
+      "strengthBrier": 0.0710550810313372,
+      "uniformBrier": 0.08319444444444443,
+      "modelLogLoss": 1.341377588220158,
+      "strengthLogLoss": 1.7774838998276223,
+      "uniformLogLoss": 2.3937458713910233,
+      "championProbability": 0.28583333333333333,
+      "strengthChampionProbability": 0.17317643142318578
+    },
+    "season2025": {
+      "n": 10,
+      "modelBrier": 0.07309494444444445,
+      "strengthBrier": 0.07555183777328066,
+      "uniformBrier": 0.08319444444444443,
+      "modelLogLoss": 1.7102944134533797,
+      "strengthLogLoss": 1.9179745982688843,
+      "uniformLogLoss": 2.3937458713910233,
+      "championProbability": 0.2345,
+      "strengthChampionProbability": 0.1556945414384655
+    },
+    "draftFresh2020": {
+      "meanRealized": 2151.8004166666665,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 445.96000000000004,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 88.87999999999998,
+          "winRate": 0.7083333333333334
+        },
+        "value": {
+          "n": 48,
+          "edge": 269.5883333333332,
+          "winRate": 0.7916666666666666
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 0.18124999999996305,
+          "winRate": 0.5
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 81.59291666666662,
+          "winRate": 0.6666666666666666
+        }
+      }
+    },
+    "draftConsistency2024": {
+      "meanRealized": 2069.0988888888887,
+      "controls": {
+        "espn-market": {
+          "n": 36,
+          "edge": 275.2594444444445,
+          "winRate": 0.8611111111111112
+        },
+        "balanced": {
+          "n": 36,
+          "edge": 31.76111111111117,
+          "winRate": 0.5555555555555556
+        },
+        "value": {
+          "n": 36,
+          "edge": 267.876111111111,
+          "winRate": 0.8888888888888888
+        },
+        "need-heavy": {
+          "n": 36,
+          "edge": -107.59999999999988,
+          "winRate": 0.3333333333333333
+        },
+        "zero-rb": {
+          "n": 36,
+          "edge": 75.26111111111112,
+          "winRate": 0.4722222222222222
+        }
+      }
+    },
+    "draftConsistency2025": {
+      "meanRealized": 2102.4261111111105,
+      "controls": {
+        "espn-market": {
+          "n": 36,
+          "edge": 425.095,
+          "winRate": 0.9444444444444444
+        },
+        "balanced": {
+          "n": 36,
+          "edge": 42.43388888888893,
+          "winRate": 0.6111111111111112
+        },
+        "value": {
+          "n": 36,
+          "edge": 188.47722222222228,
+          "winRate": 0.8333333333333334
+        },
+        "need-heavy": {
+          "n": 36,
+          "edge": -40.41833333333324,
+          "winRate": 0.4166666666666667
+        },
+        "zero-rb": {
+          "n": 36,
+          "edge": 164.91055555555556,
+          "winRate": 0.75
+        }
+      }
+    }
+  }
+}

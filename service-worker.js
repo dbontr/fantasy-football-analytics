@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.8.0-context-transport";
+const CACHE = "snapcount-browser-v1.10.0-qualified-analytics";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
   "./src/engine/core.js",
   "./src/engine/rookies.js",
   "./src/engine/correlation.js",
+  "./src/engine/mean-calibration.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/context.js",
@@ -23,6 +24,7 @@ const STATIC_ASSETS = [
   "./src/data/espn-fantasy.js",
   "./src/storage/browser-store.js",
   "./data/players-lite.json",
+  "./data/analytics-runtime-profile.json",
   "./data/coaches-2026.json",
   "./data/health-calibration-2026.json",
   "./data/rookies-2026.json",

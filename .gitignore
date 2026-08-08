@@ -4,3 +4,5 @@ node_modules/
 .render-dom.html
 *.log
 .edge-*/
+
+.cache/

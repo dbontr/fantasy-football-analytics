@@ -171,3 +171,33 @@ test("context-only coaching metadata cannot move the forecast mean", () => {
   assert.equal(contextual.distribution.mean, base.distribution.mean);
   assert.equal(contextual.drivers.some((row) => row.family === "coaching"), false);
 });
+test("live ESPN PPR anchor preserves expected mean when availability is already priced", () => {
+  const live = makePlayer("live-qb", "QB", "DET", 20, { projectionSource: "espn-live-ppr" });
+  const forecast = engine.forecastPlayer(live, { week: 1, evidence: {
+    "health.active_probability": { available: true, value: 0.5, confidence: 1, conflict: 0 },
+  } });
+  assert.ok(Math.abs(forecast.distribution.mean - 20) < 1e-9);
+  assert.ok(Math.abs(forecast.activeDistribution.mean - 20 / forecast.availability.probability) < 1e-9);
+  assert.ok(forecast.availability.probability < 0.7);
+});
+
+test("decision scale zero keeps live PPR mean anchored while retaining uncertainty", () => {
+  const live = makePlayer("live-rb", "RB", "DET", 15, { projectionSource: "espn-live-ppr" });
+  const evidence = {
+    "matchup.position_grade": { available: true, value: 1, confidence: 1 },
+    "efficiency.fpoe": { available: true, value: 3, confidence: 1 },
+  };
+  const playerView = engine.forecastPlayer(live, { week: 1, evidence });
+  const decisionView = engine.forecastPlayer(live, { week: 1, evidence, validatedMeanScale: 0 });
+  assert.notEqual(playerView.distribution.mean, 15);
+  assert.ok(Math.abs(decisionView.distribution.mean - 15) < 1e-9);
+  assert.ok(decisionView.distribution.standardDeviation > 0);
+});
+
+test("static fallback keeps legacy evidence behavior", () => {
+  const fallback = makePlayer("fallback-rb", "RB", "DET", 15);
+  const forecast = engine.forecastPlayer(fallback, { week: 1, evidence: {
+    "matchup.position_grade": { available: true, value: 1, confidence: 1 },
+  }, validatedMeanScale: 0 });
+  assert.ok(forecast.distribution.mean > 15);
+});

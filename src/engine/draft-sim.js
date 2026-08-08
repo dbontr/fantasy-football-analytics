@@ -22,6 +22,11 @@
     "zero-rb": { label: "Zero-RB", market: 0.7, value: 0.22, need: 0.42, noise: 0.55, zeroRb: true },
     mixed: { label: "Mixed normal room", market: 0.78, value: 0.2, need: 0.48, noise: 0.75, mixed: true },
   });
+  const DEFAULT_ORACLE_POLICY = Object.freeze({
+    market: 0.7, value: 0.1, need: 0.95, injury: 7, rookie: 0,
+    maxQB: 2, maxTE: 2, maxK: 1, maxDST: 1,
+    secondQbRound: 10, secondTeRound: 10, kickerRound: 14, dstRound: 13,
+  });
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -117,9 +122,27 @@
     return PROFILES[names[hashSeed(seedKey) % names.length]];
   }
 
+  function scoringPlayer(player, settings) {
+    const normalized = core.normalizePlayer(player);
+    if (settings?.scoring !== "standard") return normalized;
+    const season = Number(player?.standardProjectedPoints);
+    const weekly = Number(player?.standardWeeklyProjection);
+    if (!Number.isFinite(season) || !Number.isFinite(weekly)) return normalized;
+    const ratio = normalized.weeklyProjection > 0 ? weekly / normalized.weeklyProjection : 1;
+    return core.normalizePlayer({
+      ...normalized,
+      projectedPoints: season,
+      weeklyProjection: weekly,
+      weeklyProjections: Array.isArray(player?.standardWeeklyProjections) ? player.standardWeeklyProjections : normalized.weeklyProjections,
+      floorProjection: normalized.floorProjection * ratio,
+      ceilingProjection: normalized.ceilingProjection * ratio,
+      projectionStdDev: normalized.projectionStdDev * ratio,
+    });
+  }
+
   function createRoomContext(players, settings, board = null) {
     const config = core.cloneSettings(settings);
-    const normalized = (players || []).map(core.normalizePlayer);
+    const normalized = (players || []).map((player) => scoringPlayer(player, config));
     const byId = new Map(normalized.map((player) => [player.id, player]));
     const replacement = core.computeReplacementLevels(normalized, config);
     const market = normalized.map((player) => ({
@@ -170,20 +193,61 @@
     }).sort((a, b) => b.score - a.score).slice(0, Math.max(1, limit));
   }
 
-  function oraclePolicyPick(context, state, teamId, tracker = null) {
+  function oraclePolicyScore(row, context, state, teamId, tracker = null, policyOptions = null) {
     const room = tracker || createTracker(context, state);
+    if (!row?.player || room.drafted.has(row.player.id)) return -Infinity;
     const counts = room.countsByTeam[String(teamId)] || {};
     const pick = (state?.picks || []).length + 1;
+    const round = Math.ceil(pick / Math.max(1, context.config.teams));
+    const policy = { ...DEFAULT_ORACLE_POLICY, ...(policyOptions || {}) };
+    const superflex = finite(context.config.slots?.SUPERFLEX) > 0;
+    const maxQB = superflex ? Math.max(3, finite(policy.maxQB, 3)) : finite(policy.maxQB, 2);
+    const position = row.player.position;
+    const count = finite(counts[position]);
+    if (position === "QB" && (count >= maxQB || (!superflex && count >= 1 && round < policy.secondQbRound))) return -Infinity;
+    if (position === "TE" && (count >= policy.maxTE || (count >= 1 && round < policy.secondTeRound))) return -Infinity;
+    if (position === "K" && (count >= policy.maxK || round < policy.kickerRound)) return -Infinity;
+    if (position === "DST" && (count >= policy.maxDST || round < policy.dstRound)) return -Infinity;
+    const need = starterNeedFromCounts(position, counts, context.config);
+    let score = -row.rank * policy.market + row.asset * policy.value + need * 11 * policy.need;
+    score -= finite(row.player.injuryRisk) * policy.injury;
+    score += rookieTailScore(row.player) * policy.rookie;
+    return score;
+  }
+
+  function oraclePolicyPick(context, state, teamId, tracker = null, policyOptions = null) {
     let best = null, bestScore = -Infinity;
     for (const row of context.market) {
-      if (room.drafted.has(row.player.id)) continue;
-      const need = starterNeedFromCounts(row.player.position, counts, context.config);
-      const pressure = clamp((pick - row.rank) * 0.32, -8, 11);
-      let score = row.asset + need * 16 + pressure - row.player.injuryRisk * 11 + rookieTailScore(row.player);
-      if (["K", "DST"].includes(row.player.position) && pick < context.config.teams * 10) score -= 18;
+      const score = oraclePolicyScore(row, context, state, teamId, tracker, policyOptions);
       if (score > bestScore) { best = row.player; bestScore = score; }
     }
     return best ? { ...best, roomStrategy: "Oracle policy", roomScore: Number(bestScore.toFixed(2)) } : null;
+  }
+
+  function qualifyRecommendations(rows, players, state, settings, teamId, board = null, policyOptions = null, limit = 18) {
+    const context = createRoomContext(players, settings, board);
+    const tracker = createTracker(context, state);
+    const explanationById = new Map((rows || []).map((row) => [String(row.id), row]));
+    return context.market.map((market) => {
+      const policyScore = oraclePolicyScore(market, context, state, teamId, tracker, policyOptions);
+      if (!Number.isFinite(policyScore)) return null;
+      const explanation = explanationById.get(String(market.player.id));
+      const row = explanation || market.player;
+      const rookieEdge = rookieTailScore(row);
+      return {
+        ...row,
+        marketRank: market.rank,
+        baseHeuristicScore: explanation?.score ?? null,
+        score: Number(policyScore.toFixed(2)),
+        roomScore: Number(policyScore.toFixed(2)),
+        rookieTailScore: rookieEdge,
+        returnChance: Number.isFinite(explanation?.returnChance) ? explanation.returnChance : 0.5,
+        vona: Number.isFinite(explanation?.vona) ? explanation.vona : 0,
+        need: Number.isFinite(explanation?.need) ? explanation.need : 0,
+        reasons: [...(explanation?.reasons || []), "ranked by historically qualified draft policy"],
+      };
+    }).filter(Boolean).sort((left, right) => right.score - left.score || left.marketRank - right.marketRank)
+      .slice(0, Math.max(1, limit));
   }
 
   function cpuPick(players, state, settings, teamId, options = {}) {
@@ -240,8 +304,8 @@
     return { state, cpuPicks, summary: core.draftPickSummary(state, settings) };
   }
 
-  function chooseUserPick(players, state, settings, teamId, strategy, board, seed, context, tracker = null) {
-    if (strategy === "oracle") return oraclePolicyPick(context || createRoomContext(players, settings, board), state, teamId, tracker);
+  function chooseUserPick(players, state, settings, teamId, strategy, board, seed, context, tracker = null, oraclePolicy = null) {
+    if (strategy === "oracle") return oraclePolicyPick(context || createRoomContext(players, settings, board), state, teamId, tracker, oraclePolicy);
     return cpuPick(players, state, settings, teamId, { strategy, board, seed, context, tracker });
   }
 
@@ -332,7 +396,7 @@
       const summary = core.draftPickSummary(state, settings);
       const isUser = Number(summary.teamId) === userTeamId;
       const selected = isUser
-        ? chooseUserPick(options.players || [], state, settings, userTeamId, options.userStrategy || "oracle", options.board, options.seed, context, tracker)
+        ? chooseUserPick(options.players || [], state, settings, userTeamId, options.userStrategy || "oracle", options.board, options.seed, context, tracker, options.oraclePolicy || null)
         : cpuPick(options.players || [], state, settings, summary.teamId, { strategy: options.opponentStrategy || "mixed", board: options.board, seed: options.seed, context, tracker });
       if (!selected) break;
       state = core.applyDraftPick(state, selected.id, settings);
@@ -400,6 +464,7 @@
   return {
     VERSION,
     PROFILES,
+    DEFAULT_ORACLE_POLICY,
     advanceToUser,
     benchmarkStrategies,
     adjustRecommendations,
@@ -408,8 +473,10 @@
     createRoomContext,
     parseRankingBoard,
     projectedSeasonPoints,
+    qualifyRecommendations,
     rookieTailScore,
     rosterSummary,
+    scoringPlayer,
     simulateDraft,
     simulatePickWindow,
     strategyCatalog,
