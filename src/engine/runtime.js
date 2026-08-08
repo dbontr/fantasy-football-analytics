@@ -14,7 +14,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.5";
+  const VERSION = "oracle-browser-2026.6";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -171,7 +171,7 @@
     return rows;
   }
 
-  const FAMILY_CAPS = Object.freeze({ market: 0.3, opportunity: 0.28, efficiency: 0.08, health: 0.45, environment: 0.12, matchup: 0.12, line: 0.1, news: 0.18, coaching: 0.06, rookie: 0.1 });
+  const FAMILY_CAPS = Object.freeze({ market: 0.3, opportunity: 0.28, efficiency: 0.08, health: 0.45, environment: 0.12, matchup: 0.12, line: 0.1, news: 0.18, context: 0.12, rookie: 0.1 });
   function evidenceDrivers(player, baseline, evidence = {}) {
     const rows = [];
     const add = (feature, family, label, rawImpact) => {
@@ -215,7 +215,7 @@
     add("matchup.position_grade", "matchup", "prior-season positional matchup", (r) => ["QB", "RB", "WR", "TE"].includes(player.position) ? finite(r.value) * baseline.mean * 0.075 : 0);
     add("line.pass_block_grade", "line", "pass protection", (r) => ["QB", "WR", "TE"].includes(player.position) ? finite(r.value) * baseline.mean * 0.045 : 0);
     add("line.run_block_grade", "line", "run blocking", (r) => ["RB", "QB"].includes(player.position) ? finite(r.value) * baseline.mean * 0.055 : 0);
-    add("coaching.mean_delta", "coaching", "coaching context", (r) => finite(r.value) * baseline.mean);
+    add("context.qb_replacement_delta", "context", "starting QB replacement", (r) => finite(r.value) * baseline.mean);
     return rows;
   }
 

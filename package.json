@@ -8,10 +8,11 @@
     "test": "node --test tests/*.test.js",
     "build": "node scripts/validate-static.js",
     "audit:model": "node scripts/model-audit.js",
-    "verify": "npm run check && npm test && npm run build && npm run audit:model && npm run audit:correlation",
+    "verify": "npm run check && npm test && npm run build && npm run audit:model && npm run audit:correlation && npm run audit:context",
     "serve": "node scripts/serve.js",
     "refresh:rookies": "node scripts/build-rookie-model.js",
-    "audit:correlation": "node scripts/correlation-audit.js"
+    "audit:correlation": "node scripts/correlation-audit.js",
+    "audit:context": "node scripts/context-audit.js"
   },
   "engines": {
     "node": ">=20"

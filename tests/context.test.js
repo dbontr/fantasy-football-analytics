@@ -14,16 +14,16 @@ test("health model prefers calibrated status/practice group", () => {
   assert.equal(evidence["health.active_probability"].group, "status-practice:questionable|limited");
 });
 
-test("coaching prior stays bounded", () => {
+test("coaching profile is context-only until its mean effect earns validation", () => {
   const evidence = context.coachingEvidence({ position: "WR" }, {
     confidence: 0.8,
-    newStaff: false,
-    offense: { design: 1 },
-    leadership: { roleClarity: 1, continuity: 1 },
-    development: { WR: 1 },
+    newStaff: true,
+    headCoach: "Example Coach",
+    schemeLabel: "spread",
   });
-  assert.ok(evidence["coaching.mean_delta"].value <= 0.025);
-  assert.ok(evidence["coaching.mean_delta"].value >= -0.025);
+  assert.equal(evidence["coaching.mean_delta"], undefined);
+  assert.equal(evidence["coaching.staff_context"].newStaff, true);
+  assert.match(evidence["coaching.staff_context"].source, /direct mean effect disabled/i);
 });
 
 
@@ -37,4 +37,29 @@ test("teammate absence creates bounded role redistribution for remaining skill p
   assert.ok(evidence["role.redistribution_delta"].value > 0);
   assert.ok(evidence["role.redistribution_delta"].value <= 0.22);
   assert.deepEqual(evidence["role.redistribution_delta"].absent, ["WR Two"]);
+});
+
+test("confirmed incumbent QB loss creates calibrated WR and TE context", () => {
+  const players = [
+    { id: "qb1", name: "Starter", team: "DET", position: "QB", weeklyProjection: 20, injuryStatus: "OUT", active: false },
+    { id: "qb2", name: "Backup", team: "DET", position: "QB", weeklyProjection: 12, injuryStatus: "ACTIVE", active: true, sleeper: { depthChartOrder: 2 } },
+    { id: "wr", name: "Receiver", team: "DET", position: "WR", weeklyProjection: 15, injuryStatus: "ACTIVE", active: true },
+    { id: "te", name: "Tight End", team: "DET", position: "TE", weeklyProjection: 10, injuryStatus: "ACTIVE", active: true },
+  ];
+  const wr = context.quarterbackContextEvidence(players[2], players, 1)["context.qb_replacement_delta"];
+  const te = context.quarterbackContextEvidence(players[3], players, 1)["context.qb_replacement_delta"];
+  assert.equal(wr.incumbent, "Starter");
+  assert.equal(wr.replacement, "Backup");
+  assert.ok(Math.abs(wr.value + context.QB_CONTEXT_CALIBRATION.WR.penalty) < 1e-12);
+  assert.ok(Math.abs(te.value + context.QB_CONTEXT_CALIBRATION.TE.penalty) < 1e-12);
+  assert.ok(Math.abs(te.value) > Math.abs(wr.value));
+});
+
+test("healthy incumbent QB does not create replacement context", () => {
+  const players = [
+    { id: "qb1", name: "Starter", team: "DET", position: "QB", weeklyProjection: 20, injuryStatus: "ACTIVE", active: true },
+    { id: "qb2", name: "Backup", team: "DET", position: "QB", weeklyProjection: 12, injuryStatus: "ACTIVE", active: true },
+    { id: "wr", name: "Receiver", team: "DET", position: "WR", weeklyProjection: 15, injuryStatus: "ACTIVE", active: true },
+  ];
+  assert.deepEqual(context.quarterbackContextEvidence(players[2], players, 1), {});
 });

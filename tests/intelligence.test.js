@@ -131,3 +131,17 @@ test("expected fantasy opportunity creates bounded xFP and FPOE evidence", () =>
   assert.ok(evidence["opportunity.xfp"].confidence <= 0.325);
   assert.equal(evidence["efficiency.fpoe"].value, 2);
 });
+
+test("cross-team history is explicitly marked as transported evidence", () => {
+  const csv = [headers.join(","), row(1, 12, 14, 0.20), row(2, 13, 15, 0.22), row(3, 14, 16, 0.24)].join("\n");
+  const summary = intel.summarizeHistory(intel.parseWeeklyStatsCsv(csv));
+  const evidence = intel.historyEvidence(
+    summary,
+    { position: "RB", team: "B" },
+    { historySeason: 2025, targetSeason: 2026, historyTeams: ["A"] },
+  );
+  assert.equal(evidence["context.team_transport"].transported, true);
+  assert.deepEqual(evidence["context.team_transport"].historyTeams, ["A"]);
+  assert.equal(evidence["role.target_share"].transported, true);
+  assert.equal(evidence["role.target_share"].currentTeam, "B");
+});

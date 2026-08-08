@@ -153,3 +153,21 @@ test("cached scenario factors preserve stronger same-game correlation than unrel
   assert.ok(sameGame > 0.15);
   assert.ok(sameGame > unrelated + 0.12);
 });
+
+test("replacement QB context lowers pass-catcher mean with an explicit driver", () => {
+  const base = engine.forecastPlayer(player, { week: 1 });
+  const adjusted = engine.forecastPlayer(player, { week: 1, evidence: {
+    "context.qb_replacement_delta": { available: true, value: -0.05, confidence: 1, conflict: 0.1 },
+  } });
+  assert.ok(adjusted.distribution.mean < base.distribution.mean);
+  assert.ok(adjusted.drivers.some((row) => row.feature === "context.qb_replacement_delta"));
+});
+
+test("context-only coaching metadata cannot move the forecast mean", () => {
+  const base = engine.forecastPlayer(player, { week: 1 });
+  const contextual = engine.forecastPlayer(player, { week: 1, evidence: {
+    "coaching.staff_context": { available: true, value: 1, confidence: 0.9, newStaff: true },
+  } });
+  assert.equal(contextual.distribution.mean, base.distribution.mean);
+  assert.equal(contextual.drivers.some((row) => row.family === "coaching"), false);
+});

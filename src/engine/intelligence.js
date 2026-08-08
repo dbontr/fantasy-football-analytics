@@ -216,11 +216,21 @@
     const seasonGap = Math.max(0, targetSeason - historySeason);
     const recencyMultiplier = seasonGap === 0 ? 1 : seasonGap === 1 ? 0.65 : 0.45;
     const sourcePrefix = seasonGap ? "nflverse prior-season" : "nflverse current-season";
+    const currentTeam = canonicalTeam(player?.team);
+    const historyTeams = [...new Set((options.historyTeams || []).map(canonicalTeam).filter(Boolean))];
+    const transported = Boolean(currentTeam && historyTeams.some((team) => team !== currentTeam));
+    const transport = transported ? { transported: true, historyTeams, currentTeam } : {};
+    if (transported) evidence["context.team_transport"] = {
+      available: true, value: 1, confidence: 1, conflict: 0.08,
+      source: "historical evidence crosses a team boundary; no generic mean penalty admitted",
+      ...transport,
+    };
     if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.targetShare) && ["RB", "WR", "TE"].includes(String(player?.position || ""))) {
       evidence["role.target_share"] = {
         available: true, value: clamp(summary.last3.targetShare, 0, 0.65),
         confidence: clamp((0.52 + summary.last3.games * 0.04) * recencyMultiplier, 0.2, 0.72), conflict: 0,
         source: sourcePrefix + " game log",
+        ...transport,
       };
     }
     if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.carryShare) && ["RB", "QB"].includes(String(player?.position || ""))) {
@@ -228,6 +238,7 @@
         available: true, value: clamp(summary.last3.carryShare, 0, 0.9),
         confidence: clamp((0.54 + summary.last3.games * 0.04) * recencyMultiplier, 0.2, 0.74), conflict: 0,
         source: sourcePrefix + " derived team carry share",
+        ...transport,
       };
     }
     return evidence;
@@ -304,8 +315,12 @@
   function xfpEvidence(summary, player, options = {}) {
     const evidence = {};
     const decay = clamp(options.confidenceMultiplier ?? 1, 0.2, 1);
-    if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.xfp)) evidence["opportunity.xfp"] = { available: true, value: clamp(summary.last3.xfp, 0, 40), confidence: 0.5 * decay, conflict: 0.04, source: "ffopportunity expected fantasy points" };
-    if (summary?.last5?.games >= 3 && Number.isFinite(summary.last5.fpoe)) evidence["efficiency.fpoe"] = { available: true, value: clamp(summary.last5.fpoe, -15, 15), confidence: 0.36 * decay, conflict: 0.08, source: "ffopportunity fantasy points over expectation" };
+    const currentTeam = canonicalTeam(player?.team);
+    const historyTeams = [...new Set((options.historyTeams || []).map(canonicalTeam).filter(Boolean))];
+    const transported = Boolean(currentTeam && historyTeams.some((team) => team !== currentTeam));
+    const transport = transported ? { transported: true, historyTeams, currentTeam } : {};
+    if (summary?.last3?.games >= 3 && Number.isFinite(summary.last3.xfp)) evidence["opportunity.xfp"] = { available: true, value: clamp(summary.last3.xfp, 0, 40), confidence: 0.5 * decay, conflict: 0.04, source: "ffopportunity expected fantasy points", ...transport };
+    if (summary?.last5?.games >= 3 && Number.isFinite(summary.last5.fpoe)) evidence["efficiency.fpoe"] = { available: true, value: clamp(summary.last5.fpoe, -15, 15), confidence: 0.36 * decay, conflict: 0.08, source: "ffopportunity fantasy points over expectation", ...transport };
     return evidence;
   }
 

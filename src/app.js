@@ -301,6 +301,7 @@
       context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
       context.healthEvidence(player, state.healthCalibration),
       context.absenceRedistributionEvidence(player, state.players),
+      context.quarterbackContextEvidence(player, state.players, week),
       context.matchupEvidence(player, state.contextByWeek.get(week)),
       state.ledger.evidenceFor("player", String(player.id)),
     );
@@ -367,6 +368,7 @@
       context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
       context.healthEvidence(player, state.healthCalibration),
       context.absenceRedistributionEvidence(player, state.players),
+      context.quarterbackContextEvidence(player, state.players, 1),
       rookieEvidenceFor(player, 1),
       preseasonEvidenceFor(player),
       trendEvidenceFor(player),

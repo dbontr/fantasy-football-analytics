@@ -100,9 +100,10 @@ async function main() {
     correlation: window.SnapCountCorrelation?.VERSION || null,
     calibration: window.SnapCountCalibration?.VERSION || null,
     calibrationInstalled: window.OracleBrowserEngine?.__snapCountCalibrationVersion || null,
+    context: window.OracleContext?.VERSION || null,
     runtime: window.OracleBrowserEngine?.VERSION || null,
   })`);
-  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.5") throw new Error("Empirical correlation runtime did not install");
+  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.6" || modelState.context !== "oracle-context-browser-2026.3") throw new Error("Current empirical runtime/context bundle did not install");
   if (modelState.calibration !== "snapcount-calibration-2026.1" || modelState.calibrationInstalled !== modelState.calibration) throw new Error("Empirical uncertainty calibration did not install");
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");

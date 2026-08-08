@@ -58,12 +58,14 @@ function historyProfile(cached, player, includeGameLog = false, options = {}) {
   const xfpSummary = intelligence.summarizeXfp(xfpRows);
   const gap = Math.max(0, Number(options.targetSeason || 0) - Number(options.historySeason || 0));
   const confidenceMultiplier = gap === 0 ? 1 : gap === 1 ? 0.65 : 0.45;
+  const historyTeams = [...new Set(gameLog.slice(-3).map((row) => row.team).filter(Boolean))];
+  const xfpHistoryTeams = [...new Set(xfpRows.slice(-5).map((row) => row.team).filter(Boolean))];
   return {
     ...(includeGameLog ? { gameLog } : {}),
     summary, xfpSummary,
     evidence: {
-      ...intelligence.historyEvidence(summary, player, options),
-      ...intelligence.xfpEvidence(xfpSummary, player, { confidenceMultiplier }),
+      ...intelligence.historyEvidence(summary, player, { ...options, historyTeams }),
+      ...intelligence.xfpEvidence(xfpSummary, player, { confidenceMultiplier, historyTeams: xfpHistoryTeams }),
     },
   };
 }

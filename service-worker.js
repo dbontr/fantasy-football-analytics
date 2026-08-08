@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.7.0-correlation-calibration";
+const CACHE = "snapcount-browser-v1.8.0-context-transport";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

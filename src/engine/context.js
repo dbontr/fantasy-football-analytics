@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createContextApi() {
   "use strict";
 
-  const VERSION = "oracle-context-browser-2026.2";
+  const VERSION = "oracle-context-browser-2026.3";
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -34,6 +34,15 @@
     if (text === "out" || text.includes("injured reserve") || text === "ir") return "out";
     return text.replace(/\s+/g, "-");
   }
+  function unavailablePlayer(row) {
+    const status = statusKey(row?.injuryStatus);
+    return row?.active === false || ["out", "ir", "pup", "suspended"].includes(status);
+  }
+
+  const QB_CONTEXT_CALIBRATION = Object.freeze({
+    WR: Object.freeze({ penalty: 0.0455292991, support: 546, shrinkage: 800 }),
+    TE: Object.freeze({ penalty: 0.0937176076, support: 255, shrinkage: 25 }),
+  });
 
   function healthEvidence(player, calibration) {
     const groups = calibration?.availability?.groups || {};
@@ -68,13 +77,9 @@
     const position = String(player?.position || "").toUpperCase();
     if (!team || !["QB", "RB", "WR", "TE"].includes(position)) return {};
     const teammates = (players || []).filter((row) => String(row?.team || "").toUpperCase() === team && String(row?.id) !== String(player?.id) && ["QB", "RB", "WR", "TE"].includes(String(row?.position || "").toUpperCase()));
-    const unavailable = (row) => {
-      const status = statusKey(row?.injuryStatus);
-      return row?.active === false || ["out", "ir", "pup", "suspended"].includes(status);
-    };
-    const absent = teammates.filter(unavailable);
+    const absent = teammates.filter(unavailablePlayer);
     if (!absent.length) return {};
-    const active = [player, ...teammates.filter((row) => !unavailable(row))];
+    const active = [player, ...teammates.filter((row) => !unavailablePlayer(row))];
     const target = (row) => Math.max(0, finite(row?.opportunity?.targetShare));
     const carry = (row) => Math.max(0, finite(row?.opportunity?.carryShare));
     const vacatedTarget = absent.reduce((sum, row) => sum + target(row), 0);
@@ -92,30 +97,44 @@
     return { "role.redistribution_delta": { available: true, value: raw, confidence: 0.42, conflict: 0.14, source: "structured teammate absence redistribution", absent: absent.map((row) => row.name).slice(0, 4) } };
   }
 
+  function quarterbackContextEvidence(player, players, week = 1) {
+    const position = String(player?.position || "").toUpperCase();
+    const calibration = QB_CONTEXT_CALIBRATION[position];
+    const team = String(player?.team || "").toUpperCase();
+    if (!calibration || !team) return {};
+    const quarterbacks = (players || [])
+      .filter((row) => String(row?.team || "").toUpperCase() === team && String(row?.position || "").toUpperCase() === "QB")
+      .sort((left, right) => weeklyProjection(right, week) - weeklyProjection(left, week));
+    const incumbent = quarterbacks[0];
+    if (!incumbent || !unavailablePlayer(incumbent)) return {};
+    const replacement = quarterbacks.slice(1).filter((row) => !unavailablePlayer(row)).sort((left, right) => {
+      const leftOrder = finite(left?.sleeper?.depthChartOrder, 99);
+      const rightOrder = finite(right?.sleeper?.depthChartOrder, 99);
+      return leftOrder - rightOrder || weeklyProjection(right, week) - weeklyProjection(left, week);
+    })[0];
+    if (!replacement) return {};
+    return {
+      "context.qb_replacement_delta": {
+        available: true, value: -calibration.penalty, confidence: 1, conflict: 0.1,
+        model: "as-of-incumbent-qb-calibration", source: "current QB availability + 2023<->2024 nflverse calibration",
+        incumbent: incumbent.name, replacement: replacement.name, support: calibration.support, shrinkage: calibration.shrinkage,
+      },
+    };
+  }
+
   function coachingEvidence(player, profile) {
     if (!profile) return {};
-    const position = String(player?.position || "").toUpperCase();
-    const development = finite(profile.development?.[position], 0.67);
-    const design = finite(profile.offense?.design, 0.67);
-    const roleClarity = finite(profile.leadership?.roleClarity, 0.65);
-    const continuity = finite(profile.leadership?.continuity, 0.55);
-    const delta = clamp(
-      (development - 0.67) * 0.045
-      + (design - 0.67) * 0.025
-      + (roleClarity - 0.65) * 0.015
-      + (continuity - 0.55) * 0.008,
-      -0.025,
-      0.025,
-    );
     return {
-      "coaching.mean_delta": {
+      "coaching.staff_context": {
         available: true,
-        value: delta,
+        value: profile.newStaff ? 1 : 0,
         confidence: clamp(profile.confidence, 0.2, 0.9),
         conflict: profile.newStaff ? 0.18 : 0.05,
-        model: "bayesian-shrunk-staff-prior",
+        model: "context-only-staff-profile",
+        source: "staff context retained; direct mean effect disabled pending walk-forward validation",
         staff: profile.headCoach,
         scheme: profile.schemeLabel,
+        newStaff: Boolean(profile.newStaff),
       },
     };
   }
@@ -181,6 +200,7 @@
 
   return {
     VERSION,
+    QB_CONTEXT_CALIBRATION,
     absenceRedistributionEvidence,
     buildTeamContext,
     coachingEvidence,
@@ -188,6 +208,7 @@
     matchupEvidence,
     mergeEvidence,
     practiceKey,
+    quarterbackContextEvidence,
     statusKey,
   };
 });
