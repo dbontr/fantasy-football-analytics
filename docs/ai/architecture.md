@@ -37,7 +37,7 @@ Deliver the strongest practical fantasy-football decision engine that can be hos
 
 ### 6. Correlated scenarios
 
-Game scoring, passing, rushing, pace, team performance, game chaos, and player residual factors are deterministically sampled from a seed. Players in the same NFL game therefore share latent outcomes without requiring a huge covariance matrix.
+`src/engine/correlation.js` freezes a leakage-safe residual-correlation model for QB/RB/WR/TE. Weekly residuals use only prior games from the same season; pair correlations are fitted on 2023-2024 same-team/opponent player pairs and shrunk with a 200-pair prior selected by bidirectional 2023↔2024 cross-validation. The already-inspected 2025 season is a consistency check, not a pristine holdout. The runtime represents each non-zero pairwise target with a sparse Gaussian edge factor plus a player residual, preserving unit marginal variance without forcing every receiver in a game to share the same latent.
 
 Player simulations use `Float32Array` and are capped at 192 players × 50,000 scenarios. League simulations stream counters rather than storing all player-week-season tensors.
 
@@ -129,6 +129,6 @@ Rookies skip prior-season individual NFL-history fetches because those rows cann
 
 Draft rooms maintain a reusable tracker containing drafted IDs and per-team position counts. CPU picks, full drafts, and return-window Monte Carlo update that tracker incrementally instead of repeatedly rebuilding sets/rosters from pick history. Oracle's own policy may apply the capped rookie-tail term; CPU market/value/need profiles do not, preserving the purpose of the comparison room.
 
-The correlated scenario engine now indexes unique NFL games and teams before simulation. On each scenario it generates each game-scoring/passing/rushing/pace/chaos factor and each team-performance factor once, then reuses those values across all players sharing the latent. Availability and residual draws stay player-specific. This preserves the factor model while cutting repeated hash/normal generation. Typed-array summaries and one-pass correlation statistics reduce temporary allocations further.
+The correlated scenario engine now builds a sparse edge plan for the players actually being simulated. Each calibrated same-game pair receives one deterministic shared Gaussian edge; dense player sets are variance-capped, and the remaining player-specific residual restores unit marginal variance. Full league simulation builds one plan per NFL week across every fantasy team, samples each selected NFL player once, and then aggregates those values to fantasy-team scores. This removes the old hand-set low-rank game/team factor weights, avoids artificial WR-WR and cross-game correlation, and keeps paired simulations deterministic. K/DST are left independent in this residual layer until a separately validated calibration exists.
 
 The browser UI maintains an ID-to-player Map after bootstrap and each live status enrichment, replacing repeated linear scans across the 700-player universe in draft/roster/status operations.

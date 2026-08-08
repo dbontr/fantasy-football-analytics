@@ -8,9 +8,10 @@
     "test": "node --test tests/*.test.js",
     "build": "node scripts/validate-static.js",
     "audit:model": "node scripts/model-audit.js",
-    "verify": "npm run check && npm test && npm run build && npm run audit:model",
+    "verify": "npm run check && npm test && npm run build && npm run audit:model && npm run audit:correlation",
     "serve": "node scripts/serve.js",
-    "refresh:rookies": "node scripts/build-rookie-model.js"
+    "refresh:rookies": "node scripts/build-rookie-model.js",
+    "audit:correlation": "node scripts/correlation-audit.js"
   },
   "engines": {
     "node": ">=20"

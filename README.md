@@ -30,7 +30,7 @@ The interface uses a major-sports-site fantasy-desk layout rather than a boutiqu
 - Zero-inflated player distributions: availability + active-game performance.
 - P10/P25/P50/P75/P90, CVaR10, boom/bust probability, and uncertainty decomposition.
 - Bounded health, coaching, role, weather, matchup, line, news, and market evidence families.
-- Correlated game/team/player Monte Carlo with deterministic paired scenarios and per-scenario shared-factor caching so game/team latents are generated once and reused across players.
+- Empirically calibrated same-game Monte Carlo: QB/RB/WR/TE residual correlations are fitted on 2023-2024 player-week history, with shrinkage selected by bidirectional 2023↔2024 cross-validation; 2025 is retained only as a consistency check because its pair structure had already been inspected during the audit.
 - Exact lineup assignment across normal, FLEX, and SUPERFLEX slots.
 - ESPN Fantasy league sync: URL/ID parsing, anonymous-first access, explicit direct browser-session fallback for private leagues, team selection, roster/record/current-week import, local persistence, one-click refresh/disconnect, and automatic Start / Sit + Season population. SnapCount never accepts raw ESPN credential values.
 - Interactive draft simulator + live draft helper: the user controls one team while CPU opponents use configurable market/value/need/positional strategies.
@@ -113,6 +113,6 @@ This repository is designed for branch-based Pages publishing from the repositor
 
 This project does not fabricate precision when free evidence is unavailable. Route participation/TPRR, detailed red-zone role, offensive-line grades, true tracking data, premium prop feeds, and private-platform activity are treated as optional future evidence families unless a defensible free/keyless source is available. Public game totals/spreads are used only as a low-confidence fantasy scoring-environment prior, not as betting advice.
 
-The browser simulator is a lightweight statistical approximation, not a literal NFL play-by-play physics engine. Its value comes from calibrated distributions, correlated scenarios, exact fantasy decision logic, paired comparisons, and transparent uncertainty. New model complexity should be accepted only when it improves rolling historical validation.
+The browser simulator is a lightweight statistical approximation, not a literal NFL play-by-play physics engine. Its value comes from calibrated distributions, empirically constrained correlated scenarios, exact fantasy decision logic, paired comparisons, and transparent uncertainty. The fitted residual-correlation layer currently covers QB/RB/WR/TE only; K/DST residual dependence stays independent rather than receiving invented precision. New model complexity should be accepted only when it improves rolling historical validation.
 
 See `docs/ai/architecture.md`, `docs/ai/feature-parity.md`, and `docs/ai/performance.md` for implementation boundaries, migration decisions, and measured runtime performance.

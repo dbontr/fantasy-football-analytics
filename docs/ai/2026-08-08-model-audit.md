@@ -66,6 +66,6 @@ Priority validation work:
 
 1. Build FFOB-003 into a full week-by-week forecast tournament with as-of evidence reconstruction, CRPS/quantile loss, MAE/rank error, interval calibration, lineup regret, and decision utility.
 2. Refit or delete hand-tuned evidence weights based on those walk-forward results.
-3. Fit scenario correlation weights from historical same-team/same-game residuals rather than choosing them manually.
+3. **Completed 2026-08-08:** replace hand-set scenario-correlation weights with the leakage-safe residual-pair model documented in `2026-08-08-correlation-audit.md`; keep future seasons as new holdouts rather than retuning to 2025.
 4. Run FFOB-005 against historical ESPN-style ADP/ranking rooms and realized season value; stop presenting internal projected-roster advantage as proof of draft superiority.
 5. Complete reproducible bootstrap generation so every production input has an explicit source/transform/as-of timestamp.

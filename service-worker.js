@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.6.0-model-calibration";
+const CACHE = "snapcount-browser-v1.7.0-correlation-calibration";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   "./src/app.js",
   "./src/engine/core.js",
   "./src/engine/rookies.js",
+  "./src/engine/correlation.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/context.js",

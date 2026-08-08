@@ -5,13 +5,16 @@
   const rookies = typeof module !== "undefined" && module.exports
     ? require("./rookies.js")
     : root.OracleRookies;
-  const api = factory(core, rookies);
+  const correlationModel = typeof module !== "undefined" && module.exports
+    ? require("./correlation.js")
+    : root.SnapCountCorrelation;
+  const api = factory(core, rookies, correlationModel);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OracleBrowserEngine = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.4";
+  const VERSION = "oracle-browser-2026.5";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -331,39 +334,81 @@
       bye: row?.bye === true,
     };
   }
-  function factorWeights(position) {
-    return ({
-      QB: { scoring: 0.28, passing: 0.35, rushing: 0.08, pace: 0.12, team: 0.12, chaos: 0 },
-      RB: { scoring: 0.26, passing: 0.05, rushing: 0.38, pace: 0.1, team: 0.14, chaos: 0 },
-      WR: { scoring: 0.3, passing: 0.38, rushing: 0, pace: 0.1, team: 0.12, chaos: 0 },
-      TE: { scoring: 0.29, passing: 0.36, rushing: 0, pace: 0.1, team: 0.13, chaos: 0 },
-      K: { scoring: 0.38, passing: 0, rushing: 0, pace: 0.15, team: 0.1, chaos: 0.08 },
-      DST: { scoring: -0.35, passing: -0.08, rushing: -0.05, pace: -0.08, team: 0.15, chaos: 0.22 },
-    })[position] || { scoring: 0.3, passing: 0.38, rushing: 0, pace: 0.1, team: 0.12, chaos: 0 };
-  }
-  function scenarioZ(forecast, context, seed, scenario) {
-    const weights = factorWeights(forecast.player.position);
-    const factors = {
-      scoring: normalFromParts(seed, scenario, context.gameKey, "game-scoring"),
-      passing: normalFromParts(seed, scenario, context.gameKey, "game-passing"),
-      rushing: normalFromParts(seed, scenario, context.gameKey, "game-rushing"),
-      pace: normalFromParts(seed, scenario, context.gameKey, "game-pace"),
-      chaos: normalFromParts(seed, scenario, context.gameKey, "game-chaos"),
-      team: normalFromParts(seed, scenario, context.team, "team-performance"),
-    };
-    let shared = 0;
-    let sharedVariance = 0;
-    for (const [factor, weight] of Object.entries(weights)) {
-      shared += factors[factor] * weight;
-      sharedVariance += weight ** 2;
+  function buildCorrelationPlan(forecasts, schedule, week) {
+    const entries = (forecasts || []).map((forecast) => ({
+      forecast,
+      id: String(forecast.player.id),
+      context: gameContext(forecast.player, schedule, week),
+      activeMean: finite(forecast.activeDistribution?.mean),
+      activeStdDev: finite(forecast.activeDistribution?.standardDeviation),
+      availability: clamp(forecast.availability?.probability, 0, 1),
+      residualWeight: 1,
+    }));
+    const loads = new Float64Array(entries.length);
+    const rawEdges = [];
+    for (let leftIndex = 0; leftIndex < entries.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < entries.length; rightIndex += 1) {
+        const left = entries[leftIndex];
+        const right = entries[rightIndex];
+        if (left.context.gameKey !== right.context.gameKey) continue;
+        const sameTeam = left.context.team === right.context.team;
+        const rho = finite(correlationModel?.targetCorrelation(left.forecast.player.position, right.forecast.player.position, sameTeam), 0);
+        if (Math.abs(rho) < 1e-6) continue;
+        rawEdges.push({
+          leftIndex,
+          rightIndex,
+          rho,
+          key: [left.id, right.id].sort().join("|"),
+        });
+        loads[leftIndex] += Math.abs(rho);
+        loads[rightIndex] += Math.abs(rho);
+      }
     }
-    const residualWeight = Math.sqrt(Math.max(0.05, 1 - sharedVariance));
-    return shared + normalFromParts(seed, scenario, String(forecast.player.id), "player-residual") * residualWeight;
+    const cap = clamp(correlationModel?.MAX_SHARED_VARIANCE ?? 0.9, 0.1, 0.98);
+    const scales = Array.from(loads, (load) => load > cap ? Math.sqrt(cap / load) : 1);
+    const sharedVariance = new Float64Array(entries.length);
+    const edges = rawEdges.map((edge) => {
+      const magnitude = Math.sqrt(Math.abs(edge.rho));
+      const leftWeight = magnitude * scales[edge.leftIndex];
+      const rightWeight = Math.sign(edge.rho) * magnitude * scales[edge.rightIndex];
+      sharedVariance[edge.leftIndex] += leftWeight * leftWeight;
+      sharedVariance[edge.rightIndex] += rightWeight * rightWeight;
+      return { ...edge, leftWeight, rightWeight, realizedCorrelation: leftWeight * rightWeight };
+    });
+    entries.forEach((entry, index) => {
+      entry.residualWeight = Math.sqrt(Math.max(0, 1 - sharedVariance[index]));
+    });
+    return { version: correlationModel?.VERSION || "uncalibrated", week, entries, edges };
   }
+
+  function sampleCorrelationPlan(plan, seed, scenario, values = new Float64Array(plan.entries.length)) {
+    const z = new Float64Array(plan.entries.length);
+    for (let index = 0; index < plan.entries.length; index += 1) {
+      const entry = plan.entries[index];
+      z[index] = normalFromParts(seed, scenario, entry.id, "player-residual") * entry.residualWeight;
+    }
+    for (const edge of plan.edges) {
+      const factor = normalFromParts(seed, scenario, edge.key, "pair-correlation");
+      z[edge.leftIndex] += factor * edge.leftWeight;
+      z[edge.rightIndex] += factor * edge.rightWeight;
+    }
+    for (let index = 0; index < plan.entries.length; index += 1) {
+      const entry = plan.entries[index];
+      if (entry.context.bye || entry.forecast.baseline?.bye ||
+          uniformFromParts(seed, scenario, entry.id, "availability") > entry.availability) {
+        values[index] = 0;
+      } else {
+        values[index] = Math.max(0, entry.activeMean + entry.activeStdDev * z[index]);
+      }
+    }
+    return values;
+  }
+
   function sampleForecast(forecast, context, seed, scenario) {
     if (context.bye || forecast.baseline?.bye) return 0;
     if (uniformFromParts(seed, scenario, String(forecast.player.id), "availability") > clamp(forecast.availability?.probability, 0, 1)) return 0;
-    return Math.max(0, finite(forecast.activeDistribution?.mean) + finite(forecast.activeDistribution?.standardDeviation) * scenarioZ(forecast, context, seed, scenario));
+    const residual = normalFromParts(seed, scenario, String(forecast.player.id), "player-residual");
+    return Math.max(0, finite(forecast.activeDistribution?.mean) + finite(forecast.activeDistribution?.standardDeviation) * residual);
   }
 
   function correlation(left, right) {
@@ -388,67 +433,38 @@
     const seed = String(options.seed ?? 2026);
     const week = Math.round(clamp(options.week || forecasts[0].week || 1, 1, 18));
     const schedule = options.schedule || {};
-    const gameIndex = new Map(), teamIndex = new Map(), gameKeys = [], teamKeys = [];
-    const entries = forecasts.map((forecast) => {
-      const id = String(forecast.player.id);
-      const context = gameContext(forecast.player, schedule, week);
-      if (!gameIndex.has(context.gameKey)) { gameIndex.set(context.gameKey, gameKeys.length); gameKeys.push(context.gameKey); }
-      if (!teamIndex.has(context.team)) { teamIndex.set(context.team, teamKeys.length); teamKeys.push(context.team); }
-      const weights = factorWeights(forecast.player.position);
-      let sharedVariance = 0;
-      for (const factor of ["scoring", "passing", "rushing", "pace", "team", "chaos"]) sharedVariance += finite(weights[factor]) ** 2;
-      return {
-        forecast, id, context, weights,
-        gameIndex: gameIndex.get(context.gameKey), teamIndex: teamIndex.get(context.team),
-        residualWeight: Math.sqrt(Math.max(0.05, 1 - sharedVariance)),
-        activeMean: finite(forecast.activeDistribution?.mean),
-        activeStdDev: finite(forecast.activeDistribution?.standardDeviation),
-        availability: clamp(forecast.availability?.probability, 0, 1),
-        samples: new Float32Array(scenarios),
-      };
-    });
-    const scoring = new Float64Array(gameKeys.length);
-    const passing = new Float64Array(gameKeys.length);
-    const rushing = new Float64Array(gameKeys.length);
-    const pace = new Float64Array(gameKeys.length);
-    const chaos = new Float64Array(gameKeys.length);
-    const teamPerformance = new Float64Array(teamKeys.length);
+    const plan = buildCorrelationPlan(forecasts, schedule, week);
+    const sampleArrays = plan.entries.map(() => new Float32Array(scenarios));
+    const scratch = new Float64Array(plan.entries.length);
     for (let scenario = 0; scenario < scenarios; scenario += 1) {
-      for (let index = 0; index < gameKeys.length; index += 1) {
-        const key = gameKeys[index];
-        scoring[index] = normalFromParts(seed, scenario, key, "game-scoring");
-        passing[index] = normalFromParts(seed, scenario, key, "game-passing");
-        rushing[index] = normalFromParts(seed, scenario, key, "game-rushing");
-        pace[index] = normalFromParts(seed, scenario, key, "game-pace");
-        chaos[index] = normalFromParts(seed, scenario, key, "game-chaos");
-      }
-      for (let index = 0; index < teamKeys.length; index += 1) {
-        teamPerformance[index] = normalFromParts(seed, scenario, teamKeys[index], "team-performance");
-      }
-      for (const entry of entries) {
-        if (entry.context.bye || entry.forecast.baseline?.bye || uniformFromParts(seed, scenario, entry.id, "availability") > entry.availability) {
-          entry.samples[scenario] = 0;
-          continue;
-        }
-        const w = entry.weights, gi = entry.gameIndex;
-        let shared = 0;
-        shared += scoring[gi] * finite(w.scoring);
-        shared += passing[gi] * finite(w.passing);
-        shared += rushing[gi] * finite(w.rushing);
-        shared += pace[gi] * finite(w.pace);
-        shared += teamPerformance[entry.teamIndex] * finite(w.team);
-        shared += chaos[gi] * finite(w.chaos);
-        const residual = normalFromParts(seed, scenario, entry.id, "player-residual") * entry.residualWeight;
-        entry.samples[scenario] = Math.max(0, entry.activeMean + entry.activeStdDev * (shared + residual));
+      sampleCorrelationPlan(plan, seed, scenario, scratch);
+      for (let index = 0; index < plan.entries.length; index += 1) {
+        sampleArrays[index][scenario] = scratch[index];
       }
     }
-    const playerSamples = Object.fromEntries(entries.map((entry) => [entry.id, entry.samples]));
-    const playerSummaries = Object.fromEntries(entries.map((entry) => [entry.id, { player: entry.forecast.player, ...summarizeSamples(entry.samples, { target: entry.forecast.baseline?.mean }) }]));
+    const playerSamples = Object.fromEntries(plan.entries.map((entry, index) => [entry.id, sampleArrays[index]]));
+    const playerSummaries = Object.fromEntries(plan.entries.map((entry, index) => [entry.id, {
+      player: entry.forecast.player,
+      ...summarizeSamples(sampleArrays[index], { target: entry.forecast.baseline?.mean }),
+    }]));
     const correlations = [];
     for (const [leftId, rightId] of (options.correlationPairs || []).slice(0, 40)) {
-      if (playerSamples[leftId] && playerSamples[rightId]) correlations.push({ leftId, rightId, correlation: correlation(playerSamples[leftId], playerSamples[rightId]) });
+      if (playerSamples[leftId] && playerSamples[rightId]) correlations.push({
+        leftId,
+        rightId,
+        correlation: correlation(playerSamples[leftId], playerSamples[rightId]),
+      });
     }
-    return { version: VERSION, seed, scenarios, week, playerSamples, playerSummaries, correlations };
+    return {
+      version: VERSION,
+      correlationVersion: plan.version,
+      seed,
+      scenarios,
+      week,
+      playerSamples,
+      playerSummaries,
+      correlations,
+    };
   }
 
   function pairedRegrets(actions, sampleCount) {
@@ -590,11 +606,10 @@
     return { lineup, forecasts, selected, schedule, week };
   }
 
-  function sampleLineup(lineupForecasts, schedule, week, seed, scenario) {
+  function samplePlanTotal(plan, seed, scenario, scratch) {
+    const values = sampleCorrelationPlan(plan, seed, scenario, scratch);
     let total = 0;
-    for (const forecast of lineupForecasts) {
-      total += sampleForecast(forecast, gameContext(forecast.player, schedule, week), seed, scenario);
-    }
+    for (let index = 0; index < values.length; index += 1) total += values[index];
     return total;
   }
 
@@ -608,19 +623,25 @@
     const simulations = Math.min(25_000, Math.max(250, Number(options.simulations || 4_000)));
     const seed = String(options.seed ?? 2026);
     const lineups = {};
+    const plans = {};
     for (let week = startWeek; week <= endWeek; week += 1) {
-      lineups[week] = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek).selected;
+      const selected = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek).selected;
+      lineups[week] = selected;
+      const plan = buildCorrelationPlan(selected, schedule, week);
+      plans[week] = { plan, scratch: new Float64Array(plan.entries.length) };
     }
     const seasonTotals = new Float32Array(simulations);
     for (let scenario = 0; scenario < simulations; scenario += 1) {
       let total = 0;
       for (let week = startWeek; week <= endWeek; week += 1) {
-        total += sampleLineup(lineups[week], schedule, week, seed, scenario * 31 + week);
+        const setup = plans[week];
+        total += samplePlanTotal(setup.plan, seed, scenario * 31 + week, setup.scratch);
       }
       seasonTotals[scenario] = total;
     }
     return {
       version: VERSION,
+      correlationVersion: correlationModel?.VERSION || "uncalibrated",
       simulations,
       startWeek,
       endWeek,
@@ -695,8 +716,28 @@
     for (const team of teams) {
       lineups[team.teamId] = {};
       for (let week = startWeek; week <= championshipWeek; week += 1) {
-        lineups[team.teamId][week] = lineupForecastsForWeek(team.roster, settings, week, schedule, evidenceByPlayer, options.evidenceByPlayerWeek).selected;
+        lineups[team.teamId][week] = lineupForecastsForWeek(
+          team.roster,
+          settings,
+          week,
+          schedule,
+          evidenceByPlayer,
+          options.evidenceByPlayerWeek,
+        ).selected;
       }
+    }
+    const weekPlans = {};
+    for (let week = startWeek; week <= championshipWeek; week += 1) {
+      const unique = new Map();
+      for (const team of teams) {
+        for (const forecast of lineups[team.teamId][week]) unique.set(String(forecast.player.id), forecast);
+      }
+      const plan = buildCorrelationPlan([...unique.values()], schedule, week);
+      const indexById = new Map(plan.entries.map((entry, index) => [entry.id, index]));
+      const teamIndexes = Object.fromEntries(teams.map((team) => [team.teamId,
+        lineups[team.teamId][week].map((forecast) => indexById.get(String(forecast.player.id))).filter(Number.isInteger),
+      ]));
+      weekPlans[week] = { plan, teamIndexes, scratch: new Float64Array(plan.entries.length) };
     }
 
     const counters = Object.fromEntries(teams.map((team) => [team.teamId, {
@@ -718,14 +759,22 @@
         ties: team.ties,
         points: team.pointsFor,
       }]));
-      const scoreCache = new Map();
-      const scoreFor = (teamId, week) => {
-        const key = `${teamId}:${week}`;
-        if (!scoreCache.has(key)) {
-          scoreCache.set(key, sampleLineup(lineups[teamId][week], schedule, week, seed, simulation * 37 + week));
+      const weekScoreCache = new Map();
+      const scoresForWeek = (week) => {
+        if (!weekScoreCache.has(week)) {
+          const setup = weekPlans[week];
+          const values = sampleCorrelationPlan(setup.plan, seed, simulation * 37 + week, setup.scratch);
+          const scores = {};
+          for (const team of teams) {
+            let total = 0;
+            for (const index of setup.teamIndexes[team.teamId]) total += values[index];
+            scores[team.teamId] = total;
+          }
+          weekScoreCache.set(week, scores);
         }
-        return scoreCache.get(key);
+        return weekScoreCache.get(week);
       };
+      const scoreFor = (teamId, week) => finite(scoresForWeek(week)[teamId]);
 
       for (let week = startWeek; week <= regularSeasonEnd; week += 1) {
         const scores = Object.fromEntries(teams.map((team) => [team.teamId, scoreFor(team.teamId, week)]));
@@ -798,6 +847,7 @@
 
     return {
       version: VERSION,
+      correlationVersion: correlationModel?.VERSION || "uncalibrated",
       simulations,
       seed,
       startWeek,
@@ -904,7 +954,7 @@
     correlation,
     evaluateChampionshipActions,
     evaluatePortfolios,
-    factorWeights,
+    buildCorrelationPlan,
     forecastPlayer,
     forecastPlayers,
     gameContext,
@@ -912,6 +962,7 @@
     mixtureQuantile,
     normalFromParts,
     rankPairedActions,
+    sampleCorrelationPlan,
     sampleForecast,
     simulateForecasts,
     simulateLeague,

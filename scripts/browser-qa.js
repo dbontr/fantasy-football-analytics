@@ -96,6 +96,14 @@ async function main() {
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.reload", { ignoreCache: true });
   await waitFor(`document.querySelector('#player-count')?.textContent === '700'`);
+  const modelState = await evaluate(`({
+    correlation: window.SnapCountCorrelation?.VERSION || null,
+    calibration: window.SnapCountCalibration?.VERSION || null,
+    calibrationInstalled: window.OracleBrowserEngine?.__snapCountCalibrationVersion || null,
+    runtime: window.OracleBrowserEngine?.VERSION || null,
+  })`);
+  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.5") throw new Error("Empirical correlation runtime did not install");
+  if (modelState.calibration !== "snapcount-calibration-2026.1" || modelState.calibrationInstalled !== modelState.calibration) throw new Error("Empirical uncertainty calibration did not install");
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");

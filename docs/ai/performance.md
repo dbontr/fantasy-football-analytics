@@ -62,6 +62,6 @@ Measured 2026-08-07 on Saturn with the full 700-player bootstrap and 74-rookie a
 | Correlated scenarios, 64 x 5,000 | 1.58 s | 0.59 s | ~63% faster |
 | Correlated scenarios, 64 x 10,000 | 3.15 s | 1.10 s | ~65% faster |
 
-The draft speedup comes from a reusable room tracker instead of reconstructing drafted sets and roster counts on every CPU pick. The scenario speedup comes from generating shared NFL game/team latent factors once per scenario and reusing them for every player in that game/team. Player residual and availability draws remain player-specific and deterministic. Sample summaries sort typed arrays directly and avoid intermediate JavaScript arrays.
+The draft speedup comes from a reusable room tracker instead of reconstructing drafted sets and roster counts on every CPU pick. The scenario figures above were measured on the 2026.4 shared-latent implementation. Runtime 2026.5 replaces that hand-set factor model with sparse empirically fitted pair factors; the statistical admission result is documented in `2026-08-08-correlation-audit.md`. A new apples-to-apples performance table should be recorded before claiming a speedup or slowdown for 2026.5. Player availability draws remain deterministic, and sample summaries still use typed arrays.
 
 The rookie artifact is approximately 47 KB and covers 74 current fantasy-relevant rookies using 1,868 historical rookie records at build time. Historical raw rows are not shipped to the browser.
