@@ -150,9 +150,10 @@
   };
 });
 
-// Calibration is deliberately its own module, but this file is already loaded after
-// runtime + intelligence in both the page and Web Worker. Bootstrap it synchronously
-// here so the existing static HTML/worker entry points stay small and deterministic.
+// Calibration is its own module, but this file is already parser-loaded after
+// runtime + intelligence in the page and imported after them in the Web Worker.
+// Bootstrap it synchronously here so both existing entry points receive the same
+// calibrated engine without introducing a second application bootstrap path.
 (function bootstrapSnapCountCalibration(root) {
   if (!root || root.SnapCountCalibration) return;
   if (typeof importScripts === "function" && typeof document === "undefined") {
@@ -161,7 +162,7 @@
   }
   if (typeof document === "undefined") return;
   if (document.readyState === "loading") {
-    document.write('<script src="./src/engine/calibration.js"><\\/script>');
+    document.write('<scr' + 'ipt src="./src/engine/calibration.js"></scr' + 'ipt>');
     return;
   }
   const script = document.createElement("script");
