@@ -178,8 +178,8 @@
     const authNeeded = state.espnNeedsSession && !league;
     $("#overview").classList.toggle("league-connected", Boolean(team));
     $("#hero-lede").textContent = team
-      ? `${team.name} is synced. Your roster is loaded — now use SnapCount to attack this week's lineup, waivers, trades, and season outlook.`
-      : "Connect ESPN or start anywhere. SnapCount turns the noise — usage, injuries, matchups, news, and simulations — into one clear next move.";
+      ? `${team.name} is synced. Your roster and league context are ready for lineup, waiver, trade, and season decisions.`
+      : "Sync ESPN or jump straight into the tools. SnapCount turns projections, injuries, matchups, news, and simulations into a clear fantasy decision.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);

@@ -98,9 +98,9 @@ async function main() {
   await waitFor(`document.querySelector('#player-count')?.textContent === '700'`);
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
-  if (home.horizontalOverflow || home.background !== "rgb(246, 241, 231)") throw new Error("SnapCount canvas/layout check failed");
+  if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
   if (home.brand !== "SNAPCOUNT" || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
-  if (home.primaryBackground !== "rgb(101, 71, 232)") throw new Error("Primary action is not using the violet SnapCount palette");
+  if (home.primaryBackground !== "rgb(200, 16, 46)") throw new Error("Primary action is not using the sports-red SnapCount palette");
   const connectCard = await evaluate(`Boolean(document.querySelector('.league-connect-card') && document.querySelector('#connect-espn'))`);
   if (!connectCard) throw new Error("ESPN league connection card did not render");
 
