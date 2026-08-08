@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "oracle-browser-v1.1.1-espn-session";
+const CACHE = "snapcount-browser-v1.2.0-brand";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

@@ -18,4 +18,4 @@ http.createServer((request, response) => {
   }
   response.setHeader("Content-Type", mime[path.extname(target)] || "application/octet-stream");
   fs.createReadStream(target).pipe(response);
-}).listen(port, "127.0.0.1", () => console.log(`Oracle static server: http://127.0.0.1:${port}`));
+}).listen(port, "127.0.0.1", () => console.log(`SnapCount static server: http://127.0.0.1:${port}`));

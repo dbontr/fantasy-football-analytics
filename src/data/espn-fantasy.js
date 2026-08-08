@@ -46,11 +46,11 @@
     if (/HTTP\s+(401|403)/i.test(message)) {
       const result = options.browserSession
         ? new Error("ESPN did not accept this browser session. Sign in to ESPN in this browser and retry; some browsers may also block cross-site session cookies.")
-        : new Error("This league needs an ESPN sign-in. Oracle can try your browser's ESPN sign-in directly without reading or storing the cookie.");
+        : new Error("This league needs an ESPN sign-in. SnapCount can try your browser's ESPN sign-in directly without reading or storing the cookie.");
       result.code = options.browserSession ? "ESPN_SESSION_FAILED" : "ESPN_AUTH_REQUIRED";
       return result;
     }
-    if (/HTTP\s+404/i.test(message)) return new Error("Oracle couldn't find that ESPN league for the selected season. Check the league link and season.");
+    if (/HTTP\s+404/i.test(message)) return new Error("SnapCount couldn't find that ESPN league for the selected season. Check the league link and season.");
     return error instanceof Error ? error : new Error(message);
   }
 

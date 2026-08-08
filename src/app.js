@@ -172,8 +172,8 @@
     const authNeeded = state.espnNeedsSession && !league;
     $("#overview").classList.toggle("league-connected", Boolean(team));
     $("#hero-lede").textContent = team
-      ? `${team.name} is connected. Oracle has your roster and league context, so you can go straight to this week's lineup, waivers, trades, or season outlook.`
-      : "Connect your league or jump straight to a tool. Oracle turns projections, injuries, matchups, rookies, news, and simulations into one clear recommendation.";
+      ? `${team.name} is synced. SnapCount has the roster and league context, so your lineup, waivers, trades, and season outlook are ready to go.`
+      : "Connect ESPN or jump straight in. SnapCount turns your roster, usage, injuries, matchups, news, and simulations into the next move worth making.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);
@@ -461,7 +461,7 @@
   }
 
   function decisionContextLabel(contextState) {
-    if (contextState?.live?.failed?.length || contextState?.history?.error) return "Some live updates were unavailable — Oracle used its saved model instead";
+    if (contextState?.live?.failed?.length || contextState?.history?.error) return "Some live updates were unavailable — SnapCount used its saved model instead";
     return "Updated with the latest available player context";
   }
 
@@ -516,7 +516,7 @@
         <div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(availability)}</strong></div>
         <div class="metric"><span>RISK</span><strong class="${risk === "High" ? "warn" : ""}">${risk}</strong></div>
       </div>
-      <div class="why-box"><h3>Why Oracle sees it this way</h3>${drivers.slice(0, 5).map((driver) => `<div class="why-row"><span>${esc(friendlyDriverLabel(driver.label))}</span><b class="${driver.impact >= 0 ? "positive" : "negative"}">${driver.impact >= 0 ? "helps" : "hurts"} ${Math.abs(driver.impact) >= 1 ? "a lot" : "a little"}</b></div>`).join("")}</div>
+      <div class="why-box"><h3>Why SnapCount sees it this way</h3>${drivers.slice(0, 5).map((driver) => `<div class="why-row"><span>${esc(friendlyDriverLabel(driver.label))}</span><b class="${driver.impact >= 0 ? "positive" : "negative"}">${driver.impact >= 0 ? "helps" : "hurts"} ${Math.abs(driver.impact) >= 1 ? "a lot" : "a little"}</b></div>`).join("")}</div>
       <details class="advanced-details result-details"><summary>See advanced projection details</summary>${rangeMarkup(summary)}<p class="fineprint">Median ${num(summary.p50)} · boom chance ${pct(forecast.probabilities.boom)} · bust chance ${pct(bust)}.</p></details>
     `;
   }
@@ -576,11 +576,11 @@
     $("#player-intelligence").className = "result-space";
     $("#player-intelligence").innerHTML = `
       <div class="intelligence-grid">
-        <section class="outlook-card"><p class="control-title">OUR READ</p><h3 class="${directionClass}">${esc(trendLabel)} · ${esc(riskLabel)} risk</h3><p>Oracle projects <strong>${num(forecast.distribution.mean)} points</strong> with a ${pct(forecast.availability.probability)} chance to play.</p><p>${esc(readText)}</p></section>
+        <section class="outlook-card"><p class="control-title">OUR READ</p><h3 class="${directionClass}">${esc(trendLabel)} · ${esc(riskLabel)} risk</h3><p>SnapCount projects <strong>${num(forecast.distribution.mean)} points</strong> with a ${pct(forecast.availability.probability)} chance to play.</p><p>${esc(readText)}</p></section>
         ${rookieProfile ? `<section><p class="control-title">WHAT MATTERS MOST</p><div class="metric-grid compact-metrics"><div class="metric"><span>PROJECTION</span><strong>${num(forecast.distribution.mean)}</strong></div><div class="metric"><span>UPSIDE</span><strong>${num(forecast.distribution.p90)}</strong></div><div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(forecast.availability.probability)}</strong></div><div class="metric"><span>ROLE CLARITY</span><strong>${pct(1 - forecast.uncertainty.role)}</strong></div>${preseason ? `<div class="metric"><span>PRESEASON WORK</span><strong>${num(preseason.opportunitiesPerGame)} / game</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}. Rookies naturally carry more uncertainty until their NFL role is proven.</p></section>` : `<section><p class="control-title">RECENT FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 FANTASY PTS</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>OPPORTUNITIES / GAME</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div><div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}.${preseason ? ` Preseason usage is also included in the model.` : ""}</p></section>`}
       </div>
       ${rookieProfileMarkup(player)}
-      ${rookieProfile ? `<div class="rookie-history-note"><strong>No NFL game history yet.</strong><span>Oracle uses draft position, comparable rookies, current depth chart, preseason work, and the market projection instead of pretending missing history is bad history.</span></div>` : `<details class="advanced-details game-log-details"><summary>Show game-by-game stats</summary><div class="table-wrap"><table><thead><tr><th>Week</th><th>Opp</th><th>Fantasy pts</th><th>Touches + targets</th><th>Targets</th><th>Carries</th><th>Receptions</th><th>Scrim yds</th><th>Pass yds</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div></details>`}`;
+      ${rookieProfile ? `<div class="rookie-history-note"><strong>No NFL game history yet.</strong><span>SnapCount uses draft position, comparable rookies, current depth chart, preseason work, and the market projection instead of pretending missing history is bad history.</span></div>` : `<details class="advanced-details game-log-details"><summary>Show game-by-game stats</summary><div class="table-wrap"><table><thead><tr><th>Week</th><th>Opp</th><th>Fantasy pts</th><th>Touches + targets</th><th>Targets</th><th>Carries</th><th>Receptions</th><th>Scrim yds</th><th>Pass yds</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div></details>`}`;
   }
 
   function renderNewsPulse(player = playerById($("#player-select")?.value)) {
@@ -710,7 +710,7 @@
     if (!node || !state.players.length) return;
     const position = $("#draft-board-position")?.value || "ALL";
     const rows = oracleDraftBoard(currentDraftSettings()).filter((row) => position === "ALL" || row.position === position).slice(0, 80);
-    node.innerHTML = rows.map((row) => `<div class="big-board-row"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><small>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}</small></div><div class="board-score"><span>ORACLE SCORE</span><strong>${row.oracleScore}</strong></div></div>`).join("");
+    node.innerHTML = rows.map((row) => `<div class="big-board-row"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><small>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}</small></div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`).join("");
   }
 
   function resetDraft() {
@@ -823,7 +823,7 @@
     try {
       const settings = currentDraftSettings();
       const result = await runWorker("draft-benchmark", { options: { players: state.players, settings, userTeamId: settings.draftPosition, opponentStrategy: $("#draft-opponent-strategy").value || "mixed", baselineStrategy: $("#draft-baseline-strategy").value || "espn-market", board: draftBoardPayload(), simulations: Number($("#draft-benchmark-count").value || 100), seed: "draft-benchmark-2026" } });
-      $("#draft-benchmark-result").innerHTML = `<div class="friendly-benchmark"><strong>Oracle built the better projected roster in ${pct(result.oracleWinRate, 1)} of these mock drafts.</strong><p>Average projected season advantage: <b>${result.meanSeasonEdge >= 0 ? "+" : ""}${num(result.meanSeasonEdge)} points</b>.</p><small>This is a simulator comparison, not a guarantee of real-world results.</small></div>`;
+      $("#draft-benchmark-result").innerHTML = `<div class="friendly-benchmark"><strong>SnapCount built the better projected roster in ${pct(result.oracleWinRate, 1)} of these mock drafts.</strong><p>Average projected season advantage: <b>${result.meanSeasonEdge >= 0 ? "+" : ""}${num(result.meanSeasonEdge)} points</b>.</p><small>This is a simulator comparison, not a guarantee of real-world results.</small></div>`;
       status(`Comparison finished across ${result.simulations} mock drafts.`, "good");
     } catch (error) {
       $("#draft-benchmark-result").innerHTML = `<p>${esc(error.message)}</p>`;
@@ -1015,7 +1015,7 @@
       const tone = verdict === "ACCEPT" ? "good" : verdict === "PASS" ? "bad" : "neutral";
       const longTerm = analysis.assetGain >= 5 ? "Better" : analysis.assetGain <= -5 ? "Worse" : "About even";
       $("#trade-check-result").className = "result-space";
-      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>ORACLE SAYS</span><strong>${verdict}</strong><p>${esc(analysis.verdict)}. ${esc(analysis.summary)}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>STARTING LINEUP CHANGE</span><strong class="${analysis.lineupGain >= 0 ? "good" : "warn"}">${analysis.lineupGain >= 0 ? "+" : ""}${num(analysis.lineupGain)} pts/week</strong></div><div class="metric"><span>LONG-TERM ROSTER VALUE</span><strong>${longTerm}</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}</div>`;
+      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>THE CALL</span><strong>${verdict}</strong><p>${esc(analysis.verdict)}. ${esc(analysis.summary)}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>STARTING LINEUP CHANGE</span><strong class="${analysis.lineupGain >= 0 ? "good" : "warn"}">${analysis.lineupGain >= 0 ? "+" : ""}${num(analysis.lineupGain)} pts/week</strong></div><div class="metric"><span>LONG-TERM ROSTER VALUE</span><strong>${longTerm}</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}</div>`;
       status(`Trade checked. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
@@ -1050,7 +1050,7 @@
         limit: 10,
       } });
       $("#trade-result").className = "result-space";
-      $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">TRADE IDEA</span><strong>Give ${esc(row.give.map((p) => p.name).join(" + "))}</strong></div><b>Get ${esc(row.receive.map((p) => p.name).join(" + "))}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>Your lineup: ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)} pts</span><span>Trade balance: ${row.fairness}/100</span></div></article>`).join("")}</div>` : `<div class="empty-answer"><strong>No strong trade idea found right now.</strong><p>Oracle did not find a package that clearly helps you without becoming unrealistic for the other side.</p></div>`;
+      $("#trade-result").innerHTML = proposals.length ? `<div class="decision-list">${proposals.map((row) => `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">TRADE IDEA</span><strong>Give ${esc(row.give.map((p) => p.name).join(" + "))}</strong></div><b>Get ${esc(row.receive.map((p) => p.name).join(" + "))}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>Your lineup: ${row.userAnalysis.lineupGain >= 0 ? "+" : ""}${num(row.userAnalysis.lineupGain)} pts</span><span>Trade balance: ${row.fairness}/100</span></div></article>`).join("")}</div>` : `<div class="empty-answer"><strong>No strong trade idea found right now.</strong><p>SnapCount did not find a package that clearly helps you without becoming unrealistic for the other side.</p></div>`;
       status(`Trade ideas are ready. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");

@@ -64,8 +64,28 @@ async function main() {
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1,
       tabs: document.querySelectorAll('.tab').length,
       quickActions: document.querySelectorAll('.quick-action').length,
-      background: getComputedStyle(document.body).backgroundColor
+      background: getComputedStyle(document.body).backgroundColor,
+      brand: document.querySelector('.brand strong')?.textContent,
+      title: document.title,
+      primaryBackground: getComputedStyle(document.querySelector('.primary')).backgroundColor,
+      legacyBrandVisible: /Oracle/i.test(document.body.innerText),
+      greenishColors: (() => {
+        const found = new Set();
+        const parse = (value) => { const text=String(value); if (!text.startsWith('rgb')) return null; return text.slice(text.indexOf('(')+1, text.indexOf(')')).split(',').slice(0,3).map((part) => Number(part.trim())); };
+        for (const element of document.querySelectorAll('body *')) {
+          if (!element.getClientRects().length) continue;
+          const style = getComputedStyle(element);
+          for (const value of [style.color, style.backgroundColor, style.borderTopColor, style.borderLeftColor]) {
+            const rgb = parse(value); if (!rgb) continue;
+            const [r,g,b] = rgb;
+            if (g >= 70 && g > r * 1.22 && g > b * 1.12) found.add(value);
+          }
+        }
+        return [...found];
+      })()
     }))()`);
+    if (metrics.legacyBrandVisible) throw new Error(`Legacy Oracle branding is visible in ${name}`);
+    if (metrics.greenishColors.length) throw new Error(`Green theme color leaked into ${name}: ${metrics.greenishColors.join(', ')}`);
     const capture = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     fs.writeFileSync(`.qa-${name}.png`, Buffer.from(capture.data, "base64"));
     return metrics;
@@ -75,8 +95,10 @@ async function main() {
   await send("Page.reload", { ignoreCache: true });
   await waitFor(`document.querySelector('#player-count')?.textContent === '700'`);
   const home = await snapshot("home-desktop", 1440, 1000);
-  if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Friendly task navigation did not render");
-  if (home.horizontalOverflow || !home.background.includes("244")) throw new Error("Home light-theme/layout check failed");
+  if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
+  if (home.horizontalOverflow || home.background !== "rgb(243, 240, 232)") throw new Error("SnapCount canvas/layout check failed");
+  if (home.brand !== "SNAPCOUNT" || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
+  if (home.primaryBackground !== "rgb(36, 88, 232)") throw new Error("Primary action is not using the cobalt SnapCount palette");
   const connectCard = await evaluate(`Boolean(document.querySelector('.league-connect-card') && document.querySelector('#connect-espn'))`);
   if (!connectCard) throw new Error("ESPN league connection card did not render");
 
@@ -153,7 +175,7 @@ async function main() {
     rows: document.querySelectorAll('#draft-big-board .big-board-row').length,
     first: document.querySelector('#draft-big-board .big-board-row')?.textContent
   }))()`);
-  if (board.rows < 50 || !board.first.includes("ORACLE SCORE")) throw new Error("Oracle draft list failed");
+  if (board.rows < 50 || !board.first.includes("SNAP SCORE")) throw new Error("SnapCount draft board failed");
   await evaluate(`(() => { const s=document.querySelector('#draft-pick-search'); s.value='Bijan'; s.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
   const draftSearch = await evaluate(`document.querySelector('#draft-manual-player option:checked')?.textContent || ''`);
   if (!draftSearch.includes('Bijan')) throw new Error('Draft pick search failed');

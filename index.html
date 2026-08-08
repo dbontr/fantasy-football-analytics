@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f8f3">
-  <meta name="description" content="A simple fantasy football assistant for drafts, start/sit decisions, trades, waivers, and player rankings.">
-  <title>Oracle Fantasy Football Assistant</title>
+  <meta name="theme-color" content="#11182a">
+  <meta name="description" content="SnapCount turns your fantasy football league into clear draft, lineup, trade, waiver, player, and season decisions.">
+  <title>SnapCount — Fantasy Football Decisions</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#overview" data-jump="overview" aria-label="Oracle Fantasy Football home">
-      <span class="brand-mark" aria-hidden="true">O</span>
-      <span><strong>ORACLE</strong><small>FANTASY FOOTBALL</small></span>
+    <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
+      <span class="brand-mark" aria-hidden="true">SC</span>
+      <span><strong>SNAPCOUNT</strong><small>FANTASY FOOTBALL</small></span>
     </a>
     <nav class="tabs" aria-label="Fantasy football tools">
       <button class="tab active" data-panel-target="overview">Home</button>
@@ -32,9 +32,9 @@
     <section class="panel active" data-panel="overview" id="overview">
       <div class="hero-grid friendly-hero">
         <div class="hero-copy">
-          <p class="eyebrow">YOUR LEAGUE. YOUR NEXT MOVE.</p>
-          <h1>Know what to do next.<br>Every week.</h1>
-          <p id="hero-lede" class="lede">Connect your league or jump straight to a tool. Oracle turns projections, injuries, matchups, rookies, news, and simulations into one clear recommendation.</p>
+          <p class="eyebrow">YOUR LEAGUE. ONE MOVE AHEAD.</p>
+          <h1>See the move before<br>your league does.</h1>
+          <p id="hero-lede" class="lede">Connect ESPN or jump straight in. SnapCount turns your roster, usage, injuries, matchups, news, and simulations into the next move worth making.</p>
           <div class="action-row">
             <button class="primary" data-jump="lineup">Set my lineup</button>
             <button class="secondary" data-jump="draft">Help me draft</button>
@@ -44,8 +44,8 @@
         <aside class="league-connect-card" aria-label="Connect ESPN fantasy league">
           <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
           <div id="espn-connect-empty">
-            <h2>Bring in your league</h2>
-            <p>Paste an ESPN Fantasy league link or league ID. Oracle can fill your roster and season view automatically when ESPN allows anonymous league reads.</p>
+            <h2>Sync the league</h2>
+            <p>Paste an ESPN Fantasy league link or league ID. SnapCount pulls the league context it needs and gets your roster ready for the weekly decisions.</p>
             <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
             <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Connect ESPN</button></div>
           </div>
@@ -58,7 +58,7 @@
           <div id="espn-auth-step" class="hidden">
             <p class="connection-kicker">PRIVATE LEAGUE</p>
             <h2>Use your ESPN sign-in</h2>
-            <p>If you're already signed into ESPN in this browser, Oracle can ask ESPN for the league using that browser session. The cookie goes directly to ESPN and is never exposed to or stored by Oracle.</p>
+            <p>If you're already signed into ESPN in this browser, SnapCount can ask ESPN for the league using that browser session. The cookie goes directly to ESPN and is never exposed to or stored by SnapCount.</p>
             <a class="espn-login-link" href="https://fantasy.espn.com/football/" target="_blank" rel="noopener noreferrer">Open ESPN to sign in</a>
             <button id="connect-espn-session" class="primary">Try my ESPN sign-in</button>
             <button id="cancel-espn-session" class="ghost">Use a different league</button>
@@ -69,7 +69,7 @@
             <p id="espn-connected-meta">ESPN Fantasy</p>
             <div class="connect-actions"><button id="refresh-espn" class="secondary">Refresh ESPN</button><button id="disconnect-espn" class="ghost">Disconnect</button></div>
           </div>
-          <p class="privacy-note">Oracle never asks for your ESPN password or cookie values. If you choose browser sign-in for a private league, your existing session goes directly from your browser to ESPN and is never exposed to or stored by Oracle.</p>
+          <p class="privacy-note">SnapCount never asks for your ESPN password or cookie values. If you choose browser sign-in for a private league, your existing session goes directly from your browser to ESPN and is never exposed to or stored by SnapCount.</p>
         </aside>
       </div>
       <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
@@ -114,7 +114,7 @@
     </section>
 
     <section class="panel" data-panel="player" id="player">
-      <div class="section-heading"><div><p class="eyebrow">PLAYER CHECK</p><h1>How good is this player right now?</h1></div><p>Pick a player and week. Oracle will give you a projection, upside, risk, current status, and the biggest reasons behind the recommendation.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">PLAYER CHECK</p><h1>How good is this player right now?</h1></div><p>Pick a player and week. SnapCount gives you the projection, upside, risk, current status, and the biggest reasons behind the call.</p></div>
       <div class="workbench">
         <aside class="controls module friendly-controls">
           <label>Find a player<input id="player-search" type="search" placeholder="Start typing a name…" autocomplete="off"></label>
@@ -154,7 +154,7 @@
         <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
       </div>
       <article class="module big-board-module">
-        <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>Oracle Top Players</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
+        <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>SnapCount Big Board</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
         <p class="helper-copy">This is our simple pre-draft ranking. Higher scores mean a better mix of projection, positional value, risk, and rookie upside.</p>
         <div id="draft-big-board" class="big-board-list"></div>
       </article>
@@ -164,7 +164,7 @@
           <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
           <label>Player picked<select id="draft-manual-player"></select></label>
           <button id="draft-record-pick" class="secondary">Record this pick</button>
-          <p class="helper-copy">In Live Draft Helper, enter each real pick from your ESPN draft. Oracle immediately updates who you should take next.</p>
+          <p class="helper-copy">In Live Draft Helper, enter each real pick from your ESPN draft. SnapCount immediately updates who you should take next.</p>
           <details class="advanced-details"><summary>Use Yahoo, NFL, or another ranking list</summary>
             <label>Paste rankings<textarea id="draft-custom-board" rows="7" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
             <div class="action-row compact"><button id="draft-import-board" class="secondary">Use these rankings</button><button id="draft-clear-board" class="ghost">Use built-in market</button></div>
@@ -172,7 +172,7 @@
           </details>
         </article>
         <details class="module draft-side optional-tool">
-          <summary><span><small>OPTIONAL</small><strong>Compare our draft strategy</strong></span><em>See how Oracle performs in simulated drafts</em></summary>
+          <summary><span><small>OPTIONAL</small><strong>Compare our draft strategy</strong></span><em>See how SnapCount performs in simulated drafts</em></summary>
           <label>Number of mock drafts<select id="draft-benchmark-count"><option>40</option><option selected>100</option><option>200</option></select></label>
           <label>Compare against<select id="draft-baseline-strategy"><option value="espn-market" selected>Normal ESPN rankings</option><option value="balanced">Balanced drafter</option><option value="need-heavy">Position-need drafter</option><option value="zero-rb">Zero-RB</option></select></label>
           <button id="draft-benchmark" class="secondary">Run comparison</button>
@@ -184,20 +184,20 @@
     </section>
 
     <section class="panel" data-panel="lineup" id="lineup">
-      <div class="section-heading"><div><p class="eyebrow">START / SIT</p><h1>Set my best lineup.</h1></div><p>Add the players on your roster, choose the week, and Oracle will tell you exactly who to start and who to leave on the bench.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">START / SIT</p><h1>Set my best lineup.</h1></div><p>Add the players on your roster, choose the week, and SnapCount gives you the starters, bench, range, and upside.</p></div>
       <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
       <div id="roster-strip" class="roster-strip"></div>
-      <div id="lineup-result" class="result-space empty-state"><p>Add your roster above. Oracle will choose the starters for you.</p></div>
+      <div id="lineup-result" class="result-space empty-state"><p>Add your roster above. SnapCount will choose the starters for you.</p></div>
     </section>
 
     <section class="panel" data-panel="waivers" id="waivers">
-      <div class="section-heading"><div><p class="eyebrow">WAIVERS</p><h1>Who should I pick up?</h1></div><p>Oracle checks the available player pool against your roster and tells you who is actually worth adding — and who you should drop.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">WAIVERS</p><h1>Who should I pick up?</h1></div><p>SnapCount checks the available player pool against your roster and shows the adds that are actually worth a move — plus who to cut.</p></div>
       <div class="toolbar module"><label>My league uses<select id="waiver-mode"><option value="priority" selected>Normal waiver priority / free agency</option><option value="faab">FAAB budget</option></select></label><label id="faab-budget-label" class="hidden">FAAB left<input id="faab-budget" type="number" min="0" max="1000" value="100"></label><label>Week<select id="waiver-week"></select></label><button id="run-waivers" class="primary">Find my best pickups</button></div>
       <div id="waiver-result" class="result-space empty-state"><p>First add your roster in <strong>Start / Sit</strong>, then come back here.</p></div>
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow">TRADES</p><h1>Should I make this trade?</h1></div><p>Choose what you give up and what you get back. Oracle checks whether the trade actually improves your lineup and roster.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">TRADES</p><h1>Should I make this trade?</h1></div><p>Choose what you give up and what you get back. SnapCount checks the starting-lineup impact, long-term roster direction, and trade balance.</p></div>
       <article class="module trade-checker">
         <div class="trade-side"><strong>I GIVE</strong><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
@@ -205,7 +205,7 @@
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Add your roster in <strong>Start / Sit</strong>, then choose the trade above.</p></div>
-      <details class="module optional-tool trade-ideas"><summary><span><small>OPTIONAL</small><strong>Find trade ideas for me</strong></span><em>Search for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>Oracle can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
+      <details class="module optional-tool trade-ideas"><summary><span><small>OPTIONAL</small><strong>Find trade ideas for me</strong></span><em>Search for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>SnapCount can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
     </section>
 
     <section class="panel" data-panel="league" id="league">
@@ -243,7 +243,7 @@
     </section>
   </main>
 
-  <footer><span>Oracle Fantasy Football</span><span>Simple answers on top. Advanced modeling underneath.</span></footer>
+  <footer><span>SNAPCOUNT · FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
 
   <script src="./src/engine/core.js"></script>
   <script src="./src/engine/rookies.js"></script>

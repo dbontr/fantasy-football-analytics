@@ -1170,3 +1170,289 @@ body { background: var(--bg); }
   text-decoration: none;
 }
 .espn-login-link:hover { border-color: #9fc3b1; background: #f5f9f7; }
+
+/* SnapCount sports-editorial visual system */
+:root {
+  color-scheme: light;
+  --bg: #f3f0e8;
+  --surface: #fffdf8;
+  --surface-2: #f8f4eb;
+  --surface-3: #ece9e1;
+  --ink: #11182a;
+  --muted: #596174;
+  --faint: #858d9d;
+  --line: #cbd0da;
+  --field: #edf0f6;
+  --field-line: #c4cada;
+  --signal: #2458e8;
+  --signal-2: #17264b;
+  --accent: #ff6b35;
+  --danger: #c93642;
+  --good: #2458e8;
+  --radius: 6px;
+  --max: 1320px;
+}
+html { background: var(--ink); }
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+.topbar {
+  min-height: 72px;
+  border-bottom: 4px solid var(--accent);
+  background: var(--ink);
+  box-shadow: none;
+}
+.brand { min-width: 206px; }
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  border: 2px solid #050811;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 #050811;
+  font-size: 11px;
+  letter-spacing: -.04em;
+}
+.brand strong { color: #fffaf0; font-size: 14px; letter-spacing: .12em; }
+.brand small { color: #aeb6c8; letter-spacing: .14em; }
+.tabs { gap: 5px; }
+.tab {
+  border-radius: 3px;
+  color: #c7cede;
+  font-weight: 760;
+}
+.tab:hover { background: #202a40; color: #fffaf0; }
+.tab.active {
+  border-bottom-color: transparent;
+  background: #fffaf0;
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--signal);
+}
+.panel { padding-top: 44px; }
+.eyebrow { color: var(--signal); font-weight: 900; }
+h1 { color: var(--ink); font-weight: 850; letter-spacing: -.055em; }
+h2 { font-weight: 820; }
+.hero-copy h1 {
+  max-width: 780px;
+  font-size: clamp(54px, 5.5vw, 82px);
+  line-height: .94;
+}
+.hero-copy .lede { max-width: 700px; color: #4f586b; }
+.trust-row { color: #4f586b; }
+.trust-row span::before { color: var(--signal); }
+.primary, .secondary, .ghost, .mini-button {
+  border-radius: 4px;
+  font-weight: 800;
+}
+.primary { border-color: var(--signal); background: var(--signal); color: #fff; }
+.primary:hover { border-color: var(--signal-2); background: var(--signal-2); }
+.secondary {
+  border: 2px solid var(--ink);
+  background: #fffaf0;
+  color: var(--ink);
+}
+.secondary:hover { border-color: var(--ink); background: #e9efff; color: var(--ink); }
+.ghost { border: 1px solid #aeb5c2; background: #fffdf8; color: #555e70; }
+.ghost:hover { border-color: var(--ink); color: var(--ink); }
+input, select, textarea {
+  border: 1px solid #aeb5c2;
+  border-radius: 4px;
+  background: #fffdf8;
+  color: var(--ink);
+}
+input:hover, select:hover, textarea:hover { border-color: #68738a; }
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+button:focus-visible, .tab:focus-visible {
+  outline: 3px solid rgba(36, 88, 232, .25);
+  outline-offset: 2px;
+  border-color: var(--signal);
+}
+label { color: #50596b; }
+.app-status:not(:empty) {
+  background: #e9efff;
+  color: #173f9f;
+}
+.app-status.error:not(:empty) { background: #fff0ef; color: var(--danger); }
+.league-connect-card {
+  min-height: 430px;
+  border: 2px solid #050811;
+  border-radius: 6px;
+  background: var(--ink);
+  background-image: none;
+  color: #fffaf0;
+  box-shadow: 8px 8px 0 var(--accent);
+}
+.league-connect-card::before { width: 7px; background: var(--accent); }
+.league-connect-card h2 { color: #fffaf0; font-size: 34px; }
+.league-connect-card p { color: #b8c0d0; }
+.league-connect-card label { color: #d7dceb; }
+.league-connect-card input,
+.league-connect-card select { background: #fffdf8; color: var(--ink); border-color: #6f788d; }
+.connection-state { color: #b8c0d0; }
+.connection-state::before { background: #778095; }
+.connection-state.connected { color: #9eb8ff; }
+.connection-state.connected::before {
+  background: #9eb8ff;
+  box-shadow: 0 0 0 4px rgba(158, 184, 255, .14);
+}
+.connection-kicker { color: #9eb8ff !important; }
+.privacy-note { border-top-color: #3b455c; }
+.espn-login-link {
+  border: 2px solid #fffaf0;
+  border-radius: 4px;
+  background: transparent;
+  color: #fffaf0;
+}
+.espn-login-link:hover { border-color: #9eb8ff; background: #202a40; color: #fff; }
+.league-command-strip {
+  gap: 0;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--ink);
+  box-shadow: 5px 5px 0 var(--accent);
+}
+.league-command-strip > div,
+.league-command-strip > button {
+  border-right: 1px solid #3b455c;
+  background: var(--ink);
+  color: #fffaf0;
+}
+.league-command-strip > div { background: var(--signal); }
+.league-command-strip span { color: #ffb38f; }
+.league-command-strip > div span { color: #dce5ff; }
+.league-command-strip small { color: #dce1ec; }
+.league-command-strip > button:hover { background: #202a40; }
+.quick-actions { gap: 16px; margin-top: 26px; }
+.quick-action {
+  min-height: 124px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fffdf8;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease;
+}
+.quick-action:hover {
+  border-color: var(--ink);
+  background: #fff7e8;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.quick-action > span {
+  width: 34px;
+  height: 34px;
+  border-radius: 2px;
+  background: var(--signal);
+  color: #fff;
+  font-size: 15px;
+}
+.quick-action:nth-child(odd) > span { background: var(--accent); color: var(--ink); }
+.quick-action strong { font-size: 15px; }
+.quick-action small { color: #5a6273; }
+.module, .result-space {
+  border: 1px solid #bcc3cf;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 3px 3px 0 #d5d0c6;
+}
+.section-heading { border-bottom: 2px solid var(--ink); }
+.section-heading > p { color: #596174; }
+.table-header { border-bottom-color: #c5cad4; }
+th, td { border-bottom-color: #d5d9e0; }
+th { color: #6d7586; }
+tbody tr:hover { background: #eef2ff; }
+.pos-pill {
+  border-color: #aebdff;
+  border-radius: 3px;
+  background: #e9efff;
+  color: #173f9f;
+}
+.mini-button { border-color: var(--ink); border-radius: 3px; color: var(--ink); }
+.mini-button:hover { border-color: var(--signal); background: var(--signal); color: #fff; }
+.metric { border-color: #c7ccd5; border-radius: 4px; background: #f8f4eb; }
+.metric span { color: #6c7485; }
+.metric strong.good { color: var(--signal); }
+.metric strong.warn { color: var(--danger); }
+.result-kicker { color: var(--signal); }
+.why-box {
+  border-color: #c7ccd5;
+  border-radius: 4px;
+  background: #fffaf0;
+}
+.why-row { border-bottom-color: #dedad0; }
+.why-row span { color: #50596b; }
+.why-row b.positive, .driver-row b.positive { color: var(--signal); }
+.range-track {
+  border-color: #b9c2d4;
+  border-radius: 3px;
+  background: #e8ecf4;
+}
+.range-band { background: #9db3ff; }
+.range-median { background: var(--signal); }
+.board-rank, .board-score strong { color: var(--signal); }
+.big-board-list { border-top-color: #c5cad4; }
+.big-board-row { border-bottom-color: #d8dbe1; }
+.roster-chip {
+  border-color: #aeb5c2;
+  border-radius: 3px;
+  background: #fffdf8;
+}
+.roster-chip span { color: var(--signal); }
+.lineup-row { border-color: #c7ccd5; border-radius: 4px; background: #f8f4eb; }
+.lineup-row > span, .lineup-row b { color: var(--signal-2); }
+.trade-side, .trade-verdict, .trade-summary {
+  border-color: #c7ccd5;
+  border-radius: 4px;
+  background: #f8f4eb;
+}
+.trade-side > strong, .trade-arrow { color: var(--signal); }
+.trade-verdict.good > strong { color: var(--signal); }
+.trade-verdict.neutral > strong { color: #a64b22; }
+.decision-card {
+  border: 1px solid #c5cad4;
+  border-radius: 4px;
+  background: #fffdf8;
+  box-shadow: 2px 2px 0 #ded9cf;
+}
+.decision-head b { color: var(--signal-2); }
+.decision-stats { color: #5b6476; }
+.outlook-card, .news-item {
+  border-color: #c7ccd5;
+  border-radius: 4px;
+  background: #f8f4eb;
+}
+.rookie-pill {
+  border-color: #e85d2b;
+  border-radius: 3px;
+  background: #fff0e8;
+  color: #9b3515;
+}
+.rookie-chip, .rookie-history-note strong { color: #9b3515; }
+.rookie-profile {
+  border-color: #efb79f;
+  border-radius: 5px;
+  background: #fff4ed;
+}
+.season-connection-summary {
+  border: 1px solid #aebdff;
+  border-radius: 4px;
+  background: #e9efff;
+}
+.control-title { color: var(--signal-2); }
+.optional-tool > summary small { color: var(--signal); }
+.friendly-benchmark strong { color: var(--signal-2); }
+footer {
+  border-top: 2px solid var(--ink);
+  color: #697184;
+  font-weight: 750;
+  letter-spacing: .04em;
+}
+@media (max-width: 780px) {
+  .topbar { background: var(--ink); border-bottom-color: var(--accent); }
+  .tabs { gap: 4px; }
+  .tab { color: #c7cede; }
+  .tab.active { color: var(--ink); background: #fffaf0; }
+  .league-connect-card { border-radius: 5px; box-shadow: 5px 5px 0 var(--accent); }
+}
+.draft-take, .trade-summary { color: #50596b; }

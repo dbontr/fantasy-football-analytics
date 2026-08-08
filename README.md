@@ -1,6 +1,6 @@
-# Oracle Fantasy Football Assistant
+# SnapCount Fantasy Football
 
-A user-first fantasy football assistant for people who want a clear answer without needing to understand fantasy analytics. The interface focuses on the jobs users actually have: **draft well, set the right lineup, judge trades, find waiver pickups, and understand a player**. The advanced forecasting and simulation stack stays under the hood.
+SnapCount is a user-first fantasy football decision app for people who want a clear answer without needing to understand fantasy analytics. The interface focuses on the jobs users actually have: **draft well, set the right lineup, judge trades, find waiver pickups, and understand a player**. The advanced forecasting and simulation stack stays under the hood.
 
 The application is still fully browser-native: static GitHub Pages, **no application server, no database server, no custom GitHub Actions workflow, no API keys, and zero runtime npm dependencies**. The original `fantasy-football-oracle` repository remains the feature/behavior reference.
 
@@ -19,9 +19,9 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 
 ## User experience
 
-The product intentionally hides research terminology by default. The seven user-facing areas are **Home, Draft, Start / Sit, Trades, Waivers, Players, and Season**. Home is now league-first: an ESPN Fantasy league link or ID can populate the user's roster and league context through an anonymous read when available or an explicit browser-session fallback for private leagues, then Oracle presents direct shortcuts for the week's lineup, waivers, trades, and season outlook. Draft includes an Oracle-ranked player list, mock draft, and manual live-draft helper; Trades includes a direct give/get analyzer; detailed distributions, model diagnostics, and custom what-if controls are kept behind optional disclosures when they are useful.
+The product intentionally hides research terminology by default. The seven user-facing areas are **Home, Draft, Start / Sit, Trades, Waivers, Players, and Season**. Home is league-first: an ESPN Fantasy league link or ID can populate the user's roster and league context through an anonymous read when available or an explicit browser-session fallback for private leagues, then SnapCount presents direct shortcuts for the week's lineup, waivers, trades, and season outlook. Draft includes the SnapCount Big Board, mock draft, and manual live-draft helper; Trades includes a direct give/get analyzer; detailed distributions, model diagnostics, and custom what-if controls are kept behind optional disclosures when they are useful.
 
-The visual system is a bright, accessible light theme with a connected-league command center, large controls, responsive cards, restrained football-field details, and task-oriented recommendations such as **Draft him**, **Start these players**, **Accept / Pass**, and **Add / Drop**. Oracle never asks for ESPN passwords, SWID/`espn_s2` values, or cookie values. Anonymous ESPN access is attempted first; for a private league the user can explicitly opt into a direct browser-session request. In that mode the browser sends its existing ESPN session straight to ESPN, while Oracle cannot read or persist the cookie itself.
+The visual system is a high-contrast sports-editorial theme: warm cream canvas, midnight structure, cobalt actions, orange highlights, hard scorecard borders, and an ESPN-red provider badge only where ESPN is involved. SnapCount never asks for ESPN passwords, SWID/`espn_s2` values, or cookie values. Anonymous ESPN access is attempted first; for a private league the user can explicitly opt into a direct browser-session request. In that mode the browser sends its existing ESPN session straight to ESPN, while SnapCount cannot read or persist the cookie itself.
 
 ## What is implemented
 
@@ -32,9 +32,9 @@ The visual system is a bright, accessible light theme with a connected-league co
 - Bounded health, coaching, role, weather, matchup, line, news, and market evidence families.
 - Correlated game/team/player Monte Carlo with deterministic paired scenarios and per-scenario shared-factor caching so game/team latents are generated once and reused across players.
 - Exact lineup assignment across normal, FLEX, and SUPERFLEX slots.
-- ESPN Fantasy league sync: URL/ID parsing, anonymous-first access, explicit direct browser-session fallback for private leagues, team selection, roster/record/current-week import, local persistence, one-click refresh/disconnect, and automatic Start / Sit + Season population. Oracle never accepts raw ESPN credential values.
+- ESPN Fantasy league sync: URL/ID parsing, anonymous-first access, explicit direct browser-session fallback for private leagues, team selection, roster/record/current-week import, local persistence, one-click refresh/disconnect, and automatic Start / Sit + Season population. SnapCount never accepts raw ESPN credential values.
 - Interactive draft simulator + live draft helper: the user controls one team while CPU opponents use configurable market/value/need/positional strategies.
-- Draft VONA, replacement value, strategy-aware return probability, run pressure, market disagreement, custom external ranking-board import, and paired Oracle-vs-market strategy benchmarks.
+- Draft VONA, replacement value, strategy-aware return probability, run pressure, market disagreement, custom external ranking-board import, and paired SnapCount-vs-market strategy benchmarks.
 - Waiver add/drop search with ESPN-style waiver-priority/free-agency recommendations by default and bounded FAAB ranges only when FAAB mode is selected.
 - Bilateral trade package search through 2-for-2 combinations.
 - Full fantasy-league regular season, seeds, playoff byes, brackets, and title probability.
@@ -45,10 +45,10 @@ The visual system is a bright, accessible light theme with a connected-league co
 - On-demand ffopportunity expected-fantasy-points (xFP) and FPOE evidence, confidence-decayed across the offseason.
 - Rookie-specific 2026 intelligence for 74 fantasy-relevant rookies: 2016-2025 draft-capital cohorts, age, structured draft grade/rank, position-relative combine context, live depth chart, preseason usage, week-progressive development priors, and explicitly wider uncertainty when NFL evidence is sparse.
 - Rookie cohorts include non-producing developmental/UDFAs rather than conditioning on players who logged stats; drafted buckets shrink toward a drafted-player baseline to reduce survivorship and population-mix bias.
-- Oracle draft recommendations can use a small capped rookie-upside/tail term, while simulated market opponents remain driven by the selected market/value/need strategy rather than Oracle's rookie model.
+- SnapCount draft recommendations can use a small capped rookie-upside/tail term, while simulated market opponents remain driven by the selected market/value/need strategy rather than the SnapCount rookie model.
 - Optional live 2026 preseason boxscore usage, ESPN headline metadata, Sleeper add/drop momentum, and current game scoring-environment priors; all enter forecasts through bounded evidence families.
 - Conservative teammate-absence redistribution estimates vacated target/carry opportunity without treating it as guaranteed usage.
-- Evidence-backed Oracle Outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs or article bodies.
+- Evidence-backed player outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs or article bodies.
 - Shared history-aware decision evidence now feeds lineup optimization, waiver add/drop search, bilateral trades, and league/title simulation.
 - Decision workflows automatically attempt position-filtered Sleeper health/status refreshes; active reports clear stale bootstrap injury labels and any network failure is surfaced as a live-status fallback.
 - Lightweight matchup context derived from the free bootstrap universe and clearly marked as a proxy.
@@ -82,15 +82,15 @@ Heavy scenario work is moved off the UI thread. Player samples use `Float32Array
 
 The bootstrap is intentionally explicit about provenance instead of pretending every field comes from one feed:
 
-- `data/players-lite.json`: compacted from the prior Oracle's 2026 public ESPN fantasy player/schedule snapshot, merged with nflverse-derived opportunity profiles. It remains the offline baseline even when live adapters are unavailable.
+- `data/players-lite.json`: compacted from the prior reference engine's 2026 public ESPN fantasy player/schedule snapshot, merged with nflverse-derived opportunity profiles. It remains the offline baseline even when live adapters are unavailable.
 - `data/health-calibration-2026.json`: historical nflverse official injury/practice reports joined to nflverse weekly player outcomes with leakage controls recorded in the artifact metadata.
 - `data/history/stats_player_week_2023.csv.gz` through `2025.csv.gz`: compressed nflverse weekly player statistics, loaded on demand and never included in initial-page precache.
-- `data/coaches-2026.json`: 32-team Bayesian-shrunk Oracle coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
+- `data/coaches-2026.json`: 32-team Bayesian-shrunk coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
 - `data/intelligence/xfp_weekly_2025.csv.gz`: 153 KB compact ffopportunity expected-fantasy-points artifact (CC BY-SA 4.0), loaded only with player/decision intelligence.
 - `data/rookies-2026.json`: ~47 KB offline rookie artifact covering 74 players. It is reproducibly built from nflverse player/combine/stat data plus ESPN's public structured 2026 draft metadata; the build uses 1,868 historical rookie records and ships only compact priors/current-player metadata.
 - Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, ESPN public keyless NFL web JSON, ESPN Fantasy league reads, and NOAA/NWS. ESPN terms apply to ESPN-sourced metadata.
 
-The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists. ESPN Fantasy is the sole adapter allowed to opt into `credentials: include`, and only after the user chooses the browser-session fallback. Those credentials are managed by the browser and sent directly to ESPN; Oracle never receives or stores their values.
+The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists. ESPN Fantasy is the sole adapter allowed to opt into `credentials: include`, and only after the user chooses the browser-session fallback. Those credentials are managed by the browser and sent directly to ESPN; SnapCount never receives or stores their values.
 
 ## Local development
 

@@ -362,7 +362,7 @@
     return {
       direction, risk, confidence, health, bullets,
       headline: `${direction} · ${risk} RISK · ${(confidence * 100).toFixed(0)}% CONFIDENCE`,
-      provenance: player?.rookie ? "Generated locally from Oracle forecast, historical rookie cohorts, structured draft/combine metadata, and available live role/status fields." : "Generated locally from Oracle forecast, nflverse game logs, and available Sleeper status fields.",
+      provenance: player?.rookie ? "Generated locally from SnapCount forecast, historical rookie cohorts, structured draft/combine metadata, and available live role/status fields." : "Generated locally from SnapCount forecast, nflverse game logs, and available Sleeper status fields.",
     };
   }
 
