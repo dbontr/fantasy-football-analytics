@@ -4,7 +4,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f3f0e8",
-  "theme_color": "#11182a",
+  "background_color": "#f6f1e7",
+  "theme_color": "#181625",
   "description": "Fast fantasy football decisions for drafts, lineups, trades, waivers, players, and season outlook."
 }

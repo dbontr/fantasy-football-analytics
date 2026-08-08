@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#11182a">
+  <meta name="theme-color" content="#181625">
   <meta name="description" content="SnapCount turns your fantasy football league into clear draft, lineup, trade, waiver, player, and season decisions.">
   <title>SnapCount — Fantasy Football Decisions</title>
   <link rel="manifest" href="./manifest.webmanifest">
@@ -32,22 +32,22 @@
     <section class="panel active" data-panel="overview" id="overview">
       <div class="hero-grid friendly-hero">
         <div class="hero-copy">
-          <p class="eyebrow">YOUR LEAGUE. ONE MOVE AHEAD.</p>
-          <h1>See the move before<br>your league does.</h1>
-          <p id="hero-lede" class="lede">Connect ESPN or jump straight in. SnapCount turns your roster, usage, injuries, matchups, news, and simulations into the next move worth making.</p>
+          <p class="eyebrow">YOUR LEAGUE. YOUR EDGE.</p>
+          <h1>Make the call before<br>the room catches up.</h1>
+          <p id="hero-lede" class="lede">Connect ESPN or start anywhere. SnapCount turns the noise — usage, injuries, matchups, news, and simulations — into one clear next move.</p>
           <div class="action-row">
-            <button class="primary" data-jump="lineup">Set my lineup</button>
-            <button class="secondary" data-jump="draft">Help me draft</button>
+            <button class="primary" data-jump="lineup">Fix my lineup</button>
+            <button class="secondary" data-jump="draft">Build my draft plan</button>
           </div>
-          <div class="trust-row"><span>Private by design</span><span>Runs in your browser</span><span>No paid data required</span></div>
+          <div class="trust-row"><span>Your league stays local</span><span>No setup maze</span><span>No paid data required</span></div>
         </div>
         <aside class="league-connect-card" aria-label="Connect ESPN fantasy league">
           <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
           <div id="espn-connect-empty">
-            <h2>Sync the league</h2>
-            <p>Paste an ESPN Fantasy league link or league ID. SnapCount pulls the league context it needs and gets your roster ready for the weekly decisions.</p>
+            <h2>Bring in your league</h2>
+            <p>Paste your ESPN Fantasy link or league ID. SnapCount loads your roster, opponents, record, and current week so every tool starts with the right context.</p>
             <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
-            <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Connect ESPN</button></div>
+            <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Load my ESPN league</button></div>
           </div>
           <div id="espn-team-step" class="hidden">
             <h2>Which team is yours?</h2>
@@ -74,17 +74,17 @@
       </div>
       <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
         <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">—</strong><small id="home-team-record">—</small></div>
-        <button data-jump="lineup"><span>START / SIT</span><strong>Set this week's lineup</strong></button>
-        <button data-jump="waivers"><span>WAIVERS</span><strong>Find an upgrade</strong></button>
-        <button data-jump="trades"><span>TRADES</span><strong>Check a deal</strong></button>
-        <button data-jump="league"><span>SEASON</span><strong>See title odds</strong></button>
+        <button data-jump="lineup"><span>START / SIT</span><strong>Lock in the starters</strong></button>
+        <button data-jump="waivers"><span>WAIVERS</span><strong>Attack the wire</strong></button>
+        <button data-jump="trades"><span>TRADES</span><strong>Pressure-test a deal</strong></button>
+        <button data-jump="league"><span>SEASON</span><strong>Check the title path</strong></button>
       </section>
       <div class="quick-actions" aria-label="Choose what you need help with">
-        <button class="quick-action" data-jump="draft"><span>1</span><strong>Draft help</strong><small>Live helper, mock draft, and our ranked board</small></button>
-        <button class="quick-action" data-jump="lineup"><span>2</span><strong>Who should I start?</strong><small>Build your roster and get the best lineup</small></button>
-        <button class="quick-action" data-jump="trades"><span>3</span><strong>Is this trade good?</strong><small>Check a trade or find trade ideas</small></button>
-        <button class="quick-action" data-jump="waivers"><span>4</span><strong>Who should I pick up?</strong><small>Find upgrades and who to drop</small></button>
-        <button class="quick-action" data-jump="player"><span>5</span><strong>Check a player</strong><small>Projection, upside, risk, news, and outlook</small></button>
+        <button class="quick-action" data-jump="draft"><span>1</span><strong>Draft smarter</strong><small>Build a board, practice the room, then draft live</small></button>
+        <button class="quick-action" data-jump="lineup"><span>2</span><strong>Set it. Stop guessing.</strong><small>Get the lineup SnapCount would actually start</small></button>
+        <button class="quick-action" data-jump="trades"><span>3</span><strong>Would I win this trade?</strong><small>See what changes now and over the season</small></button>
+        <button class="quick-action" data-jump="waivers"><span>4</span><strong>Find the upgrade</strong><small>Best add, best drop, and how hard to chase it</small></button>
+        <button class="quick-action" data-jump="player"><span>5</span><strong>Scout a player</strong><small>Projection, ceiling, risk, role, and latest context</small></button>
       </div>
 
       <div class="scoreboard" aria-label="Engine status">
@@ -114,7 +114,7 @@
     </section>
 
     <section class="panel" data-panel="player" id="player">
-      <div class="section-heading"><div><p class="eyebrow">PLAYER CHECK</p><h1>How good is this player right now?</h1></div><p>Pick a player and week. SnapCount gives you the projection, upside, risk, current status, and the biggest reasons behind the call.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">PLAYER SCOUT</p><h1>What am I really getting from this player?</h1></div><p>Pick a player and week. Get the expected points, ceiling, risk, role, and the few things that actually matter to the decision.</p></div>
       <div class="workbench">
         <aside class="controls module friendly-controls">
           <label>Find a player<input id="player-search" type="search" placeholder="Start typing a name…" autocomplete="off"></label>
@@ -140,7 +140,7 @@
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
-      <div class="section-heading"><div><p class="eyebrow">DRAFT HELP</p><h1>Know who to take before you're on the clock.</h1></div><p>Use our ranked board before the draft, practice in a mock draft, or switch to Live Draft Helper and record the real picks as they happen.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">DRAFT ROOM</p><h1>Walk in with a plan. Adjust faster than everyone else.</h1></div><p>Rankings tell you who's good. SnapCount tells you who fits your build, who may make it back, and when waiting is the mistake.</p></div>
       <div class="toolbar module draft-toolbar">
         <label>What are you doing?<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
         <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
@@ -184,20 +184,20 @@
     </section>
 
     <section class="panel" data-panel="lineup" id="lineup">
-      <div class="section-heading"><div><p class="eyebrow">START / SIT</p><h1>Set my best lineup.</h1></div><p>Add the players on your roster, choose the week, and SnapCount gives you the starters, bench, range, and upside.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">START / SIT</p><h1>Set it. Stop second-guessing.</h1></div><p>Give SnapCount your roster and week. It handles the FLEX decisions, injury risk, upside, and the close calls for you.</p></div>
       <div class="toolbar module"><label>Find a roster player<input id="roster-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Choose player<select id="roster-add"></select></label><button id="roster-add-button" class="secondary">Add player</button><button id="roster-demo" class="secondary">Try a demo roster</button><button id="roster-clear" class="ghost">Clear roster</button><label>Week<select id="lineup-week"></select></label><button id="run-lineup" class="primary">Set my lineup</button></div>
       <div id="roster-strip" class="roster-strip"></div>
       <div id="lineup-result" class="result-space empty-state"><p>Add your roster above. SnapCount will choose the starters for you.</p></div>
     </section>
 
     <section class="panel" data-panel="waivers" id="waivers">
-      <div class="section-heading"><div><p class="eyebrow">WAIVERS</p><h1>Who should I pick up?</h1></div><p>SnapCount checks the available player pool against your roster and shows the adds that are actually worth a move — plus who to cut.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">WAIVER WIRE</p><h1>Where is the upgrade?</h1></div><p>Skip the giant free-agent list. SnapCount finds the adds that actually improve your roster, who to cut, and how aggressively to chase them.</p></div>
       <div class="toolbar module"><label>My league uses<select id="waiver-mode"><option value="priority" selected>Normal waiver priority / free agency</option><option value="faab">FAAB budget</option></select></label><label id="faab-budget-label" class="hidden">FAAB left<input id="faab-budget" type="number" min="0" max="1000" value="100"></label><label>Week<select id="waiver-week"></select></label><button id="run-waivers" class="primary">Find my best pickups</button></div>
       <div id="waiver-result" class="result-space empty-state"><p>First add your roster in <strong>Start / Sit</strong>, then come back here.</p></div>
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow">TRADES</p><h1>Should I make this trade?</h1></div><p>Choose what you give up and what you get back. SnapCount checks the starting-lineup impact, long-term roster direction, and trade balance.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">TRADE DESK</p><h1>Would I actually win this trade?</h1></div><p>Put the deal on the table. SnapCount checks what it does to your starters, depth, season value, and whether the price makes sense.</p></div>
       <article class="module trade-checker">
         <div class="trade-side"><strong>I GIVE</strong><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
@@ -209,7 +209,7 @@
     </section>
 
     <section class="panel" data-panel="league" id="league">
-      <div class="section-heading"><div><p class="eyebrow">SEASON OUTLOOK</p><h1>How strong is my team?</h1></div><p>See how often your team makes the playoffs and wins the league across many possible seasons.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">SEASON OUTLOOK</p><h1>Can this team actually win it?</h1></div><p>Run the season forward thousands of ways and see whether your roster is a contender, a playoff team, or still one move away.</p></div>
       <div class="league-grid">
         <article class="module controls season-controls">
           <p class="control-title">MY LEAGUE</p>

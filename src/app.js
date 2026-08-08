@@ -178,8 +178,8 @@
     const authNeeded = state.espnNeedsSession && !league;
     $("#overview").classList.toggle("league-connected", Boolean(team));
     $("#hero-lede").textContent = team
-      ? `${team.name} is synced. SnapCount has the roster and league context, so your lineup, waivers, trades, and season outlook are ready to go.`
-      : "Connect ESPN or jump straight in. SnapCount turns your roster, usage, injuries, matchups, news, and simulations into the next move worth making.";
+      ? `${team.name} is synced. Your roster is loaded — now use SnapCount to attack this week's lineup, waivers, trades, and season outlook.`
+      : "Connect ESPN or start anywhere. SnapCount turns the noise — usage, injuries, matchups, news, and simulations — into one clear next move.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);
@@ -511,10 +511,10 @@
     const availability = forecast.availability.probability;
     const bust = forecast.probabilities.bust;
     const risk = availability < 0.75 || bust > 0.4 ? "High" : availability < 0.92 || bust > 0.25 ? "Medium" : "Low";
-    const verdict = forecast.edge.points >= 1.5 ? "Trending better than the baseline" : forecast.edge.points <= -1.5 ? "Trending worse than the baseline" : "Close to the baseline";
+    const verdict = forecast.edge.points >= 1.5 ? "Looking better than expected" : forecast.edge.points <= -1.5 ? "Looking shakier than expected" : "Right around expectations";
     $("#player-result").className = "result-space";
     $("#player-result").innerHTML = `
-      <div class="friendly-verdict"><div><span class="pos-pill">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week}</p></div><strong>${esc(verdict)}</strong></div>
+      <div class="friendly-verdict"><div><span class="pos-pill pos-${esc(String(forecast.player.position || '').toLowerCase())}">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week}</p></div><strong>${esc(verdict)}</strong></div>
       <div class="metric-grid friendly-metrics">
         <div class="metric"><span>PROJECTED POINTS</span><strong>${num(summary.mean)}</strong></div>
         <div class="metric"><span>LIKELY RANGE</span><strong>${num(summary.p25)}–${num(summary.p75)}</strong></div>
@@ -522,7 +522,7 @@
         <div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(availability)}</strong></div>
         <div class="metric"><span>RISK</span><strong class="${risk === "High" ? "warn" : ""}">${risk}</strong></div>
       </div>
-      <div class="why-box"><h3>Why SnapCount sees it this way</h3>${drivers.slice(0, 5).map((driver) => `<div class="why-row"><span>${esc(friendlyDriverLabel(driver.label))}</span><b class="${driver.impact >= 0 ? "positive" : "negative"}">${driver.impact >= 0 ? "helps" : "hurts"} ${Math.abs(driver.impact) >= 1 ? "a lot" : "a little"}</b></div>`).join("")}</div>
+      <div class="why-box"><h3>What is moving the call</h3>${drivers.slice(0, 5).map((driver) => `<div class="why-row"><span>${esc(friendlyDriverLabel(driver.label))}</span><b class="${driver.impact >= 0 ? "positive" : "negative"}">${driver.impact >= 0 ? "helps" : "hurts"} ${Math.abs(driver.impact) >= 1 ? "a lot" : "a little"}</b></div>`).join("")}</div>
       <details class="advanced-details result-details"><summary>See advanced projection details</summary>${rangeMarkup(summary)}<p class="fineprint">Median ${num(summary.p50)} · boom chance ${pct(forecast.probabilities.boom)} · bust chance ${pct(bust)}.</p></details>
     `;
   }
@@ -716,7 +716,7 @@
     if (!node || !state.players.length) return;
     const position = $("#draft-board-position")?.value || "ALL";
     const rows = oracleDraftBoard(currentDraftSettings()).filter((row) => position === "ALL" || row.position === position).slice(0, 80);
-    node.innerHTML = rows.map((row) => `<div class="big-board-row"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><small>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}</small></div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`).join("");
+    node.innerHTML = rows.map((row) => `<div class="big-board-row pos-${esc(String(row.position || '').toLowerCase())}"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><small><span class="board-pos">${esc(row.position)}</span> · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}</small></div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`).join("");
   }
 
   function resetDraft() {
