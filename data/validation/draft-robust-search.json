@@ -1,0 +1,400 @@
+{
+  "version": "draft-robust-search-2026.1",
+  "generatedAt": "2026-08-08T22:25:23.661Z",
+  "developmentSeasons": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "coarseSeeds": 1,
+  "fineSeeds": 4,
+  "top": [
+    {
+      "policy": {
+        "market": 0.82,
+        "value": 0.24,
+        "need": 1
+      },
+      "passCells": 24,
+      "worstEdge": -67,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 317.7,
+          "win": 0.875
+        },
+        "balanced": {
+          "edge": 65.5,
+          "win": 0.604
+        },
+        "value": {
+          "edge": 321.9,
+          "win": 0.889
+        },
+        "need-heavy": {
+          "edge": 6.3,
+          "win": 0.444
+        },
+        "zero-rb": {
+          "edge": 86.5,
+          "win": 0.674
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.58,
+        "value": 0.16,
+        "need": 0.75
+      },
+      "passCells": 24,
+      "worstEdge": -90.5,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 325.2,
+          "win": 0.875
+        },
+        "balanced": {
+          "edge": 73,
+          "win": 0.618
+        },
+        "value": {
+          "edge": 329.4,
+          "win": 0.882
+        },
+        "need-heavy": {
+          "edge": 13.8,
+          "win": 0.486
+        },
+        "zero-rb": {
+          "edge": 94,
+          "win": 0.688
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.78,
+        "value": 0.24,
+        "need": 1
+      },
+      "passCells": 23,
+      "worstEdge": -60.5,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 317.2,
+          "win": 0.882
+        },
+        "balanced": {
+          "edge": 65.1,
+          "win": 0.618
+        },
+        "value": {
+          "edge": 321.5,
+          "win": 0.896
+        },
+        "need-heavy": {
+          "edge": 5.9,
+          "win": 0.458
+        },
+        "zero-rb": {
+          "edge": 86.1,
+          "win": 0.66
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.9,
+        "value": 0.28,
+        "need": 1.1
+      },
+      "passCells": 23,
+      "worstEdge": -62.3,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 320.8,
+          "win": 0.875
+        },
+        "balanced": {
+          "edge": 68.6,
+          "win": 0.632
+        },
+        "value": {
+          "edge": 325,
+          "win": 0.896
+        },
+        "need-heavy": {
+          "edge": 9.4,
+          "win": 0.486
+        },
+        "zero-rb": {
+          "edge": 89.6,
+          "win": 0.646
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.5,
+        "value": 0.12,
+        "need": 0.75
+      },
+      "passCells": 23,
+      "worstEdge": -69.7,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 320.9,
+          "win": 0.896
+        },
+        "balanced": {
+          "edge": 68.7,
+          "win": 0.576
+        },
+        "value": {
+          "edge": 325.2,
+          "win": 0.868
+        },
+        "need-heavy": {
+          "edge": 9.6,
+          "win": 0.472
+        },
+        "zero-rb": {
+          "edge": 89.8,
+          "win": 0.66
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.66,
+        "value": 0.2,
+        "need": 0.75
+      },
+      "passCells": 23,
+      "worstEdge": -70.4,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 312.5,
+          "win": 0.882
+        },
+        "balanced": {
+          "edge": 60.4,
+          "win": 0.597
+        },
+        "value": {
+          "edge": 316.8,
+          "win": 0.889
+        },
+        "need-heavy": {
+          "edge": 1.2,
+          "win": 0.438
+        },
+        "zero-rb": {
+          "edge": 81.4,
+          "win": 0.653
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.78,
+        "value": 0.24,
+        "need": 0.9
+      },
+      "passCells": 23,
+      "worstEdge": -73.3,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 315.1,
+          "win": 0.882
+        },
+        "balanced": {
+          "edge": 62.9,
+          "win": 0.59
+        },
+        "value": {
+          "edge": 319.3,
+          "win": 0.896
+        },
+        "need-heavy": {
+          "edge": 3.7,
+          "win": 0.451
+        },
+        "zero-rb": {
+          "edge": 83.9,
+          "win": 0.66
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.58,
+        "value": 0.18,
+        "need": 0.75
+      },
+      "passCells": 22,
+      "worstEdge": -64.3,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 317.9,
+          "win": 0.875
+        },
+        "balanced": {
+          "edge": 65.7,
+          "win": 0.625
+        },
+        "value": {
+          "edge": 322.1,
+          "win": 0.889
+        },
+        "need-heavy": {
+          "edge": 6.5,
+          "win": 0.479
+        },
+        "zero-rb": {
+          "edge": 86.7,
+          "win": 0.653
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.82,
+        "value": 0.24,
+        "need": 0.9
+      },
+      "passCells": 22,
+      "worstEdge": -69.3,
+      "worstWin": 0.292,
+      "controls": {
+        "espn-market": {
+          "edge": 312,
+          "win": 0.875
+        },
+        "balanced": {
+          "edge": 59.8,
+          "win": 0.569
+        },
+        "value": {
+          "edge": 316.2,
+          "win": 0.896
+        },
+        "need-heavy": {
+          "edge": 0.6,
+          "win": 0.431
+        },
+        "zero-rb": {
+          "edge": 80.8,
+          "win": 0.653
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.62,
+        "value": 0.24,
+        "need": 1.35
+      },
+      "passCells": 22,
+      "worstEdge": -176.4,
+      "worstWin": 0.167,
+      "controls": {
+        "espn-market": {
+          "edge": 298.9,
+          "win": 0.847
+        },
+        "balanced": {
+          "edge": 46.7,
+          "win": 0.576
+        },
+        "value": {
+          "edge": 303.2,
+          "win": 0.889
+        },
+        "need-heavy": {
+          "edge": -12.4,
+          "win": 0.486
+        },
+        "zero-rb": {
+          "edge": 67.8,
+          "win": 0.618
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.62,
+        "value": 0.24,
+        "need": 1.5
+      },
+      "passCells": 22,
+      "worstEdge": -177.1,
+      "worstWin": 0.167,
+      "controls": {
+        "espn-market": {
+          "edge": 300,
+          "win": 0.854
+        },
+        "balanced": {
+          "edge": 47.8,
+          "win": 0.576
+        },
+        "value": {
+          "edge": 304.3,
+          "win": 0.889
+        },
+        "need-heavy": {
+          "edge": -11.3,
+          "win": 0.5
+        },
+        "zero-rb": {
+          "edge": 68.9,
+          "win": 0.618
+        }
+      }
+    },
+    {
+      "policy": {
+        "market": 0.62,
+        "value": 0.24,
+        "need": 1.2
+      },
+      "passCells": 21,
+      "worstEdge": -177.9,
+      "worstWin": 0.167,
+      "controls": {
+        "espn-market": {
+          "edge": 296.1,
+          "win": 0.854
+        },
+        "balanced": {
+          "edge": 43.9,
+          "win": 0.583
+        },
+        "value": {
+          "edge": 300.3,
+          "win": 0.903
+        },
+        "need-heavy": {
+          "edge": -15.3,
+          "win": 0.479
+        },
+        "zero-rb": {
+          "edge": 64.9,
+          "win": 0.611
+        }
+      }
+    }
+  ]
+}

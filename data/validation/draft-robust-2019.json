@@ -1,0 +1,605 @@
+{
+  "version": "draft-robust-historical-2026.1",
+  "generatedAt": "2026-08-08T22:26:50.497Z",
+  "season": 2019,
+  "poolPlayers": 426,
+  "sources": {
+    "espn": {
+      "url": "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2019/segments/0/leaguedefaults/3?view=kona_player_info",
+      "sha256": "9b851f3cdda796ea0c27c4b1b57727d92eb64dae682a15a1d2c348d8e8d730c7",
+      "bytes": 9270380
+    },
+    "fantasyData": [
+      {
+        "position": "QB",
+        "url": "https://fantasydata.com/nfl/ppr-adp/qb?season=2019",
+        "sha256": "93764a1104968a5587ce2eba8f7e133ac1bcd8d9e25222456a49817d0a6a1da2",
+        "bytes": 190531
+      },
+      {
+        "position": "RB",
+        "url": "https://fantasydata.com/nfl/ppr-adp/rb?season=2019",
+        "sha256": "4e1a668ae6487334f5b5bf9a25a23126a6eefe4b3a31babe9a42410e3997bcc6",
+        "bytes": 190729
+      },
+      {
+        "position": "WR",
+        "url": "https://fantasydata.com/nfl/ppr-adp/wr?season=2019",
+        "sha256": "2c5000b558f6a5f8ebcac00e1fbb4c5f729ee6f549cbf84dc2c959f7b890a19c",
+        "bytes": 190724
+      },
+      {
+        "position": "TE",
+        "url": "https://fantasydata.com/nfl/ppr-adp/te?season=2019",
+        "sha256": "1a9d271f228076f2286d4bb48626dcc2efbb56ad0031a83098ca0cc84dc23936",
+        "bytes": 190542
+      },
+      {
+        "position": "K",
+        "url": "https://fantasydata.com/nfl/ppr-adp/k?season=2019",
+        "sha256": "80a07e8711378ff5b90e8260117a146e6f919e6fd050bd520b2ac1bdcd55c978",
+        "bytes": 169545
+      },
+      {
+        "position": "DST",
+        "url": "https://fantasydata.com/nfl/ppr-adp/dst?season=2019",
+        "sha256": "96ef79c4268ddbb576fb34e90e7ed53a3e9a6a7c8778fc9bf27b578052a2fdaa",
+        "bytes": 159952
+      }
+    ]
+  },
+  "results": [
+    {
+      "policy": {
+        "market": 0.62,
+        "value": 0.24,
+        "need": 1.35,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2203.956666666667,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 490.21500000000015,
+          "winRate": 0.9791666666666666
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 108.26750000000008,
+          "winRate": 0.7291666666666666
+        },
+        "value": {
+          "n": 48,
+          "edge": 213.12208333333334,
+          "winRate": 0.8958333333333334
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 75.63416666666669,
+          "winRate": 0.6875
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 109.80000000000003,
+          "winRate": 0.7708333333333334
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.62,
+        "value": 0.24,
+        "need": 1.5,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2203.956666666667,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 490.21500000000015,
+          "winRate": 0.9791666666666666
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 108.26750000000008,
+          "winRate": 0.7291666666666666
+        },
+        "value": {
+          "n": 48,
+          "edge": 213.12208333333334,
+          "winRate": 0.8958333333333334
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 75.63416666666669,
+          "winRate": 0.6875
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 109.80000000000003,
+          "winRate": 0.7708333333333334
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.62,
+        "value": 0.24,
+        "need": 1.2,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2202.15875,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 488.41708333333344,
+          "winRate": 0.9791666666666666
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 106.46958333333343,
+          "winRate": 0.7291666666666666
+        },
+        "value": {
+          "n": 48,
+          "edge": 211.32416666666668,
+          "winRate": 0.8958333333333334
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 73.83625000000005,
+          "winRate": 0.6875
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 108.00208333333335,
+          "winRate": 0.7708333333333334
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.9,
+        "value": 0.28,
+        "need": 1.1,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2168.02,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 454.2783333333334,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 72.33083333333339,
+          "winRate": 0.6875
+        },
+        "value": {
+          "n": 48,
+          "edge": 177.1854166666667,
+          "winRate": 0.8541666666666666
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 39.697500000000005,
+          "winRate": 0.625
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 73.8633333333333,
+          "winRate": 0.6875
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.58,
+        "value": 0.18,
+        "need": 0.75,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2168.02,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 454.2783333333334,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 72.33083333333339,
+          "winRate": 0.6875
+        },
+        "value": {
+          "n": 48,
+          "edge": 177.1854166666667,
+          "winRate": 0.8541666666666666
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 39.697500000000005,
+          "winRate": 0.625
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 73.8633333333333,
+          "winRate": 0.6875
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.58,
+        "value": 0.16,
+        "need": 0.75,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2163.4812499999994,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 449.73958333333326,
+          "winRate": 0.9375
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 67.79208333333344,
+          "winRate": 0.6458333333333334
+        },
+        "value": {
+          "n": 48,
+          "edge": 172.64666666666676,
+          "winRate": 0.8333333333333334
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 35.158750000000055,
+          "winRate": 0.6041666666666666
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 69.32458333333336,
+          "winRate": 0.6666666666666666
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.78,
+        "value": 0.24,
+        "need": 1,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2153.52875,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 439.78708333333344,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 57.8395833333334,
+          "winRate": 0.6458333333333334
+        },
+        "value": {
+          "n": 48,
+          "edge": 162.6941666666667,
+          "winRate": 0.8125
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 25.206250000000015,
+          "winRate": 0.6041666666666666
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 59.37208333333333,
+          "winRate": 0.6875
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.66,
+        "value": 0.2,
+        "need": 0.75,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2155.2395833333335,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 441.4979166666667,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 59.55041666666674,
+          "winRate": 0.6875
+        },
+        "value": {
+          "n": 48,
+          "edge": 164.40500000000006,
+          "winRate": 0.7916666666666666
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 26.917083333333352,
+          "winRate": 0.5833333333333334
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 61.082916666666655,
+          "winRate": 0.6875
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.78,
+        "value": 0.24,
+        "need": 0.9,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2152.7475,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 439.0058333333333,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 57.0583333333334,
+          "winRate": 0.6458333333333334
+        },
+        "value": {
+          "n": 48,
+          "edge": 161.9129166666667,
+          "winRate": 0.8125
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 24.425000000000022,
+          "winRate": 0.5833333333333334
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 58.59083333333333,
+          "winRate": 0.6875
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.82,
+        "value": 0.24,
+        "need": 0.9,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2149.96,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 436.2183333333334,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 54.27083333333343,
+          "winRate": 0.6458333333333334
+        },
+        "value": {
+          "n": 48,
+          "edge": 159.12541666666672,
+          "winRate": 0.7916666666666666
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 21.637500000000045,
+          "winRate": 0.5625
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 55.80333333333336,
+          "winRate": 0.6666666666666666
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.82,
+        "value": 0.24,
+        "need": 1,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2153.690416666667,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 439.94875,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 58.001250000000084,
+          "winRate": 0.6666666666666666
+        },
+        "value": {
+          "n": 48,
+          "edge": 162.85583333333338,
+          "winRate": 0.8125
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 25.3679166666667,
+          "winRate": 0.5416666666666666
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 59.53375000000002,
+          "winRate": 0.6875
+        }
+      },
+      "admitted": true
+    },
+    {
+      "policy": {
+        "market": 0.5,
+        "value": 0.12,
+        "need": 0.75,
+        "injury": 7,
+        "rookie": 0,
+        "maxQB": 2,
+        "maxTE": 2,
+        "maxK": 1,
+        "maxDST": 1,
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 14,
+        "dstRound": 13
+      },
+      "meanRealized": 2150.261249999999,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 436.5195833333335,
+          "winRate": 1
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 54.57208333333344,
+          "winRate": 0.6041666666666666
+        },
+        "value": {
+          "n": 48,
+          "edge": 159.4266666666667,
+          "winRate": 0.7708333333333334
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": 21.938750000000056,
+          "winRate": 0.5208333333333334
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": 56.10458333333337,
+          "winRate": 0.5833333333333334
+        }
+      },
+      "admitted": true
+    }
+  ]
+}
