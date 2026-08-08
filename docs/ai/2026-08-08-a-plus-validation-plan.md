@@ -14,9 +14,10 @@ Historical datasets and reports live under `data/validation/` and are qualificat
 - Model/policy selection: 2023.
 - Frozen internal forecast/decision test: 2024.
 - 2025: consistency only because it was already inspected in earlier work.
-- Draft policy development/selection used 2021-2023. The 2020 replay is retained as a pre-release stress test but is not labeled pristine after reviewing the development history.
-- Post-freeze draft holdout: 2019, inspected only after `c9668c9` and its segment policies were frozen/published; no retuning is permitted from this result.
-- Preserve 2026 realized outcomes as future unseen evidence.
+- The original segmented Draft policy used 2021-2023 development/selection, with 2020 as a pre-release stress test. Its genuinely post-freeze 2019 holdout failed the strict multi-control gate and is retained as falsification evidence.
+- The replacement Draft policy treats all already-inspected 2019-2025 seasons as development evidence. A low-dimensional global policy search optimized multi-control robustness rather than raw realized points.
+- Before any 2018 draft payload was fetched or inspected, 2018 was predeclared as the one final holdout in `docs/ai/2026-08-08-draft-a-plus-robust-plan.md`. The winning policy was frozen at commit `3f3bd7e` with policy-definition SHA-256 `7338a9c34cf40e5828a1ec33654ce482e13c2ae52ec129c4776dc5e8dbe7befc`; 2018 was then evaluated exactly once for selection and passed.
+- Preserve 2026 realized outcomes as future unseen evidence for later requalification, not retrospective tuning.
 
 ## Qualified production behavior
 - **Player mean:** live ESPN PPR anchor; only historically admitted residual corrections may move RB/WR/TE means. QB stays on the market mean.
@@ -24,7 +25,7 @@ Historical datasets and reports live under `data/validation/` and are qualificat
 - **Start/Sit:** raw live ESPN PPR mean plus exact lineup optimization; residual mean corrections were rejected for this decision surface.
 - **Waivers:** raw live PPR decision mean plus the frozen waiver score threshold.
 - **Trades:** raw live PPR decision mean plus frozen accept/pass score thresholds.
-- **Draft:** slot/team-size segmented frozen policy for qualified 10- and 12-team rooms; same scorer drives historical replay and live UI ordering.
+- **Draft:** one global robustness-qualified policy (`market=0.60`, `value=0.18`, `need=0.65`) for qualified 10- and 12-team PPR rooms. The compact serving profile mirrors the same policy into the existing early/middle/late segment keys for backward-compatible live routing; the scorer and coefficients are identical in replay and the live UI.
 - **Season:** Monte Carlo championship probabilities using frozen uncertainty and empirical correlation models.
 - **Standard scoring:** derived from the same ESPN projection payload as PPR by subtracting projected receptions (ESPN stat 53), preventing PPR/Standard cross-contamination.
 
@@ -35,7 +36,7 @@ Historical datasets and reports live under `data/validation/` and are qualificat
 - Waivers, frozen 2024: +39.1 realized four-week lineup points per qualified decision and +16.9 versus a simple highest-current-projection add/drop control; 2025 edge versus control +9.8.
 - Trades, frozen 2024 at score +/-28: ACCEPT mean realized six-week gain +41.5 with 84.8% positive outcomes; PASS mean -28.9 with 79.5% correct negative outcomes. 2025 remains directionally strong.
 - Season, frozen 2024: championship Brier 0.0598 versus 0.0832 uniform and 0.0711 preseason-strength; log loss 1.34 versus 2.39 / 1.78. 2025 remains better than both baselines.
-- Draft pre-release 2020 stress test: +446 realized points versus preseason ADP, +88.9 versus balanced, +269.6 versus value, +81.6 versus Zero-RB, and non-inferior to need-heavy (+0.18 mean, 50% paired wins). A true post-freeze 2019 holdout then produced +396.8 versus ESPN-market (100% wins), +23.2 balanced, +209.4 value, but -77.3 need-heavy and -17.6 Zero-RB. Therefore Draft is **A, not A+** under the strict multi-control gate; the policy is unchanged and was not retuned after seeing 2019.
+- Draft: the original segmented policy's 2019 post-freeze failure remains in the evidence ledger and was not reinterpreted. A new simpler global policy was selected on already-inspected 2019-2025 development evidence, where its eight-seed aggregate was +346.3 points / 88.4% wins vs ESPN-market, +67.7 / 64.3% balanced, +334.6 / 89.9% value, +24.3 / 55.1% need-heavy, and +98.8 / 67.6% Zero-RB. The exact candidate was then frozen at `3f3bd7e` before the predeclared 2018 final holdout was accessed. On 428 matched 2018 players and 48 paired rooms per control, it scored +317.5 / 85.4% vs ESPN-market, +77.2 / 68.8% balanced, +405.8 / 97.9% value, +77.1 / 62.5% need-heavy, and +93.4 / 60.4% Zero-RB. Every strict A+ condition passed, so Draft now earns **A+** without weakening the gate or reusing 2019 as a holdout.
 
 ## A+ definition
 A+ is a serving qualification, not a claim that every model embellishment wins.

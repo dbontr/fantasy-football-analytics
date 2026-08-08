@@ -17,22 +17,14 @@ const hashFile = (file) => crypto.createHash("sha256").update(fs.readFileSync(fi
 function requireGate(condition, label) {
   if (!condition) throw new Error(`Analytics qualification gate failed: ${label}`);
 }
-function draftQualified(report) {
-  const controls = report?.fresh2020?.controls || {};
-  const rows = Object.values(controls);
-  return rows.length >= 5
-    && rows.every((row) => Number(row.edge) >= 0 && Number(row.winRate) >= 0.5)
+function strictDraftGate(report) {
+  const controls = report?.result?.controls || {};
+  const rows = ["espn-market", "balanced", "value", "need-heavy", "zero-rb"].map((name) => controls[name]);
+  return report?.admitted === true
+    && rows.every((row) => Number(row?.edge) >= 0 && Number(row?.winRate) >= 0.5)
     && Number(controls["espn-market"]?.edge) > 0
     && Number(controls["espn-market"]?.winRate) >= 0.75;
 }
-function draftPostFreezeGrade(report) {
-  const controls = report?.result?.controls || {};
-  if (report?.admitted === true) return "A+";
-  if (Number(controls["espn-market"]?.edge) > 0 && Number(controls["espn-market"]?.winRate) >= 0.75
-      && Number(controls.balanced?.edge) >= 0 && Number(controls.value?.edge) >= 0) return "A";
-  return "B+";
-}
-
 function main() {
   const forecast = read("forecast-audit-report.json");
   const uncertaintyReport = read("uncertainty-audit-report.json");
@@ -40,9 +32,11 @@ function main() {
   const waivers = read("waiver-audit-report.json");
   const trades = read("trade-audit-report.json");
   const season = read("season-audit-report.json");
-  const draft = read("draft-segmented-policy.json");
-  const draftPostFreeze = read("draft-postfreeze-holdout.json");
-  const draftGrade = draftPostFreezeGrade(draftPostFreeze);
+  const priorDraft = read("draft-segmented-policy.json");
+  const priorDraftHoldout = read("draft-postfreeze-holdout.json");
+  const robustDraft = read("draft-robust-policy.json");
+  const robustDraftHoldout = read("draft-a-plus-holdout-2018.json");
+  const draftGrade = strictDraftGate(robustDraftHoldout) ? "A+" : "A";
 
   requireGate(forecast.overall.frozen2024.corrected.mae < forecast.overall.frozen2024.raw.mae, "forecast MAE");
   requireGate(forecast.overall.frozen2024.corrected.rmse < forecast.overall.frozen2024.raw.rmse, "forecast RMSE");
@@ -51,17 +45,21 @@ function main() {
   requireGate(waivers.admitted === true, "waiver utility");
   requireGate(trades.admitted === true, "trade utility");
   requireGate(season.admitted === true, "season probability calibration");
-  requireGate(draftQualified(draft), "draft pre-freeze market superiority / synthetic-control non-inferiority");
-  requireGate(draftGrade !== "B+", "post-freeze draft market/balanced/value resilience");
+  requireGate(robustDraft.finalHoldoutSeason === 2018 && robustDraft.finalHoldoutInspected === false, "robust draft candidate freeze contract");
+  requireGate(robustDraftHoldout.policyFrozenBeforeInspection === true, "2018 draft holdout freeze provenance");
+  requireGate(robustDraftHoldout.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "robust draft policy hash parity");
+  requireGate(hashFile(path.join(validationDir, "draft-robust-policy.json")) === robustDraftHoldout.policyArtifactSha256, "robust draft artifact hash parity");
+  requireGate(hashFile(path.join(validationDir, "draft-robust-refine.json")) === robustDraft.sourceArtifactSha256, "robust draft development artifact hash parity");
+  requireGate(strictDraftGate(robustDraftHoldout), "2018 robust draft all-control A+ holdout");
 
   const datasetPath = path.join(validationDir, "historical-ppr-2020-2025.json.gz");
-  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json"];
+  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json"];
   const reportHashes = Object.fromEntries(reportNames.map((name) => [name, hashFile(path.join(validationDir, name))]));
 
   const qualifiedAt = new Date().toISOString();
-  const draftSegments = Object.fromEntries(Object.entries(draft.segments || {}).map(([key, row]) => [key, row.policy]));
+  const draftSegments = robustDraft.segments || {};
   const qualification = {
-    version: "snapcount-analytics-qualification-2026.2",
+    version: "snapcount-analytics-qualification-2026.3",
     qualifiedAt,
     architecture: "offline-qualification-live-serving",
     dataset: { file: "historical-ppr-2020-2025.json.gz", sha256: hashFile(datasetPath), seasons: [2020, 2021, 2022, 2023, 2024, 2025] },
@@ -79,13 +77,15 @@ function main() {
       waiver2024: waivers.frozen2024, waiver2025: waivers.consistency2025,
       trade2024: trades.frozen2024, trade2025: trades.consistency2025,
       season2024: season.frozen2024, season2025: season.consistency2025,
-      draftPreFreeze2020: draft.fresh2020, draftConsistency2024: draft.consistency2024, draftConsistency2025: draft.consistency2025,
-      draftPostFreeze2019: draftPostFreeze.result,
+      draftPreFreeze2020: priorDraft.fresh2020, draftConsistency2024: priorDraft.consistency2024, draftConsistency2025: priorDraft.consistency2025,
+      draftPostFreeze2019: priorDraftHoldout.result,
+      draftRobustDevelopment2019To2025: robustDraft.development,
+      draftFinalHoldout2018: robustDraftHoldout.result,
     },
   };
 
   const runtimeProfile = {
-    version: "snapcount-runtime-profile-2026.2",
+    version: "snapcount-runtime-profile-2026.3",
     qualifiedAt,
     qualificationSha256: crypto.createHash("sha256").update(JSON.stringify(qualification)).digest("hex"),
     mode: "serve-frozen-qualified-analytics",
@@ -105,7 +105,7 @@ function main() {
     startSit: { baseline: "espn-live-ppr", validatedMeanScale: 0, policy: "raw-live-ppr-exact-lineup" },
     waivers: { baseline: "espn-live-ppr", validatedMeanScale: 0, minimumScore: waivers.selectedThreshold },
     trades: { baseline: "espn-live-ppr", validatedMeanScale: 0, acceptScore: trades.selectedThreshold, passScore: -trades.selectedThreshold },
-    draft: { policy: "segmented-qualified", grade: draftGrade, postFreezeHoldoutSeason: 2019, supportedTeamCounts: [10, 12], segments: draftSegments, fallbackPolicy: draftSim.DEFAULT_ORACLE_POLICY },
+    draft: { policy: "segmented-qualified", grade: draftGrade, postFreezeHoldoutSeason: 2018, policyDefinitionSha256: robustDraft.policyDefinitionSha256, supportedTeamCounts: robustDraft.supportedTeamCounts, segments: draftSegments, fallbackPolicy: robustDraft.policy },
     season: { probabilityEngine: "monte-carlo", calibrationVersion: uncertainty.VERSION, correlationVersion: correlation.VERSION },
     context: { version: context.VERSION, policy: "admitted-mean-or-metadata-only" },
   };

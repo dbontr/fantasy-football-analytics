@@ -14,7 +14,7 @@
     "audit:waiver-history": "node scripts/waiver-history-audit.js",
     "audit:trade-history": "node scripts/trade-history-audit.js",
     "audit:season-history": "node scripts/season-history-audit.js",
-    "qualify:draft": "node scripts/tune-draft-policy-segmented.js",
+    "qualify:draft": "node scripts/draft-robust-search.js && node scripts/draft-robust-historical.js && node scripts/draft-robust-refine.js && node scripts/freeze-draft-robust-policy.js",
     "qualify:profile": "node scripts/build-analytics-profile.js",
     "qualify:analytics": "npm run build:validation && npm run audit:forecast && npm run audit:uncertainty-history && npm run audit:decision-history && npm run audit:waiver-history && npm run audit:trade-history && npm run audit:season-history && npm run qualify:draft && npm run qualify:profile",
     "verify:analytics": "node scripts/verify-analytics-profile.js",
@@ -24,7 +24,8 @@
     "refresh:rookies": "node scripts/build-rookie-model.js",
     "build:validation": "node scripts/build-historical-validation.js",
     "audit:correlation": "node scripts/correlation-audit.js",
-    "audit:context": "node scripts/context-audit.js"
+    "audit:context": "node scripts/context-audit.js",
+    "qualify:draft:legacy": "node scripts/tune-draft-policy-segmented.js"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,109 @@
+{
+  "version": "draft-a-plus-holdout-2018-2026.1",
+  "evaluatedAt": "2026-08-08T22:34:38.533Z",
+  "season": 2018,
+  "policyArtifact": "draft-robust-policy-2026.2",
+  "policyArtifactSha256": "cf4b21212a93af9bc1000f398b9d5057f338e5cc6a0b285be674ca7757485993",
+  "policyDefinitionSha256": "7338a9c34cf40e5828a1ec33654ce482e13c2ae52ec129c4776dc5e8dbe7befc",
+  "freezeCommit": "3f3bd7e8885f66480caaf0f5624895e22fc3c7cc",
+  "policyFrozenBeforeInspection": true,
+  "pairedSeedsPerSegment": 8,
+  "pairedRoomsPerControl": 48,
+  "poolPlayers": 428,
+  "sources": {
+    "espn": {
+      "url": "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2018/segments/0/leaguedefaults/3?view=kona_player_info",
+      "sha256": "f71d455555bed1f32ef620d50cd7e14d159bdc9f75a6c4633c196f8e09c9b981",
+      "bytes": 9809577
+    },
+    "fantasyData": [
+      {
+        "position": "QB",
+        "url": "https://fantasydata.com/nfl/ppr-adp/qb?season=2018",
+        "sha256": "c0fbcc0bb666680a458f3898d706e672b9eb834be42a15f735b2b6406ddaa004",
+        "bytes": 190506
+      },
+      {
+        "position": "RB",
+        "url": "https://fantasydata.com/nfl/ppr-adp/rb?season=2018",
+        "sha256": "3593ce13ec4c52e66cccdb4f6b4aac0a19223f46d1385b0c319082987055207f",
+        "bytes": 190642
+      },
+      {
+        "position": "WR",
+        "url": "https://fantasydata.com/nfl/ppr-adp/wr?season=2018",
+        "sha256": "db83fa07927063e2f7b301435683ccfd3198b61df9e08eb33c665fd7b41fc7f8",
+        "bytes": 190754
+      },
+      {
+        "position": "TE",
+        "url": "https://fantasydata.com/nfl/ppr-adp/te?season=2018",
+        "sha256": "33c04a20dc0925a70d19459e3e23e62e6dde8785d66c11cbc4c97de5e1799af0",
+        "bytes": 190568
+      },
+      {
+        "position": "K",
+        "url": "https://fantasydata.com/nfl/ppr-adp/k?season=2018",
+        "sha256": "6ce165d4d2fd1302c7d9f1383b84efbfdc9f4855d7969db1e93a9547b730a939",
+        "bytes": 174298
+      },
+      {
+        "position": "DST",
+        "url": "https://fantasydata.com/nfl/ppr-adp/dst?season=2018",
+        "sha256": "5b47fc017f96d2fc086b5916995d6842f06bc15bd69b32b33c49f4a1b8e3ad50",
+        "bytes": 159952
+      }
+    ]
+  },
+  "result": {
+    "policy": {
+      "market": 0.6,
+      "value": 0.18,
+      "need": 0.65,
+      "injury": 7,
+      "rookie": 0,
+      "maxQB": 2,
+      "maxTE": 2,
+      "maxK": 1,
+      "maxDST": 1,
+      "secondQbRound": 10,
+      "secondTeRound": 10,
+      "kickerRound": 14,
+      "dstRound": 13
+    },
+    "meanRealized": 2289.223333333334,
+    "controls": {
+      "espn-market": {
+        "n": 48,
+        "edge": 317.5362500000001,
+        "winRate": 0.8541666666666666
+      },
+      "balanced": {
+        "n": 48,
+        "edge": 77.2091666666667,
+        "winRate": 0.6875
+      },
+      "value": {
+        "n": 48,
+        "edge": 405.8054166666666,
+        "winRate": 0.9791666666666666
+      },
+      "need-heavy": {
+        "n": 48,
+        "edge": 77.1058333333334,
+        "winRate": 0.625
+      },
+      "zero-rb": {
+        "n": 48,
+        "edge": 93.39125000000001,
+        "winRate": 0.6041666666666666
+      }
+    }
+  },
+  "gate": {
+    "everyControlMeanEdgeAtLeast": 0,
+    "everyControlWinRateAtLeast": 0.5,
+    "espnMarketWinRateAtLeast": 0.75
+  },
+  "admitted": true
+}

@@ -12,6 +12,8 @@ const root = path.resolve(__dirname, "..");
 const validationDir = path.join(root, "data", "validation");
 const profile = JSON.parse(fs.readFileSync(path.join(root, "data", "analytics-runtime-profile.json"), "utf8"));
 const qualification = JSON.parse(fs.readFileSync(path.join(validationDir, "analytics-qualification.json"), "utf8"));
+const robustDraft = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-robust-policy.json"), "utf8"));
+const robustHoldout = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-a-plus-holdout-2018.json"), "utf8"));
 const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const hashFile = (file) => hashBytes(fs.readFileSync(file));
 
@@ -20,9 +22,8 @@ function assert(condition, message) {
 }
 
 assert(profile.mode === "serve-frozen-qualified-analytics", "runtime mode drift");
-assert(profile.grades?.draft === "A", "post-freeze draft grade drift");
 for (const [surface, grade] of Object.entries(profile.grades || {})) {
-  if (surface !== "draft") assert(grade === "A+", `grade drift: ${surface}`);
+  assert(grade === "A+", `grade drift: ${surface}`);
 }
 assert(profile.qualificationSha256 === hashBytes(JSON.stringify(qualification)), "qualification manifest hash drift");
 
@@ -33,6 +34,9 @@ assert(profile.context.version === context.VERSION, "context version drift");
 assert(Number(profile.waivers.minimumScore) >= 0, "waiver threshold missing");
 assert(Number(profile.trades.acceptScore) > 0 && Number(profile.trades.passScore) < 0, "trade thresholds missing");
 assert(profile.draft.policy === "segmented-qualified" && Object.keys(profile.draft.segments || {}).length >= 6, "draft policy missing");
+assert(profile.draft.postFreezeHoldoutSeason === 2018, "Draft A+ holdout season drift");
+assert(profile.draft.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "Draft policy hash drift");
+assert(robustHoldout.admitted === true && robustHoldout.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "Draft A+ holdout evidence drift");
 
 const datasetPath = path.join(validationDir, qualification.dataset.file);
 assert(hashFile(datasetPath) === qualification.dataset.sha256, "qualification dataset hash drift");

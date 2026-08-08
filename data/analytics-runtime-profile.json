@@ -1,7 +1,7 @@
 {
-  "version": "snapcount-runtime-profile-2026.2",
-  "qualifiedAt": "2026-08-08T20:34:25.658Z",
-  "qualificationSha256": "6f906619b9aede408503ab1bce8988c1e751e9410892bcb0d64ca9966b3a06b5",
+  "version": "snapcount-runtime-profile-2026.3",
+  "qualifiedAt": "2026-08-08T22:39:24.645Z",
+  "qualificationSha256": "7d098b018cb160eb3c3a16c080de11d1610806d7ff172d6c44fd83d07c7cb5ef",
   "mode": "serve-frozen-qualified-analytics",
   "grades": {
     "forecastMean": "A+",
@@ -10,7 +10,7 @@
     "startSit": "A+",
     "waivers": "A+",
     "trades": "A+",
-    "draft": "A",
+    "draft": "A+",
     "season": "A+",
     "provenance": "A+",
     "runtimeParity": "A+"
@@ -53,17 +53,18 @@
   },
   "draft": {
     "policy": "segmented-qualified",
-    "grade": "A",
-    "postFreezeHoldoutSeason": 2019,
+    "grade": "A+",
+    "postFreezeHoldoutSeason": 2018,
+    "policyDefinitionSha256": "7338a9c34cf40e5828a1ec33654ce482e13c2ae52ec129c4776dc5e8dbe7befc",
     "supportedTeamCounts": [
       10,
       12
     ],
     "segments": {
       "10-early": {
-        "market": 0.75,
-        "value": 0.24,
-        "need": 1.15,
+        "market": 0.6,
+        "value": 0.18,
+        "need": 0.65,
         "injury": 7,
         "rookie": 0,
         "maxQB": 2,
@@ -76,9 +77,9 @@
         "dstRound": 13
       },
       "10-middle": {
-        "market": 0.75,
-        "value": 0.1,
-        "need": 1.15,
+        "market": 0.6,
+        "value": 0.18,
+        "need": 0.65,
         "injury": 7,
         "rookie": 0,
         "maxQB": 2,
@@ -91,9 +92,9 @@
         "dstRound": 13
       },
       "10-late": {
-        "market": 0.65,
+        "market": 0.6,
         "value": 0.18,
-        "need": 1.15,
+        "need": 0.65,
         "injury": 7,
         "rookie": 0,
         "maxQB": 2,
@@ -106,9 +107,9 @@
         "dstRound": 13
       },
       "12-early": {
-        "market": 0.75,
-        "value": 0.24,
-        "need": 0.55,
+        "market": 0.6,
+        "value": 0.18,
+        "need": 0.65,
         "injury": 7,
         "rookie": 0,
         "maxQB": 2,
@@ -121,9 +122,9 @@
         "dstRound": 13
       },
       "12-middle": {
-        "market": 0.95,
+        "market": 0.6,
         "value": 0.18,
-        "need": 0.75,
+        "need": 0.65,
         "injury": 7,
         "rookie": 0,
         "maxQB": 2,
@@ -136,9 +137,9 @@
         "dstRound": 13
       },
       "12-late": {
-        "market": 0.65,
-        "value": 0.1,
-        "need": 0.55,
+        "market": 0.6,
+        "value": 0.18,
+        "need": 0.65,
         "injury": 7,
         "rookie": 0,
         "maxQB": 2,
@@ -152,9 +153,9 @@
       }
     },
     "fallbackPolicy": {
-      "market": 0.7,
-      "value": 0.1,
-      "need": 0.95,
+      "market": 0.6,
+      "value": 0.18,
+      "need": 0.65,
       "injury": 7,
       "rookie": 0,
       "maxQB": 2,

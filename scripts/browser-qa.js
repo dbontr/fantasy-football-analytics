@@ -107,8 +107,8 @@ async function main() {
   if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.7" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1") throw new Error("Current empirical runtime/context/mean bundle did not install");
   if (modelState.calibration !== "snapcount-calibration-2026.1" || modelState.calibrationInstalled !== modelState.calibration) throw new Error("Empirical uncertainty calibration did not install");
   const profileState = await evaluate(`fetch('./data/analytics-runtime-profile.json').then((response) => response.json()).then((profile) => ({ mode: profile.mode, grades: profile.grades || {}, startSit: profile.startSit?.policy, draft: profile.draft?.policy }))`);
-  const nonDraftGrades = Object.entries(profileState.grades).filter(([surface]) => surface !== 'draft').map(([, grade]) => grade);
-  if (profileState.mode !== "serve-frozen-qualified-analytics" || profileState.grades.draft !== "A" || nonDraftGrades.some((grade) => grade !== "A+") || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified") throw new Error("Frozen qualified analytics profile did not load");
+  const servingGrades = Object.values(profileState.grades);
+  if (profileState.mode !== "serve-frozen-qualified-analytics" || servingGrades.some((grade) => grade !== "A+") || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified") throw new Error("Frozen all-A+ analytics profile did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");

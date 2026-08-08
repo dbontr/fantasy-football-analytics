@@ -72,6 +72,13 @@ function main(){
   const base4=baselineTable(4);
   const fine=finalists.map(p=>{ const r=evaluate(p,4,base4); r.rank=rankScore(r); return r; }).sort((a,b)=>b.rank-a.rank);
   console.log("FINE_TOP"); fine.forEach(r=>console.log(JSON.stringify(compact(r))));
-  fs.writeFileSync(path.join(root,"data","validation","draft-robust-search.json"),JSON.stringify({version:"draft-robust-search-2026.1",generatedAt:new Date().toISOString(),developmentSeasons:SEASONS,coarseSeeds:1,fineSeeds:4,top:fine.slice(0,12).map(compact)},null,2));
+  const output=path.join(root,"data","validation","draft-robust-search.json");
+  const report={version:"draft-robust-search-2026.1",generatedAt:new Date().toISOString(),developmentSeasons:SEASONS,coarseSeeds:1,fineSeeds:4,top:fine.slice(0,12).map(compact)};
+  if(fs.existsSync(output)){
+    const existing=JSON.parse(fs.readFileSync(output,"utf8"));
+    report.generatedAt=existing.generatedAt || report.generatedAt;
+    if(JSON.stringify(report)===JSON.stringify(existing)){console.log("Search artifact unchanged; preserving frozen bytes.");return;}
+  }
+  fs.writeFileSync(output,JSON.stringify(report,null,2));
 }
 main();

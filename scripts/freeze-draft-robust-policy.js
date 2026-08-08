@@ -57,7 +57,22 @@ const artifact = {
 };
 
 const output = path.join(validationDir, "draft-robust-policy.json");
-fs.writeFileSync(output, JSON.stringify(artifact, null, 2));
-console.log(`Frozen ${artifact.version}`);
-console.log(`Policy SHA-256 ${artifact.policyDefinitionSha256}`);
-console.log(JSON.stringify(policy));
+if (fs.existsSync(output)) {
+  const existing = JSON.parse(fs.readFileSync(output, "utf8"));
+  if (existing.policyDefinitionSha256 === artifact.policyDefinitionSha256
+      && existing.sourceArtifactSha256 === artifact.sourceArtifactSha256) {
+    console.log(`Candidate unchanged; preserving ${existing.version} frozen bytes.`);
+    console.log(`Policy SHA-256 ${existing.policyDefinitionSha256}`);
+    console.log(JSON.stringify(existing.policy));
+  } else {
+    fs.writeFileSync(output, JSON.stringify(artifact, null, 2));
+    console.log(`Frozen new ${artifact.version}`);
+    console.log(`Policy SHA-256 ${artifact.policyDefinitionSha256}`);
+    console.log(JSON.stringify(policy));
+  }
+} else {
+  fs.writeFileSync(output, JSON.stringify(artifact, null, 2));
+  console.log(`Frozen ${artifact.version}`);
+  console.log(`Policy SHA-256 ${artifact.policyDefinitionSha256}`);
+  console.log(JSON.stringify(policy));
+}
