@@ -14,7 +14,8 @@ Historical datasets and reports live under `data/validation/` and are qualificat
 - Model/policy selection: 2023.
 - Frozen internal forecast/decision test: 2024.
 - 2025: consistency only because it was already inspected in earlier work.
-- Draft second-generation fresh out-of-era test: 2020, reserved before segmented policy tuning.
+- Draft policy development/selection used 2021-2023. The 2020 replay is retained as a pre-release stress test but is not labeled pristine after reviewing the development history.
+- Post-freeze draft holdout: 2019, inspected only after `c9668c9` and its segment policies were frozen/published; no retuning is permitted from this result.
 - Preserve 2026 realized outcomes as future unseen evidence.
 
 ## Qualified production behavior
@@ -29,12 +30,12 @@ Historical datasets and reports live under `data/validation/` and are qualificat
 
 ## Qualification results
 - Forecast, frozen 2024: MAE 4.920 -> 4.828; RMSE 6.442 -> 6.414; weekly rank correlation 0.660 -> 0.664. 2025 repeats the direction.
-- Uncertainty: central-80 coverage 81.4% in 2024 and 81.9% in 2025; a newly fitted replacement was worse and was rejected.
+- Uncertainty: the existing production calibration is retained; its original leakage-safe audit trained on 2023-2024 and used 2025 as the true holdout, improving mean absolute 80% coverage error from 25.0 pp to 4.6 pp. The exact-anchor 2024/2025 reconstruction is supporting consistency evidence, not a new pristine holdout.
 - Start/Sit: residual corrections did not generalize for lineup regret, so the qualified policy is the raw live PPR mean. A+ means the selector rejected the harmful transform.
 - Waivers, frozen 2024: +39.1 realized four-week lineup points per qualified decision and +16.9 versus a simple highest-current-projection add/drop control; 2025 edge versus control +9.8.
 - Trades, frozen 2024 at score +/-28: ACCEPT mean realized six-week gain +41.5 with 84.8% positive outcomes; PASS mean -28.9 with 79.5% correct negative outcomes. 2025 remains directionally strong.
 - Season, frozen 2024: championship Brier 0.0598 versus 0.0832 uniform and 0.0711 preseason-strength; log loss 1.34 versus 2.39 / 1.78. 2025 remains better than both baselines.
-- Draft segmented fresh 2020: +446 realized points versus preseason ADP, +88.9 versus balanced, +269.6 versus value, +81.6 versus Zero-RB, and non-inferior to need-heavy (+0.18 mean, 50% paired wins). Live UI and replay use the identical policy scorer.
+- Draft pre-release 2020 stress test: +446 realized points versus preseason ADP, +88.9 versus balanced, +269.6 versus value, +81.6 versus Zero-RB, and non-inferior to need-heavy (+0.18 mean, 50% paired wins). A true post-freeze 2019 holdout then produced +396.8 versus ESPN-market (100% wins), +23.2 balanced, +209.4 value, but -77.3 need-heavy and -17.6 Zero-RB. Therefore Draft is **A, not A+** under the strict multi-control gate; the policy is unchanged and was not retuned after seeing 2019.
 
 ## A+ definition
 A+ is a serving qualification, not a claim that every model embellishment wins.

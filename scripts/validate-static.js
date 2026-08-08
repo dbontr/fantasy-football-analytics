@@ -46,7 +46,8 @@ const standardCount = dataset.players.filter((player) => Number.isFinite(Number(
 if (standardCount < 650) throw new Error(`Bootstrap Standard-scoring coverage is incomplete: ${standardCount}`);
 const runtimeProfile = JSON.parse(fs.readFileSync(path.join(root, "data", "analytics-runtime-profile.json"), "utf8"));
 if (runtimeProfile.mode !== "serve-frozen-qualified-analytics") throw new Error("Runtime analytics profile is not in frozen serving mode");
-if (Object.values(runtimeProfile.grades || {}).some((grade) => grade !== "A+")) throw new Error("Runtime analytics profile contains an unqualified surface");
+if (runtimeProfile.grades?.draft !== "A") throw new Error("Runtime draft grade does not reflect the post-freeze holdout");
+if (Object.entries(runtimeProfile.grades || {}).some(([surface, grade]) => surface !== "draft" && grade !== "A+")) throw new Error("Runtime analytics profile contains an unqualified non-draft surface");
 const rookieArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "rookies-2026.json"), "utf8"));
 if (!Array.isArray(rookieArtifact.players) || rookieArtifact.players.length < 50) throw new Error("Rookie artifact is incomplete");
 if (Number(rookieArtifact.meta?.historicalRookieCount || 0) < 1500) throw new Error("Rookie historical cohort support is incomplete");

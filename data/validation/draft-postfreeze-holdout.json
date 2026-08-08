@@ -1,0 +1,84 @@
+{
+  "version": "draft-postfreeze-holdout-2026.1",
+  "generatedAt": "2026-08-08T20:34:25.606Z",
+  "season": 2019,
+  "policyArtifact": "draft-segmented-policy-2026.1",
+  "policyFrozenBeforeInspection": true,
+  "poolPlayers": 426,
+  "sources": {
+    "espn": {
+      "url": "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2019/segments/0/leaguedefaults/3?view=kona_player_info",
+      "sha256": "9b851f3cdda796ea0c27c4b1b57727d92eb64dae682a15a1d2c348d8e8d730c7",
+      "bytes": 9270380
+    },
+    "fantasyData": [
+      {
+        "position": "QB",
+        "url": "https://fantasydata.com/nfl/ppr-adp/qb?season=2019",
+        "sha256": "93764a1104968a5587ce2eba8f7e133ac1bcd8d9e25222456a49817d0a6a1da2",
+        "bytes": 190531
+      },
+      {
+        "position": "RB",
+        "url": "https://fantasydata.com/nfl/ppr-adp/rb?season=2019",
+        "sha256": "4e1a668ae6487334f5b5bf9a25a23126a6eefe4b3a31babe9a42410e3997bcc6",
+        "bytes": 190729
+      },
+      {
+        "position": "WR",
+        "url": "https://fantasydata.com/nfl/ppr-adp/wr?season=2019",
+        "sha256": "2c5000b558f6a5f8ebcac00e1fbb4c5f729ee6f549cbf84dc2c959f7b890a19c",
+        "bytes": 190724
+      },
+      {
+        "position": "TE",
+        "url": "https://fantasydata.com/nfl/ppr-adp/te?season=2019",
+        "sha256": "1a9d271f228076f2286d4bb48626dcc2efbb56ad0031a83098ca0cc84dc23936",
+        "bytes": 190542
+      },
+      {
+        "position": "K",
+        "url": "https://fantasydata.com/nfl/ppr-adp/k?season=2019",
+        "sha256": "80a07e8711378ff5b90e8260117a146e6f919e6fd050bd520b2ac1bdcd55c978",
+        "bytes": 169545
+      },
+      {
+        "position": "DST",
+        "url": "https://fantasydata.com/nfl/ppr-adp/dst?season=2019",
+        "sha256": "96ef79c4268ddbb576fb34e90e7ed53a3e9a6a7c8778fc9bf27b578052a2fdaa",
+        "bytes": 159952
+      }
+    ]
+  },
+  "result": {
+    "meanRealized": 2126.6112500000004,
+    "controls": {
+      "espn-market": {
+        "n": 48,
+        "edge": 396.79375,
+        "winRate": 1
+      },
+      "balanced": {
+        "n": 48,
+        "edge": 23.23499999999993,
+        "winRate": 0.5416666666666666
+      },
+      "value": {
+        "n": 48,
+        "edge": 209.39083333333326,
+        "winRate": 0.75
+      },
+      "need-heavy": {
+        "n": 48,
+        "edge": -77.30416666666669,
+        "winRate": 0.3125
+      },
+      "zero-rb": {
+        "n": 48,
+        "edge": -17.62875000000007,
+        "winRate": 0.4583333333333333
+      }
+    }
+  },
+  "admitted": false
+}

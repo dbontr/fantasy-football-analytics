@@ -87,6 +87,8 @@ analytics-runtime-profile.json
 
 `npm run verify` is intentionally different from `npm run qualify:analytics`: verification checks code/tests/static assets plus the hashes and versions of the already-qualified profile, while qualification is the heavier historical research operation.
 
+The current `snapcount-runtime-profile-2026.2` records A+ for every graded serving surface except Draft, which is **A** after a genuinely post-freeze 2019 replay falsified the stricter multi-control A+ gate. The frozen draft policy still beat ESPN-market, balanced, and value controls on that holdout, but lost to need-heavy and slightly to Zero-RB. The policy was not retuned after inspection; 2019 is retained as falsification evidence.
+
 Heavy scenario work is moved off the UI thread. Player samples use `Float32Array`; league simulations stream standings/title counters instead of retaining entire season tensors. The scenario engine caps one player scenario run at 192 players × 50,000 simulations.
 ## Data provenance
 

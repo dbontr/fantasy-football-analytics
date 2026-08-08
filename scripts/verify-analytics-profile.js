@@ -20,7 +20,10 @@ function assert(condition, message) {
 }
 
 assert(profile.mode === "serve-frozen-qualified-analytics", "runtime mode drift");
-assert(Object.values(profile.grades || {}).every((grade) => grade === "A+"), "grade drift");
+assert(profile.grades?.draft === "A", "post-freeze draft grade drift");
+for (const [surface, grade] of Object.entries(profile.grades || {})) {
+  if (surface !== "draft") assert(grade === "A+", `grade drift: ${surface}`);
+}
 assert(profile.qualificationSha256 === hashBytes(JSON.stringify(qualification)), "qualification manifest hash drift");
 
 assert(profile.players.meanCalibrationVersion === meanCalibration.VERSION, "mean calibration version drift");

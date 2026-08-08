@@ -5,10 +5,11 @@ const assert = require("node:assert/strict");
 const profile = require("../data/analytics-runtime-profile.json");
 const core = require("../src/engine/core.js");
 
-test("runtime profile serves only frozen A+ qualified analytics", () => {
+test("runtime profile serves frozen qualified analytics with post-freeze draft grade", () => {
   assert.equal(profile.mode, "serve-frozen-qualified-analytics");
   assert.ok(Object.keys(profile.grades).length >= 8);
-  assert.ok(Object.values(profile.grades).every((grade) => grade === "A+"));
+  assert.equal(profile.grades.draft, "A");
+  for (const [surface, grade] of Object.entries(profile.grades)) if (surface !== "draft") assert.equal(grade, "A+");
   assert.equal(profile.startSit.validatedMeanScale, 0);
   assert.equal(profile.waivers.validatedMeanScale, 0);
   assert.equal(profile.trades.validatedMeanScale, 0);

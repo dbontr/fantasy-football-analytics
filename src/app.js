@@ -1390,7 +1390,7 @@
       reindexPlayers();
       state.schedule = state.dataset.schedule || {};
       $("#player-count").textContent = state.players.length.toLocaleString();
-      const qualified = Object.values(state.analyticsProfile?.grades || {}).every((grade) => grade === "A+") ? "A+ qualified" : state.analyticsProfile?.version || "qualified";
+      const qualified = state.analyticsProfile?.mode === "serve-frozen-qualified-analytics" ? "qualified profile" : state.analyticsProfile?.version || "qualified";
       $("#bootstrap-status").textContent = livePpr
         ? `${season} live ESPN PPR · ${qualified} · ${state.rookieArtifact?.players?.length || 0} rookie priors`
         : `${season} committed PPR fallback · ${qualified} · ${state.rookieArtifact?.players?.length || 0} rookie priors`;

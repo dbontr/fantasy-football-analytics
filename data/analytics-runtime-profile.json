@@ -1,7 +1,7 @@
 {
-  "version": "snapcount-runtime-profile-2026.1",
-  "qualifiedAt": "2026-08-08T19:41:30.567Z",
-  "qualificationSha256": "7811db0692c945b7d442ed71f505a12c183f2edc49a24d927e8f791d41d4550c",
+  "version": "snapcount-runtime-profile-2026.2",
+  "qualifiedAt": "2026-08-08T20:34:25.658Z",
+  "qualificationSha256": "6f906619b9aede408503ab1bce8988c1e751e9410892bcb0d64ca9966b3a06b5",
   "mode": "serve-frozen-qualified-analytics",
   "grades": {
     "forecastMean": "A+",
@@ -10,7 +10,7 @@
     "startSit": "A+",
     "waivers": "A+",
     "trades": "A+",
-    "draft": "A+",
+    "draft": "A",
     "season": "A+",
     "provenance": "A+",
     "runtimeParity": "A+"
@@ -53,6 +53,8 @@
   },
   "draft": {
     "policy": "segmented-qualified",
+    "grade": "A",
+    "postFreezeHoldoutSeason": 2019,
     "supportedTeamCounts": [
       10,
       12

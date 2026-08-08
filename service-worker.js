@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.10.0-qualified-analytics";
+const CACHE = "snapcount-browser-v1.10.1-postfreeze-holdout";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

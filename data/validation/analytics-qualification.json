@@ -1,6 +1,6 @@
 {
-  "version": "snapcount-analytics-qualification-2026.1",
-  "qualifiedAt": "2026-08-08T19:41:30.567Z",
+  "version": "snapcount-analytics-qualification-2026.2",
+  "qualifiedAt": "2026-08-08T20:34:25.658Z",
   "architecture": "offline-qualification-live-serving",
   "dataset": {
     "file": "historical-ppr-2020-2025.json.gz",
@@ -21,7 +21,8 @@
     "waiver-audit-report.json": "d1a4af803d32915a10c8fe4d4eb5e12eb901fc2c89b3a9341d2efd4dbc1dd29b",
     "trade-audit-report.json": "46a0819b5bfeeb163ded2357489f5968485eb08a71f80f6f88bb625ce906ad37",
     "season-audit-report.json": "54fc0d2fbabc0b5ecf7730c44cc8c09871c964999e8fd80f65f0592e7a9e7fb0",
-    "draft-segmented-policy.json": "cfb94af7ee33634e07c8da5663c96945acfb51e108c725f14fd1f4a93d09cf17"
+    "draft-segmented-policy.json": "cfb94af7ee33634e07c8da5663c96945acfb51e108c725f14fd1f4a93d09cf17",
+    "draft-postfreeze-holdout.json": "34ccba15bba018dba53dc10029571a7623fc0a5e2d17cc14ebf7507977e5cbd8"
   },
   "grades": {
     "forecastMean": "A+",
@@ -30,7 +31,7 @@
     "startSit": "A+",
     "waivers": "A+",
     "trades": "A+",
-    "draft": "A+",
+    "draft": "A",
     "season": "A+",
     "provenance": "A+",
     "runtimeParity": "A+"
@@ -151,7 +152,7 @@
       "championProbability": 0.2345,
       "strengthChampionProbability": 0.1556945414384655
     },
-    "draftFresh2020": {
+    "draftPreFreeze2020": {
       "meanRealized": 2151.8004166666665,
       "controls": {
         "espn-market": {
@@ -238,6 +239,36 @@
           "n": 36,
           "edge": 164.91055555555556,
           "winRate": 0.75
+        }
+      }
+    },
+    "draftPostFreeze2019": {
+      "meanRealized": 2126.6112500000004,
+      "controls": {
+        "espn-market": {
+          "n": 48,
+          "edge": 396.79375,
+          "winRate": 1
+        },
+        "balanced": {
+          "n": 48,
+          "edge": 23.23499999999993,
+          "winRate": 0.5416666666666666
+        },
+        "value": {
+          "n": 48,
+          "edge": 209.39083333333326,
+          "winRate": 0.75
+        },
+        "need-heavy": {
+          "n": 48,
+          "edge": -77.30416666666669,
+          "winRate": 0.3125
+        },
+        "zero-rb": {
+          "n": 48,
+          "edge": -17.62875000000007,
+          "winRate": 0.4583333333333333
         }
       }
     }
