@@ -149,3 +149,23 @@
     summarizePreseason,
   };
 });
+
+// Calibration is deliberately its own module, but this file is already loaded after
+// runtime + intelligence in both the page and Web Worker. Bootstrap it synchronously
+// here so the existing static HTML/worker entry points stay small and deterministic.
+(function bootstrapSnapCountCalibration(root) {
+  if (!root || root.SnapCountCalibration) return;
+  if (typeof importScripts === "function" && typeof document === "undefined") {
+    importScripts("./src/engine/calibration.js");
+    return;
+  }
+  if (typeof document === "undefined") return;
+  if (document.readyState === "loading") {
+    document.write('<script src="./src/engine/calibration.js"><\\/script>');
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = "./src/engine/calibration.js";
+  script.async = false;
+  document.head.appendChild(script);
+})(typeof globalThis !== "undefined" ? globalThis : this);
