@@ -19,9 +19,9 @@ Production Pages site: <https://dbontr.github.io/fantasy-football-analytics/>
 
 ## User experience
 
-The product intentionally hides research terminology by default. The seven user-facing areas are **Home, Draft, Start / Sit, Trades, Waivers, Players, and Season**. Home starts with plain-English tasks; Draft includes an Oracle-ranked player list, mock draft, and manual live-draft helper; Trades includes a direct give/get analyzer; detailed distributions, model diagnostics, and custom what-if controls are kept behind optional disclosures when they are useful.
+The product intentionally hides research terminology by default. The seven user-facing areas are **Home, Draft, Start / Sit, Trades, Waivers, Players, and Season**. Home is now league-first: an ESPN Fantasy league link or ID can populate the user's roster and league context through an anonymous read when available or an explicit browser-session fallback for private leagues, then Oracle presents direct shortcuts for the week's lineup, waivers, trades, and season outlook. Draft includes an Oracle-ranked player list, mock draft, and manual live-draft helper; Trades includes a direct give/get analyzer; detailed distributions, model diagnostics, and custom what-if controls are kept behind optional disclosures when they are useful.
 
-The visual system is a bright, accessible light theme with large controls, responsive cards, and task-oriented recommendations such as **Draft him**, **Start these players**, **Accept / Pass**, and **Add / Drop**.
+The visual system is a bright, accessible light theme with a connected-league command center, large controls, responsive cards, restrained football-field details, and task-oriented recommendations such as **Draft him**, **Start these players**, **Accept / Pass**, and **Add / Drop**. Oracle never asks for ESPN passwords, SWID/`espn_s2` values, or cookie values. Anonymous ESPN access is attempted first; for a private league the user can explicitly opt into a direct browser-session request. In that mode the browser sends its existing ESPN session straight to ESPN, while Oracle cannot read or persist the cookie itself.
 
 ## What is implemented
 
@@ -32,6 +32,7 @@ The visual system is a bright, accessible light theme with large controls, respo
 - Bounded health, coaching, role, weather, matchup, line, news, and market evidence families.
 - Correlated game/team/player Monte Carlo with deterministic paired scenarios and per-scenario shared-factor caching so game/team latents are generated once and reused across players.
 - Exact lineup assignment across normal, FLEX, and SUPERFLEX slots.
+- ESPN Fantasy league sync: URL/ID parsing, anonymous-first access, explicit direct browser-session fallback for private leagues, team selection, roster/record/current-week import, local persistence, one-click refresh/disconnect, and automatic Start / Sit + Season population. Oracle never accepts raw ESPN credential values.
 - Interactive draft simulator + live draft helper: the user controls one team while CPU opponents use configurable market/value/need/positional strategies.
 - Draft VONA, replacement value, strategy-aware return probability, run pressure, market disagreement, custom external ranking-board import, and paired Oracle-vs-market strategy benchmarks.
 - Waiver add/drop search with ESPN-style waiver-priority/free-agency recommendations by default and bounded FAAB ranges only when FAAB mode is selected.
@@ -87,9 +88,9 @@ The bootstrap is intentionally explicit about provenance instead of pretending e
 - `data/coaches-2026.json`: 32-team Bayesian-shrunk Oracle coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
 - `data/intelligence/xfp_weekly_2025.csv.gz`: 153 KB compact ffopportunity expected-fantasy-points artifact (CC BY-SA 4.0), loaded only with player/decision intelligence.
 - `data/rookies-2026.json`: ~47 KB offline rookie artifact covering 74 players. It is reproducibly built from nflverse player/combine/stat data plus ESPN's public structured 2026 draft metadata; the build uses 1,868 historical rookie records and ships only compact priors/current-player metadata.
-- Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, ESPN public keyless NFL web JSON, and NOAA/NWS. ESPN terms apply to ESPN-sourced metadata.
+- Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, ESPN public keyless NFL web JSON, ESPN Fantasy league reads, and NOAA/NWS. ESPN terms apply to ESPN-sourced metadata.
 
-The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists.
+The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists. ESPN Fantasy is the sole adapter allowed to opt into `credentials: include`, and only after the user chooses the browser-session fallback. Those credentials are managed by the browser and sent directly to ESPN; Oracle never receives or stores their values.
 
 ## Local development
 
@@ -103,7 +104,7 @@ npm.cmd run serve
 
 Open `http://127.0.0.1:4173/` (or set `PORT` if that port is occupied).
 
-For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script exercises player Monte Carlo, veteran xFP/history intelligence, a no-prior-NFL-history rookie path, preseason/news sync, realistic draft-room simulation + strategy benchmark, ESPN-style waivers, lineup/trades/league simulation, and rookie/draft/overview layouts at desktop, tablet, and phone widths while checking browser console errors and overflow.
+For the reproducible Edge integration QA, start Edge with a DevTools port and run `node scripts/browser-qa.js`. The script uses a deterministic mocked private ESPN league to exercise anonymous rejection, the explicit browser-session fallback, team selection, roster/week population and the connected home state, then covers player Monte Carlo, veteran xFP/history intelligence, a no-prior-NFL-history rookie path, preseason/news sync, realistic draft-room simulation + strategy benchmark, ESPN-style waivers, lineup/trades/league simulation, and desktop/tablet/phone layouts while checking browser console errors and overflow.
 
 ## GitHub Pages
 

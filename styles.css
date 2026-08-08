@@ -896,3 +896,277 @@ footer {
   padding-right: max(20px, calc((100vw - var(--max)) / 2));
   text-align: left;
 }
+
+/* ESPN-connected product polish */
+:root {
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --surface-2: #f7faf8;
+  --surface-3: #edf4f0;
+  --ink: #10251d;
+  --muted: #5a6d64;
+  --faint: #819087;
+  --line: #d6e1db;
+  --field: #e8f3ed;
+  --field-line: #bed7ca;
+  --signal: #087455;
+  --signal-2: #174c3a;
+  --accent: #b77a12;
+  --danger: #b84543;
+  --good: #14764f;
+  --radius: 16px;
+  --max: 1320px;
+}
+body { background: var(--bg); }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: 70px;
+  background: rgba(255,255,255,.985);
+  box-shadow: 0 1px 0 rgba(16,37,29,.05);
+}
+
+.tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+.tab:hover { background: #f0f5f2; }
+.tab.active {
+  border-bottom-color: transparent;
+  background: #eaf4ef;
+  color: var(--signal);
+}
+.brand-mark {
+  border-radius: 13px;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.12);
+}
+.panel { padding-top: 40px; }
+.friendly-hero {
+  grid-template-columns: minmax(0,1.05fr) minmax(390px,.95fr);
+  gap: 56px;
+  align-items: stretch;
+  padding: 26px 0 28px;
+}
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 430px;
+}
+.hero-copy h1 { max-width: 760px; font-size: clamp(52px,5.2vw,76px); }
+.hero-copy .lede { max-width: 720px; }
+
+.trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.trust-row span::before {
+  content: "✓";
+  margin-right: 6px;
+  color: var(--signal);
+  font-weight: 900;
+}
+.league-connect-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 430px;
+  padding: 28px;
+  border: 1px solid #c6d9cf;
+  border-radius: 22px;
+  background-color: #fbfdfc;
+  background-image: repeating-linear-gradient(90deg, transparent 0, transparent 51px, rgba(8,116,85,.045) 52px, transparent 53px);
+  box-shadow: 0 18px 48px rgba(21,65,49,.10);
+}
+.league-connect-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--signal);
+}
+
+.connect-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 26px;
+}
+.provider-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.espn-badge { background: #d83232; color: #fff; }
+.connection-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+.connection-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #a9b4ad; }
+.connection-state.connected { color: var(--good); }
+.connection-state.connected::before { background: var(--good); box-shadow: 0 0 0 4px rgba(20,118,79,.10); }
+.league-connect-card h2 { margin: 0 0 9px; font-size: 30px; letter-spacing: -.025em; }
+.league-connect-card p { color: var(--muted); line-height: 1.6; }
+
+.connect-row {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+}
+.connect-row .primary { width: 100%; }
+.privacy-note {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+.connection-kicker {
+  margin: 0 0 4px !important;
+  color: var(--signal) !important;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+.connect-actions { display: flex; gap: 8px; margin-top: 20px; }
+.connect-actions button { flex: 1; }
+#espn-team-step label, #espn-connect-empty label { margin-top: 14px; }
+#espn-team-step .primary { width: 100%; margin-top: 12px; }
+#espn-connected { padding-top: 14px; }
+#espn-connected h2 { font-size: 34px; }
+.hidden { display: none !important; }
+
+.league-command-strip {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(4,1fr);
+  gap: 1px;
+  overflow: hidden;
+  margin: 8px 0 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--line);
+  box-shadow: 0 8px 26px rgba(16,37,29,.055);
+}
+.league-command-strip > div,
+.league-command-strip > button {
+  min-width: 0;
+  min-height: 82px;
+  padding: 15px 17px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+}
+.league-command-strip > div { background: #edf6f1; }
+.league-command-strip span { display: block; color: var(--signal); font-size: 9px; font-weight: 850; letter-spacing: .08em; }
+.league-command-strip strong { display: block; margin-top: 4px; font-size: 14px; }
+.league-command-strip small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.league-command-strip > button:hover { background: #f4f8f6; }
+
+.quick-actions { gap: 14px; margin-top: 18px; }
+.quick-action {
+  min-height: 112px;
+  border-radius: 16px;
+  box-shadow: 0 7px 22px rgba(16,37,29,.045);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.quick-action:hover {
+  border-color: #91baa5;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(16,37,29,.075);
+}
+.module, .result-space {
+  border-color: #d4dfd9;
+  box-shadow: 0 8px 24px rgba(16,37,29,.045);
+}
+.section-heading { max-width: 1180px; }
+.section-heading h1 { max-width: 760px; font-size: clamp(40px,4.1vw,58px); }
+.section-heading > p { max-width: 470px; }
+.season-controls { align-self: start; }
+.season-connection-summary {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid #c7dbd0;
+  border-radius: 13px;
+  background: #eff7f2;
+}
+.season-connection-summary .provider-badge { justify-self: start; margin-bottom: 4px; }
+.season-connection-summary strong { font-size: 17px; }
+.season-connection-summary small { color: var(--muted); line-height: 1.45; }
+.other-provider button { width: 100%; margin-top: 10px; }
+
+@media (max-width: 1080px) {
+  .friendly-hero { grid-template-columns: minmax(0,1fr) minmax(340px,.82fr); gap: 32px; }
+  .hero-copy h1 { font-size: clamp(48px,6vw,66px); }
+  .league-command-strip { grid-template-columns: 1fr 1fr 1fr; }
+  .league-command-strip > div { grid-row: span 2; }
+}
+@media (max-width: 780px) {
+  .topbar { position: relative; }
+  .friendly-hero { grid-template-columns: 1fr; padding-top: 10px; }
+  .hero-copy { min-height: auto; padding: 28px 0 4px; }
+  .hero-copy h1 { font-size: clamp(44px,11vw,58px); }
+  .league-connect-card { min-height: 0; }
+  .league-command-strip { grid-template-columns: 1fr 1fr; }
+  .league-command-strip > div { grid-column: 1 / -1; grid-row: auto; min-height: 72px; }
+}
+@media (max-width: 480px) {
+  .hero-copy h1 { font-size: 44px; line-height: 1.02; }
+  .hero-copy .lede { font-size: 17px; }
+  .trust-row { gap: 6px 12px; }
+  .league-connect-card { padding: 22px 20px; border-radius: 18px; }
+  .connect-row { grid-template-columns: 96px 1fr; }
+  .league-command-strip { grid-template-columns: 1fr; }
+  .league-command-strip > div { grid-column: auto; }
+  .league-command-strip > button { min-height: 68px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+#overview.league-connected .hero-copy { min-height: 360px; }
+#overview.league-connected .league-connect-card { min-height: 360px; }
+#overview.league-connected .friendly-hero { padding-bottom: 18px; }
+#overview.league-connected #espn-connected { padding-top: 2px; }
+#overview.league-connected .privacy-note { margin-top: 16px; }
+@media (max-width: 780px) {
+  #overview.league-connected .hero-copy { min-height: auto; }
+  #overview.league-connected .league-connect-card { min-height: 0; }
+}
+
+#espn-auth-step { display: grid; gap: 10px; }
+#espn-auth-step .primary, #espn-auth-step .ghost { width: 100%; }
+.espn-login-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--signal-2);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.espn-login-link:hover { border-color: #9fc3b1; background: #f5f9f7; }

@@ -3,3 +3,4 @@ node_modules/
 .qa-results.json
 .render-dom.html
 *.log
+.edge-*/

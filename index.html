@@ -31,22 +31,54 @@
   <main>
     <section class="panel active" data-panel="overview" id="overview">
       <div class="hero-grid friendly-hero">
-        <div>
-          <p class="eyebrow">FANTASY FOOTBALL, MADE SIMPLE</p>
-          <h1>Make the right move.<br>We handle the math.</h1>
-          <p class="lede">Tell Oracle what you need help with. Get a clear recommendation for your draft, lineup, trades, waivers, or a specific player — with the complicated modeling kept out of your way.</p>
+        <div class="hero-copy">
+          <p class="eyebrow">YOUR LEAGUE. YOUR NEXT MOVE.</p>
+          <h1>Know what to do next.<br>Every week.</h1>
+          <p id="hero-lede" class="lede">Connect your league or jump straight to a tool. Oracle turns projections, injuries, matchups, rookies, news, and simulations into one clear recommendation.</p>
           <div class="action-row">
-            <button class="primary" data-jump="draft">Help me draft</button>
-            <button class="secondary" data-jump="lineup">Set my lineup</button>
+            <button class="primary" data-jump="lineup">Set my lineup</button>
+            <button class="secondary" data-jump="draft">Help me draft</button>
           </div>
+          <div class="trust-row"><span>Private by design</span><span>Runs in your browser</span><span>No paid data required</span></div>
         </div>
-        <div class="field-card friendly-promise" aria-label="What Oracle helps with">
-          <strong>Built for one job:</strong>
-          <h2>Help you win your league.</h2>
-          <p>No fantasy jargon required. Oracle turns projections, injuries, rookies, news, matchups, preseason usage, and simulations into a simple answer.</p>
-          <span class="confidence-note">Default setup: ESPN-style PPR</span>
-        </div>
+        <aside class="league-connect-card" aria-label="Connect ESPN fantasy league">
+          <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
+          <div id="espn-connect-empty">
+            <h2>Bring in your league</h2>
+            <p>Paste an ESPN Fantasy league link or league ID. Oracle can fill your roster and season view automatically when ESPN allows anonymous league reads.</p>
+            <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
+            <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Connect ESPN</button></div>
+          </div>
+          <div id="espn-team-step" class="hidden">
+            <h2>Which team is yours?</h2>
+            <p id="espn-league-found">League found.</p>
+            <label>My team<select id="espn-team-select"></select></label>
+            <button id="use-espn-team" class="primary">Use this team</button>
+          </div>
+          <div id="espn-auth-step" class="hidden">
+            <p class="connection-kicker">PRIVATE LEAGUE</p>
+            <h2>Use your ESPN sign-in</h2>
+            <p>If you're already signed into ESPN in this browser, Oracle can ask ESPN for the league using that browser session. The cookie goes directly to ESPN and is never exposed to or stored by Oracle.</p>
+            <a class="espn-login-link" href="https://fantasy.espn.com/football/" target="_blank" rel="noopener noreferrer">Open ESPN to sign in</a>
+            <button id="connect-espn-session" class="primary">Try my ESPN sign-in</button>
+            <button id="cancel-espn-session" class="ghost">Use a different league</button>
+          </div>
+          <div id="espn-connected" class="hidden">
+            <p class="connection-kicker">CONNECTED LEAGUE</p>
+            <h2 id="espn-connected-team">My team</h2>
+            <p id="espn-connected-meta">ESPN Fantasy</p>
+            <div class="connect-actions"><button id="refresh-espn" class="secondary">Refresh ESPN</button><button id="disconnect-espn" class="ghost">Disconnect</button></div>
+          </div>
+          <p class="privacy-note">Oracle never asks for your ESPN password or cookie values. If you choose browser sign-in for a private league, your existing session goes directly from your browser to ESPN and is never exposed to or stored by Oracle.</p>
+        </aside>
       </div>
+      <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
+        <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">—</strong><small id="home-team-record">—</small></div>
+        <button data-jump="lineup"><span>START / SIT</span><strong>Set this week's lineup</strong></button>
+        <button data-jump="waivers"><span>WAIVERS</span><strong>Find an upgrade</strong></button>
+        <button data-jump="trades"><span>TRADES</span><strong>Check a deal</strong></button>
+        <button data-jump="league"><span>SEASON</span><strong>See title odds</strong></button>
+      </section>
       <div class="quick-actions" aria-label="Choose what you need help with">
         <button class="quick-action" data-jump="draft"><span>1</span><strong>Draft help</strong><small>Live helper, mock draft, and our ranked board</small></button>
         <button class="quick-action" data-jump="lineup"><span>2</span><strong>Who should I start?</strong><small>Build your roster and get the best lineup</small></button>
@@ -179,12 +211,15 @@
     <section class="panel" data-panel="league" id="league">
       <div class="section-heading"><div><p class="eyebrow">SEASON OUTLOOK</p><h1>How strong is my team?</h1></div><p>See how often your team makes the playoffs and wins the league across many possible seasons.</p></div>
       <div class="league-grid">
-        <article class="module controls">
-          <p class="control-title">League setup</p>
-          <label>Sleeper league ID<input id="sleeper-league-id" type="text" inputmode="numeric" placeholder="optional"></label>
-          <button id="import-sleeper-league" class="secondary">Import Sleeper league</button>
-          <span class="or-rule">OR</span>
-          <button id="build-demo-league" class="secondary">Try a demo league</button>
+        <article class="module controls season-controls">
+          <p class="control-title">MY LEAGUE</p>
+          <div id="season-connection-summary" class="season-connection-summary hidden"><span class="provider-badge espn-badge">ESPN</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
+          <button id="season-connect-espn" class="secondary" data-jump="overview">Connect or change ESPN league</button>
+          <button id="build-demo-league" class="ghost">Try a demo league</button>
+          <details class="advanced-details other-provider"><summary>Use Sleeper instead</summary>
+            <label>Sleeper league ID<input id="sleeper-league-id" type="text" inputmode="numeric" placeholder="League ID"></label>
+            <button id="import-sleeper-league" class="secondary">Import Sleeper league</button>
+          </details>
           <details class="advanced-details"><summary>Season settings</summary>
             <label>Simulation depth<select id="league-scenarios"><option>500</option><option selected>1500</option><option>3000</option><option>5000</option></select></label>
             <label>Regular season ends<input id="regular-season-end" type="number" min="8" max="16" value="14"></label>
@@ -219,6 +254,7 @@
   <script src="./src/engine/live-intelligence.js"></script>
   <script src="./src/engine/draft-sim.js"></script>
   <script src="./src/data/sources.js"></script>
+  <script src="./src/data/espn-fantasy.js"></script>
   <script src="./src/storage/browser-store.js"></script>
   <script src="./src/app.js"></script>
 </body>

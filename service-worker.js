@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "oracle-browser-v1.0.0-friendly";
+const CACHE = "oracle-browser-v1.1.1-espn-session";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   "./src/engine/live-intelligence.js",
   "./src/engine/draft-sim.js",
   "./src/data/sources.js",
+  "./src/data/espn-fantasy.js",
   "./src/storage/browser-store.js",
   "./data/players-lite.json",
   "./data/coaches-2026.json",

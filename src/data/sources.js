@@ -34,6 +34,16 @@
       terms: "https://www.espn.com/",
       license: "Public keyless web JSON; ESPN terms apply",
     }),
+    espnFantasy: Object.freeze({
+      id: "espnFantasy",
+      origins: ["https://lm-api-reads.fantasy.espn.com"],
+      prefixes: ["/apis/v3/games/ffl/"],
+      maxBytes: 24 * 1024 * 1024,
+      attribution: "ESPN Fantasy",
+      terms: "https://fantasy.espn.com/football/",
+      license: "Anonymous reads or direct browser-session reads where ESPN permits them; ESPN terms apply",
+      browserSessionOptional: true,
+    }),
     nws: Object.freeze({
       id: "nws",
       origins: ["https://api.weather.gov"],
@@ -48,7 +58,7 @@
   function sourceCatalog() {
     return Object.values(SOURCES).map((source) => ({
       ...source,
-      access: { anonymous: true, accountRequired: false, apiKeyRequired: false, oauthRequired: false },
+      access: { anonymous: true, accountRequired: false, apiKeyRequired: false, oauthRequired: false, browserSessionOptional: source.browserSessionOptional === true },
       cost: { priceUsd: 0, trialOnly: false, paymentMethodRequired: false, expires: false, paidFallbackRequired: false },
     }));
   }
@@ -70,13 +80,15 @@
 
   async function fetchBounded(sourceId, input, options = {}) {
     const { source, url } = assertFreeUrl(sourceId, input);
+    const credentialMode = options.credentials === "include" ? "include" : "omit";
+    if (credentialMode === "include" && source.browserSessionOptional !== true) throw new Error(`${sourceId} does not permit browser-session credentials`);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), Math.max(1_000, Number(options.timeoutMs || 15_000)));
     try {
       const response = await fetch(url, {
         method: "GET",
         cache: options.cache || "default",
-        credentials: "omit",
+        credentials: credentialMode,
         redirect: "follow",
         signal: controller.signal,
         headers: { Accept: options.accept || "*/*" },

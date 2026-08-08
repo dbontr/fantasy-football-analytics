@@ -65,3 +65,22 @@ test("Sleeper enrichment preserves rookie identity and live development context"
   assert.equal(player.sleeper.depthChartOrder, 1);
   assert.equal(player.sleeper.searchRank, 20);
 });
+
+
+test("browser-session credentials are restricted to the ESPN Fantasy adapter", async () => {
+  const originalFetch = global.fetch;
+  let seenCredentials = null;
+  global.fetch = async (_url, options = {}) => {
+    seenCredentials = options.credentials;
+    return new Response('{"ok":true}', { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const url = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2026/segments/0/leagues/123?view=mTeam";
+    const result = await sources.fetchJson("espnFantasy", url, { credentials: "include" });
+    assert.equal(result.ok, true);
+    assert.equal(seenCredentials, "include");
+    await assert.rejects(() => sources.fetchJson("sleeper", "https://api.sleeper.app/v1/players/nfl", { credentials: "include" }), /does not permit browser-session credentials/i);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

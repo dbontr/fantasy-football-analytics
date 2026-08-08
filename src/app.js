@@ -6,6 +6,7 @@
   const rookieModel = window.OracleRookies;
   const evidenceApi = window.OracleEvidence;
   const sources = window.OracleSources;
+  const espnFantasy = window.OracleEspnFantasy;
   const context = window.OracleContext;
   const intelligence = window.OraclePlayerIntelligence;
   const liveIntelligence = window.OracleLiveIntelligence;
@@ -43,6 +44,10 @@
     rosterIds: [],
     draftState: null,
     leagueTeams: null,
+    leagueMeta: null,
+    espnLeague: null,
+    espnConnection: null,
+    espnNeedsSession: false,
     sleeperLoaded: false,
     sleeperPositions: new Set(),
     ensembleWeights: { market: 0.55, opportunity: 0.45 },
@@ -76,7 +81,7 @@
   function status(message, kind = "") {
     const node = $("#global-status");
     node.textContent = message || "";
-    node.className = `status-line ${kind}`.trim();
+    node.className = `status-line app-status ${kind}`.trim();
   }
 
   function reindexPlayers() {
@@ -133,6 +138,150 @@
     status("");
     history.replaceState(null, "", `#${name}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function espnTeamById(teamId) {
+    return state.espnLeague?.teams?.find((team) => String(team.teamId) === String(teamId)) || null;
+  }
+
+  function hydratedEspnTeams(league = state.espnLeague) {
+    return (league?.teams || []).map((team) => ({
+      ...team,
+      roster: (team.rosterIds || []).map((id) => playerById(id)).filter(Boolean),
+    }));
+  }
+
+  function setDecisionWeek(week) {
+    const selected = Math.max(1, Math.min(18, Number(week || 1)));
+    ["#player-week", "#lineup-week", "#waiver-week", "#trade-week"].forEach((selector) => {
+      if ($(selector)) $(selector).value = String(selected);
+    });
+  }
+
+  function populateEspnTeams() {
+    const select = $("#espn-team-select");
+    if (!select || !state.espnLeague) return;
+    const previous = state.espnConnection?.teamId || select.value;
+    select.innerHTML = state.espnLeague.teams.map((team) => `<option value="${esc(team.teamId)}">${esc(team.name)}${team.ownerName ? ` · ${esc(team.ownerName)}` : ""} · ${esc(team.recordLabel)}</option>`).join("");
+    if (state.espnLeague.teams.some((team) => String(team.teamId) === String(previous))) select.value = String(previous);
+  }
+
+  function renderEspnConnection() {
+    const league = state.espnLeague;
+    const team = espnTeamById(state.espnConnection?.teamId);
+    const authNeeded = state.espnNeedsSession && !league;
+    $("#overview").classList.toggle("league-connected", Boolean(team));
+    $("#hero-lede").textContent = team
+      ? `${team.name} is connected. Oracle has your roster and league context, so you can go straight to this week's lineup, waivers, trades, or season outlook.`
+      : "Connect your league or jump straight to a tool. Oracle turns projections, injuries, matchups, rookies, news, and simulations into one clear recommendation.";
+    $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
+    $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
+    $("#espn-auth-step").classList.toggle("hidden", !authNeeded);
+    $("#espn-connected").classList.toggle("hidden", !team);
+    $("#league-command-strip").classList.toggle("hidden", !team);
+    $("#season-connection-summary").classList.toggle("hidden", !team);
+    $("#espn-connection-state").textContent = team ? "Connected" : league ? "Choose your team" : authNeeded ? "Sign-in needed" : "Not connected";
+    $("#espn-connection-state").classList.toggle("connected", Boolean(team));
+    if (!league) return;
+    populateEspnTeams();
+    $("#espn-league-found").textContent = `${league.name} · ${league.teams.length} teams · ${league.scoringLabel}`;
+    if (!team) return;
+    const rosterNote = `${team.rosterIds.length} players recognized${team.unmatchedPlayers.length ? ` · ${team.unmatchedPlayers.length} unmatched` : ""}`;
+    $("#espn-connected-team").textContent = team.name;
+    $("#espn-connected-meta").textContent = `${league.name} · ${team.recordLabel} · ${rosterNote}`;
+    $("#home-league-label").textContent = league.name;
+    $("#home-team-name").textContent = team.name;
+    $("#home-team-record").textContent = `${team.recordLabel} · Week ${league.currentWeek} · ${rosterNote}`;
+    $("#season-connected-team").textContent = team.name;
+    $("#season-connected-league").textContent = `${league.name} · ${team.recordLabel} · Week ${league.currentWeek}`;
+  }
+
+  async function applyEspnTeam(teamId, persist = true) {
+    const team = espnTeamById(teamId);
+    if (!team || !state.espnLeague) throw new Error("Choose a valid ESPN team");
+    state.espnConnection = {
+      provider: "espn",
+      leagueId: state.espnLeague.leagueId,
+      season: state.espnLeague.season,
+      teamId: String(team.teamId),
+      authMode: state.espnConnection?.authMode || "anonymous",
+      lastSync: state.espnLeague.syncedAt,
+    };
+    state.rosterIds = (team.rosterIds || []).map(String).filter((id) => playerById(id));
+    state.leagueTeams = hydratedEspnTeams();
+    state.leagueMeta = {
+      playoffTeams: state.espnLeague.playoffTeams || Math.min(6, state.leagueTeams.length),
+      playoffByes: (state.espnLeague.playoffTeams || 6) === 6 ? 2 : 0,
+    };
+    setDecisionWeek(state.espnLeague.currentWeek);
+    if (persist) await Promise.all([
+      store.set("roster-ids", state.rosterIds),
+      store.set("espn-connection", state.espnConnection),
+      store.set("espn-snapshot", state.espnLeague),
+    ]);
+    renderRoster();
+    renderEspnConnection();
+    $("#league-source-status").textContent = `${state.espnLeague.name} · ${team.name} loaded from ESPN.`;
+    return team;
+  }
+
+  async function connectEspnLeague(options = {}) {
+    const button = options.browserSession ? $("#connect-espn-session") : $("#connect-espn");
+    const input = options.input || $("#espn-league-input").value;
+    const season = Number(options.season || $("#espn-season").value || 2026);
+    const preferredTeamId = options.teamId || null;
+    const browserSession = options.browserSession === true;
+    if (!input) return status("Paste an ESPN league link or league ID first.", "error");
+    if (button) button.disabled = true;
+    status(browserSession ? "Asking ESPN to use your existing browser sign-in…" : "Connecting to ESPN Fantasy…");
+    try {
+      const loaded = await espnFantasy.loadLeague(input, season, { browserSession });
+      state.espnNeedsSession = false;
+      state.espnLeague = espnFantasy.normalizeLeague(loaded.raw, state.players);
+      state.espnConnection = { provider: "espn", leagueId: loaded.leagueId, season: loaded.season, teamId: null, authMode: loaded.browserSession ? "browser-session" : "anonymous", lastSync: state.espnLeague.syncedAt };
+      $("#espn-league-input").value = loaded.leagueId;
+      $("#espn-season").value = String(loaded.season);
+      await Promise.all([store.set("espn-connection", state.espnConnection), store.set("espn-snapshot", state.espnLeague)]);
+      if (preferredTeamId && espnTeamById(preferredTeamId)) {
+        const team = await applyEspnTeam(preferredTeamId);
+        status(`ESPN refreshed. ${team.name} is ready.`, "good");
+      } else {
+        renderEspnConnection();
+        status(`${state.espnLeague.name} found. Choose your team.`, "good");
+      }
+    } catch (error) {
+      if (error.code === "ESPN_AUTH_REQUIRED" || error.code === "ESPN_SESSION_FAILED") {
+        state.espnNeedsSession = true;
+        state.espnLeague = null;
+        renderEspnConnection();
+      }
+      status(error.message, "error");
+      throw error;
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function refreshEspnLeague() {
+    if (!state.espnConnection?.leagueId) return status("Connect an ESPN league first.", "error");
+    const button = $("#refresh-espn");
+    button.disabled = true;
+    try {
+      await connectEspnLeague({ input: state.espnConnection.leagueId, season: state.espnConnection.season, teamId: state.espnConnection.teamId, browserSession: state.espnConnection.authMode === "browser-session" });
+    } catch (_) { /* connectEspnLeague already surfaced the error */ }
+    finally { button.disabled = false; }
+  }
+
+  async function disconnectEspnLeague() {
+    state.espnLeague = null;
+    state.espnConnection = null;
+    state.espnNeedsSession = false;
+    state.leagueTeams = null;
+    state.leagueMeta = null;
+    await Promise.all([store.remove("espn-connection"), store.remove("espn-snapshot")]);
+    renderEspnConnection();
+    $("#league-source-status").textContent = "No league loaded.";
+    status("ESPN league disconnected. Your current roster is still saved locally.", "good");
   }
 
   function savedEvidence(player, week = 1) {
@@ -1084,15 +1233,20 @@
   }
 
   async function clearLocalState() {
-    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board")]);
+    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot")]);
     state.rosterIds = [];
     state.ledger = new evidenceApi.EvidenceLedger();
     state.ensembleWeights = { market: 0.55, opportunity: 0.45 };
     state.leagueTeams = null;
+    state.leagueMeta = null;
+    state.espnLeague = null;
+    state.espnConnection = null;
+    state.espnNeedsSession = false;
     state.draftBoard = null;
     $("#draft-custom-board").value = "";
     resetDraft();
     renderRoster();
+    renderEspnConnection();
     renderEvidenceStatus();
     renderWeights();
     $("#chain-status").textContent = "Not checked";
@@ -1102,6 +1256,18 @@
   function bindEvents() {
     $$(".tab").forEach((tab) => tab.addEventListener("click", () => activatePanel(tab.dataset.panelTarget)));
     $$('[data-jump]').forEach((button) => button.addEventListener("click", () => activatePanel(button.dataset.jump)));
+    $("#connect-espn").addEventListener("click", () => connectEspnLeague().catch(() => {}));
+    $("#connect-espn-session").addEventListener("click", () => connectEspnLeague({ browserSession: true }).catch(() => {}));
+    $("#cancel-espn-session").addEventListener("click", () => { state.espnNeedsSession = false; renderEspnConnection(); status(""); });
+    $("#use-espn-team").addEventListener("click", async () => {
+      try {
+        const team = await applyEspnTeam($("#espn-team-select").value);
+        status(`${team.name} is connected. Your roster and season view are ready.`, "good");
+      } catch (error) { status(error.message, "error"); }
+    });
+    $("#refresh-espn").addEventListener("click", refreshEspnLeague);
+    $("#disconnect-espn").addEventListener("click", disconnectEspnLeague);
+    $("#espn-league-input").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); connectEspnLeague().catch(() => {}); } });
     $("#player-search").addEventListener("input", () => { const rows = fillPlayerPicker("#player-select", $("#player-search").value); if (rows[0]) { $("#player-select").value = String(rows[0].id); renderNewsPulse(); } });
     $("#roster-search").addEventListener("input", () => fillPlayerPicker("#roster-add", $("#roster-search").value));
     $("#trade-search").addEventListener("input", populateTradeSelectors);
@@ -1168,11 +1334,13 @@
       $("#bootstrap-status").textContent = `${state.dataset.meta?.season || 2026} compact + ${state.rookieArtifact?.players?.length || 0} rookie priors`;
       fillPlayerSelects();
 
-      const [savedLedger, savedRoster, savedWeights, savedBoard] = await Promise.all([
+      const [savedLedger, savedRoster, savedWeights, savedBoard, savedEspnConnection, savedEspnSnapshot] = await Promise.all([
         store.get("evidence-ledger", []),
         store.get("roster-ids", []),
         store.get("ensemble-weights", null),
         store.get("draft-custom-board", ""),
+        store.get("espn-connection", null),
+        store.get("espn-snapshot", null),
       ]);
       state.ledger = new evidenceApi.EvidenceLedger(Array.isArray(savedLedger) ? savedLedger : []);
       state.rosterIds = Array.isArray(savedRoster) ? savedRoster.map(String).filter((id) => playerById(id)) : [];
@@ -1182,6 +1350,16 @@
         const parsed = draftSim.parseRankingBoard(savedBoard);
         if (parsed.rows.length) { state.draftBoard = parsed; $("#draft-board-status").textContent = `${parsed.rows.length} custom ranks restored.`; }
       }
+      if (savedEspnConnection?.leagueId) {
+        state.espnConnection = savedEspnConnection;
+        $("#espn-league-input").value = String(savedEspnConnection.leagueId);
+        $("#espn-season").value = String(savedEspnConnection.season || 2026);
+      }
+      if (savedEspnSnapshot?.provider === "espn" && Array.isArray(savedEspnSnapshot.teams)) {
+        state.espnLeague = savedEspnSnapshot;
+        if (state.espnConnection?.teamId && espnTeamById(state.espnConnection.teamId)) await applyEspnTeam(state.espnConnection.teamId, false);
+        else renderEspnConnection();
+      } else renderEspnConnection();
       renderRoster();
       renderEvidenceStatus();
       renderWeights();

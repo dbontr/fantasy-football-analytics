@@ -76,7 +76,28 @@ async function main() {
   await waitFor(`document.querySelector('#player-count')?.textContent === '700'`);
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Friendly task navigation did not render");
-  if (home.horizontalOverflow || !home.background.includes("246")) throw new Error("Home light-theme/layout check failed");
+  if (home.horizontalOverflow || !home.background.includes("244")) throw new Error("Home light-theme/layout check failed");
+  const connectCard = await evaluate(`Boolean(document.querySelector('.league-connect-card') && document.querySelector('#connect-espn'))`);
+  if (!connectCard) throw new Error("ESPN league connection card did not render");
+
+  await evaluate(`(() => {
+    OracleEspnFantasy.loadLeague = async (_input, _season, options = {}) => {
+      if (!options.browserSession) { const error = new Error("This league needs an ESPN sign-in."); error.code = "ESPN_AUTH_REQUIRED"; throw error; }
+      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2},scoringSettings:{playerRankType:'PPR'}}, status:{currentScoringPeriod:3}, members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:4362628,fullName:"Ja'Marr Chase"}}},{playerPoolEntry:{player:{id:4430878,fullName:'Jaxon Smith-Njigba'}}}]}}] } };
+    };
+    document.querySelector('#espn-league-input').value='424242';
+    document.querySelector('#connect-espn').click();
+    return true;
+  })()`);
+  await waitFor(`!document.querySelector('#espn-auth-step').classList.contains('hidden') && document.querySelector('#espn-connection-state').textContent.includes('Sign-in')`, 10000);
+  await evaluate(`document.querySelector('#connect-espn-session').click(); true`);
+  await waitFor(`!document.querySelector('#espn-team-step').classList.contains('hidden')`, 10000);
+  await evaluate(`document.querySelector('#espn-team-select').value='1'; document.querySelector('#use-espn-team').click(); true`);
+  await waitFor(`!document.querySelector('#league-command-strip').classList.contains('hidden') && document.querySelectorAll('#roster-strip .roster-chip').length===3`, 10000);
+  const espnSync = await evaluate(`(() => ({team:document.querySelector('#espn-connected-team').textContent,league:document.querySelector('#home-league-label').textContent,roster:document.querySelectorAll('#roster-strip .roster-chip').length,week:document.querySelector('#lineup-week').value}))()`);
+  if (espnSync.team !== 'QA Champions' || espnSync.league !== 'QA Sunday League' || espnSync.roster !== 3 || espnSync.week !== '3') throw new Error("ESPN league sync flow failed");
+  const connectedHome = await snapshot("home-connected-desktop", 1440, 1000);
+  if (connectedHome.horizontalOverflow) throw new Error("Connected ESPN home layout overflow");
 
   await evaluate(`(() => { document.querySelector('[data-panel-target="player"]').click(); const s=document.querySelector('#player-search'); s.value='Jahmyr'; s.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
   const playerSearch = await evaluate(`document.querySelector('#player-select option:checked')?.textContent || ''`);
@@ -201,8 +222,8 @@ async function main() {
   const homeMobile = await snapshot("home-mobile", 390, 844);
   if (homeMobile.horizontalOverflow || homeMobile.quickActions !== 5) throw new Error("Home mobile layout failed");
 
-  const result = { home, player, veteran, liveNews, rookie, rookieTablet, board, draftRoom, benchmark, draftDesktop, lineup, trade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, errors,
-    screenshots: [".qa-home-desktop.png", ".qa-player-tablet.png", ".qa-draft-desktop.png", ".qa-trade-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };
+  const result = { home, espnSync, connectedHome, player, veteran, liveNews, rookie, rookieTablet, board, draftRoom, benchmark, draftDesktop, lineup, trade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, errors,
+    screenshots: [".qa-home-desktop.png", ".qa-home-connected-desktop.png", ".qa-player-tablet.png", ".qa-draft-desktop.png", ".qa-trade-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) throw new Error(`Browser logged ${errors.length} error(s)`);
