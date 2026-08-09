@@ -1,7 +1,7 @@
 {
-  "version": "snapcount-runtime-profile-2026.3",
-  "qualifiedAt": "2026-08-08T22:39:24.645Z",
-  "qualificationSha256": "7d098b018cb160eb3c3a16c080de11d1610806d7ff172d6c44fd83d07c7cb5ef",
+  "version": "snapcount-runtime-profile-2026.4",
+  "qualifiedAt": "2026-08-09T02:42:17.951Z",
+  "qualificationSha256": "c47c8cf5681a44ab2080f3bb4286e261563d96ec1546ee0f7d62506b2c469aff",
   "mode": "serve-frozen-qualified-analytics",
   "grades": {
     "forecastMean": "A+",
@@ -56,6 +56,17 @@
     "grade": "A+",
     "postFreezeHoldoutSeason": 2018,
     "policyDefinitionSha256": "7338a9c34cf40e5828a1ec33654ce482e13c2ae52ec129c4776dc5e8dbe7befc",
+    "robustnessAuditVersion": "draft-overfit-audit-2026.1",
+    "robustnessEvidenceYears": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
     "supportedTeamCounts": [
       10,
       12

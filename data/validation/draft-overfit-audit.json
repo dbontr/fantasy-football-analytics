@@ -1,0 +1,756 @@
+{
+  "version": "draft-overfit-audit-2026.1",
+  "policyCanonicalSha256": "98d0cf634f14c42a04ed1a6f09157ce0f016f2be77af494ba7eff46c7a8f3f3e",
+  "policyDefinitionSha256": "7338a9c34cf40e5828a1ec33654ce482e13c2ae52ec129c4776dc5e8dbe7befc",
+  "purpose": "post-selection robustness audit of the frozen policy; no coefficient fitting or policy selection",
+  "evidenceYears": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "developmentYears": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "independentHistoricalHoldoutYear": 2018,
+  "controls": {
+    "espn-market": {
+      "aggregate": {
+        "edge": 342.66083333333336,
+        "winRate": 0.8802083333333334
+      },
+      "seasonBootstrap": {
+        "method": "season-cluster-bootstrap",
+        "seasons": 8,
+        "replicates": 200000,
+        "edge95": [
+          230.27427083333333,
+          439.459375
+        ],
+        "winRate95": [
+          0.7630208333333335,
+          0.9661458333333334
+        ]
+      },
+      "jackknife": [
+        {
+          "omittedYear": 2018,
+          "edge": 346.2500595238095,
+          "winRate": 0.8839285714285714
+        },
+        {
+          "omittedYear": 2019,
+          "edge": 332.25136904761905,
+          "winRate": 0.8660714285714286
+        },
+        {
+          "omittedYear": 2020,
+          "edge": 316.1419642857143,
+          "winRate": 0.8630952380952381
+        },
+        {
+          "omittedYear": 2021,
+          "edge": 346.76125,
+          "winRate": 0.8839285714285714
+        },
+        {
+          "omittedYear": 2022,
+          "edge": 355.79172619047625,
+          "winRate": 0.880952380952381
+        },
+        {
+          "omittedYear": 2023,
+          "edge": 388.54529761904763,
+          "winRate": 0.9315476190476192
+        },
+        {
+          "omittedYear": 2024,
+          "edge": 337.4656547619048,
+          "winRate": 0.8660714285714286
+        },
+        {
+          "omittedYear": 2025,
+          "edge": 318.0793452380953,
+          "winRate": 0.8660714285714286
+        }
+      ],
+      "jackknifeMinimum": {
+        "edge": 316.1419642857143,
+        "winRate": 0.8630952380952381
+      }
+    },
+    "balanced": {
+      "aggregate": {
+        "edge": 68.87171875000001,
+        "winRate": 0.6484375
+      },
+      "seasonBootstrap": {
+        "method": "season-cluster-bootstrap",
+        "seasons": 8,
+        "replicates": 200000,
+        "edge95": [
+          36.151562499999976,
+          108.84140624999998
+        ],
+        "winRate95": [
+          0.5677083333333334,
+          0.7395833333333333
+        ]
+      },
+      "jackknife": [
+        {
+          "omittedYear": 2018,
+          "edge": 67.68065476190476,
+          "winRate": 0.6428571428571429
+        },
+        {
+          "omittedYear": 2019,
+          "edge": 70.66869047619048,
+          "winRate": 0.6398809523809523
+        },
+        {
+          "omittedYear": 2020,
+          "edge": 52.477559523809525,
+          "winRate": 0.613095238095238
+        },
+        {
+          "omittedYear": 2021,
+          "edge": 75.40934523809526,
+          "winRate": 0.6636904761904763
+        },
+        {
+          "omittedYear": 2022,
+          "edge": 72.73803571428572,
+          "winRate": 0.6636904761904763
+        },
+        {
+          "omittedYear": 2023,
+          "edge": 77.8967261904762,
+          "winRate": 0.6577380952380952
+        },
+        {
+          "omittedYear": 2024,
+          "edge": 62.8664880952381,
+          "winRate": 0.636904761904762
+        },
+        {
+          "omittedYear": 2025,
+          "edge": 71.23625,
+          "winRate": 0.6696428571428571
+        }
+      ],
+      "jackknifeMinimum": {
+        "edge": 52.477559523809525,
+        "winRate": 0.613095238095238
+      }
+    },
+    "value": {
+      "aggregate": {
+        "edge": 343.5115104166667,
+        "winRate": 0.9088541666666667
+      },
+      "seasonBootstrap": {
+        "method": "season-cluster-bootstrap",
+        "seasons": 8,
+        "replicates": 200000,
+        "edge95": [
+          249.18109374999997,
+          461.2058333333334
+        ],
+        "winRate95": [
+          0.8463541666666665,
+          0.9661458333333334
+        ]
+      },
+      "jackknife": [
+        {
+          "omittedYear": 2018,
+          "edge": 334.61238095238093,
+          "winRate": 0.8988095238095238
+        },
+        {
+          "omittedYear": 2019,
+          "edge": 369.9757142857143,
+          "winRate": 0.9285714285714286
+        },
+        {
+          "omittedYear": 2020,
+          "edge": 341.43065476190475,
+          "winRate": 0.9017857142857143
+        },
+        {
+          "omittedYear": 2021,
+          "edge": 359.5751785714286,
+          "winRate": 0.9226190476190477
+        },
+        {
+          "omittedYear": 2022,
+          "edge": 355.98452380952375,
+          "winRate": 0.9226190476190477
+        },
+        {
+          "omittedYear": 2023,
+          "edge": 293.42565476190475,
+          "winRate": 0.8958333333333334
+        },
+        {
+          "omittedYear": 2024,
+          "edge": 337.3234523809524,
+          "winRate": 0.8958333333333334
+        },
+        {
+          "omittedYear": 2025,
+          "edge": 355.76452380952384,
+          "winRate": 0.9047619047619049
+        }
+      ],
+      "jackknifeMinimum": {
+        "edge": 293.42565476190475,
+        "winRate": 0.8958333333333334
+      }
+    },
+    "need-heavy": {
+      "aggregate": {
+        "edge": 30.901510416666646,
+        "winRate": 0.5598958333333334
+      },
+      "seasonBootstrap": {
+        "method": "season-cluster-bootstrap",
+        "seasons": 8,
+        "replicates": 200000,
+        "edge95": [
+          6.540989583333307,
+          54.92614583333333
+        ],
+        "winRate95": [
+          0.515625,
+          0.6015625
+        ]
+      },
+      "jackknife": [
+        {
+          "omittedYear": 2018,
+          "edge": 24.300892857142827,
+          "winRate": 0.5505952380952381
+        },
+        {
+          "omittedYear": 2019,
+          "edge": 34.34238095238094,
+          "winRate": 0.5654761904761905
+        },
+        {
+          "omittedYear": 2020,
+          "edge": 25.571488095238085,
+          "winRate": 0.5565476190476191
+        },
+        {
+          "omittedYear": 2021,
+          "edge": 38.39738095238094,
+          "winRate": 0.5714285714285714
+        },
+        {
+          "omittedYear": 2022,
+          "edge": 32.70708333333331,
+          "winRate": 0.5595238095238095
+        },
+        {
+          "omittedYear": 2023,
+          "edge": 36.49017857142855,
+          "winRate": 0.574404761904762
+        },
+        {
+          "omittedYear": 2024,
+          "edge": 25.792916666666635,
+          "winRate": 0.5505952380952381
+        },
+        {
+          "omittedYear": 2025,
+          "edge": 29.609761904761886,
+          "winRate": 0.5505952380952381
+        }
+      ],
+      "jackknifeMinimum": {
+        "edge": 24.300892857142827,
+        "winRate": 0.5505952380952381
+      }
+    },
+    "zero-rb": {
+      "aggregate": {
+        "edge": 98.1166145833333,
+        "winRate": 0.6666666666666666
+      },
+      "seasonBootstrap": {
+        "method": "season-cluster-bootstrap",
+        "seasons": 8,
+        "replicates": 200000,
+        "edge95": [
+          51.831041666666664,
+          149.83218749999992
+        ],
+        "winRate95": [
+          0.5807291666666666,
+          0.7630208333333334
+        ]
+      },
+      "jackknife": [
+        {
+          "omittedYear": 2018,
+          "edge": 98.79166666666663,
+          "winRate": 0.6755952380952381
+        },
+        {
+          "omittedYear": 2019,
+          "edge": 110.33357142857139,
+          "winRate": 0.6904761904761906
+        },
+        {
+          "omittedYear": 2020,
+          "edge": 93.09988095238091,
+          "winRate": 0.6577380952380952
+        },
+        {
+          "omittedYear": 2021,
+          "edge": 109.39863095238091,
+          "winRate": 0.6845238095238095
+        },
+        {
+          "omittedYear": 2022,
+          "edge": 106.86922619047616,
+          "winRate": 0.6785714285714286
+        },
+        {
+          "omittedYear": 2023,
+          "edge": 93.91374999999996,
+          "winRate": 0.6696428571428571
+        },
+        {
+          "omittedYear": 2024,
+          "edge": 94.35095238095235,
+          "winRate": 0.6458333333333333
+        },
+        {
+          "omittedYear": 2025,
+          "edge": 78.17523809523807,
+          "winRate": 0.6309523809523808
+        }
+      ],
+      "jackknifeMinimum": {
+        "edge": 78.17523809523807,
+        "winRate": 0.6309523809523808
+      }
+    }
+  },
+  "individualFailures": [
+    {
+      "year": 2021,
+      "control": "need-heavy",
+      "edge": -21.56958333333338,
+      "winRate": 0.4791666666666667
+    },
+    {
+      "year": 2023,
+      "control": "need-heavy",
+      "edge": -8.219166666666695,
+      "winRate": 0.4583333333333333
+    }
+  ],
+  "finalistNeighborhood": {
+    "finalists": 12,
+    "allAggregatePass": true,
+    "productionFullRank": 1,
+    "productionTop1LeaveOneDevelopmentSeasonOut": 5,
+    "productionTop3LeaveOneDevelopmentSeasonOut": 7,
+    "leaveOneSeasonOut": [
+      {
+        "heldOutYear": 2019,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.18,
+          "need": 0.65
+        },
+        "productionRank": 1,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 415.52708333333334,
+            "winRate": 0.9791666666666666
+          },
+          "balanced": {
+            "edge": 56.29291666666668,
+            "winRate": 0.7083333333333334
+          },
+          "value": {
+            "edge": 158.26208333333327,
+            "winRate": 0.7708333333333334
+          },
+          "need-heavy": {
+            "edge": 6.815416666666612,
+            "winRate": 0.5208333333333334
+          },
+          "zero-rb": {
+            "edge": 12.59791666666663,
+            "winRate": 0.5
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": 415.52708333333334,
+            "winRate": 0.9791666666666666
+          },
+          "balanced": {
+            "edge": 56.29291666666668,
+            "winRate": 0.7083333333333334
+          },
+          "value": {
+            "edge": 158.26208333333327,
+            "winRate": 0.7708333333333334
+          },
+          "need-heavy": {
+            "edge": 6.815416666666612,
+            "winRate": 0.5208333333333334
+          },
+          "zero-rb": {
+            "edge": 12.59791666666663,
+            "winRate": 0.5
+          }
+        }
+      },
+      {
+        "heldOutYear": 2020,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.18,
+          "need": 0.65
+        },
+        "productionRank": 1,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 528.2929166666667,
+            "winRate": 1
+          },
+          "balanced": {
+            "edge": 183.63083333333327,
+            "winRate": 0.8958333333333334
+          },
+          "value": {
+            "edge": 358.07750000000004,
+            "winRate": 0.9583333333333334
+          },
+          "need-heavy": {
+            "edge": 68.21166666666659,
+            "winRate": 0.5833333333333334
+          },
+          "zero-rb": {
+            "edge": 133.23374999999996,
+            "winRate": 0.7291666666666666
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": 528.2929166666667,
+            "winRate": 1
+          },
+          "balanced": {
+            "edge": 183.63083333333327,
+            "winRate": 0.8958333333333334
+          },
+          "value": {
+            "edge": 358.07750000000004,
+            "winRate": 0.9583333333333334
+          },
+          "need-heavy": {
+            "edge": 68.21166666666659,
+            "winRate": 0.5833333333333334
+          },
+          "zero-rb": {
+            "edge": 133.23374999999996,
+            "winRate": 0.7291666666666666
+          }
+        }
+      },
+      {
+        "heldOutYear": 2021,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.17,
+          "need": 0.65
+        },
+        "productionRank": 3,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 313.9579166666667,
+            "winRate": 0.8541666666666666
+          },
+          "balanced": {
+            "edge": 23.108333333333277,
+            "winRate": 0.5416666666666666
+          },
+          "value": {
+            "edge": 231.06583333333336,
+            "winRate": 0.8125
+          },
+          "need-heavy": {
+            "edge": -21.56958333333338,
+            "winRate": 0.4791666666666667
+          },
+          "zero-rb": {
+            "edge": 19.14250000000005,
+            "winRate": 0.5416666666666666
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": 283.85,
+            "winRate": 0.8541666666666666
+          },
+          "balanced": {
+            "edge": -6.999583333333376,
+            "winRate": 0.4166666666666667
+          },
+          "value": {
+            "edge": 200.95791666666653,
+            "winRate": 0.75
+          },
+          "need-heavy": {
+            "edge": -51.67750000000003,
+            "winRate": 0.4583333333333333
+          },
+          "zero-rb": {
+            "edge": -10.965416666666604,
+            "winRate": 0.4583333333333333
+          }
+        }
+      },
+      {
+        "heldOutYear": 2022,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.18,
+          "need": 0.65
+        },
+        "productionRank": 1,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 250.74458333333328,
+            "winRate": 0.875
+          },
+          "balanced": {
+            "edge": 41.80749999999998,
+            "winRate": 0.5416666666666666
+          },
+          "value": {
+            "edge": 256.20041666666674,
+            "winRate": 0.8125
+          },
+          "need-heavy": {
+            "edge": 18.26249999999999,
+            "winRate": 0.5625
+          },
+          "zero-rb": {
+            "edge": 36.84833333333335,
+            "winRate": 0.5833333333333334
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": 250.74458333333328,
+            "winRate": 0.875
+          },
+          "balanced": {
+            "edge": 41.80749999999998,
+            "winRate": 0.5416666666666666
+          },
+          "value": {
+            "edge": 256.20041666666674,
+            "winRate": 0.8125
+          },
+          "need-heavy": {
+            "edge": 18.26249999999999,
+            "winRate": 0.5625
+          },
+          "zero-rb": {
+            "edge": 36.84833333333335,
+            "winRate": 0.5833333333333334
+          }
+        }
+      },
+      {
+        "heldOutYear": 2023,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.2,
+          "need": 0.65
+        },
+        "productionRank": 3,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 21.469583333333194,
+            "winRate": 0.5208333333333334
+          },
+          "balanced": {
+            "edge": 5.696666666666597,
+            "winRate": 0.5833333333333334
+          },
+          "value": {
+            "edge": 694.1125000000001,
+            "winRate": 1
+          },
+          "need-heavy": {
+            "edge": -8.219166666666695,
+            "winRate": 0.4583333333333333
+          },
+          "zero-rb": {
+            "edge": 127.53666666666659,
+            "winRate": 0.6458333333333334
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": -25.25833333333345,
+            "winRate": 0.4791666666666667
+          },
+          "balanced": {
+            "edge": -41.03125000000006,
+            "winRate": 0.5
+          },
+          "value": {
+            "edge": 647.3845833333332,
+            "winRate": 1
+          },
+          "need-heavy": {
+            "edge": -54.947083333333346,
+            "winRate": 0.3541666666666667
+          },
+          "zero-rb": {
+            "edge": 80.80874999999993,
+            "winRate": 0.5416666666666666
+          }
+        }
+      },
+      {
+        "heldOutYear": 2024,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.18,
+          "need": 0.65
+        },
+        "productionRank": 1,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 379.0270833333334,
+            "winRate": 0.9791666666666666
+          },
+          "balanced": {
+            "edge": 110.90833333333335,
+            "winRate": 0.7291666666666666
+          },
+          "value": {
+            "edge": 386.8279166666666,
+            "winRate": 1
+          },
+          "need-heavy": {
+            "edge": 66.66166666666672,
+            "winRate": 0.625
+          },
+          "zero-rb": {
+            "edge": 124.47624999999987,
+            "winRate": 0.8125
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": 379.0270833333334,
+            "winRate": 0.9791666666666666
+          },
+          "balanced": {
+            "edge": 110.90833333333335,
+            "winRate": 0.7291666666666666
+          },
+          "value": {
+            "edge": 386.8279166666666,
+            "winRate": 1
+          },
+          "need-heavy": {
+            "edge": 66.66166666666672,
+            "winRate": 0.625
+          },
+          "zero-rb": {
+            "edge": 124.47624999999987,
+            "winRate": 0.8125
+          }
+        }
+      },
+      {
+        "heldOutYear": 2025,
+        "selectedPolicy": {
+          "market": 0.6,
+          "value": 0.18,
+          "need": 0.65
+        },
+        "productionRank": 1,
+        "productionHeldOut": {
+          "espn-market": {
+            "edge": 514.7312499999999,
+            "winRate": 0.9791666666666666
+          },
+          "balanced": {
+            "edge": 52.32000000000011,
+            "winRate": 0.5
+          },
+          "value": {
+            "edge": 257.7404166666667,
+            "winRate": 0.9375
+          },
+          "need-heavy": {
+            "edge": 39.94374999999997,
+            "winRate": 0.625
+          },
+          "zero-rb": {
+            "edge": 237.70624999999993,
+            "winRate": 0.9166666666666666
+          }
+        },
+        "selectedHeldOut": {
+          "espn-market": {
+            "edge": 514.7312499999999,
+            "winRate": 0.9791666666666666
+          },
+          "balanced": {
+            "edge": 52.32000000000011,
+            "winRate": 0.5
+          },
+          "value": {
+            "edge": 257.7404166666667,
+            "winRate": 0.9375
+          },
+          "need-heavy": {
+            "edge": 39.94374999999997,
+            "winRate": 0.625
+          },
+          "zero-rb": {
+            "edge": 237.70624999999993,
+            "winRate": 0.9166666666666666
+          }
+        }
+      }
+    ],
+    "caveat": "The finalist neighborhood itself was selected using 2019-2025, so LOSO ranks are a sensitivity diagnostic rather than independent validation."
+  },
+  "gates": {
+    "independent2018HoldoutPass": true,
+    "frozenPolicyIsFullDevelopmentWinner": true,
+    "leaveOneSeasonOutAggregatePass": true,
+    "seasonBootstrap95Pass": true,
+    "robustnessPass": true
+  },
+  "interpretation": "No material aggregate overfit is detected in the tested historical evidence: the frozen low-dimensional policy remains qualified after every one-season omission and its season-cluster 95% lower bounds stay above the production gates. This does not prove zero overfit because 2019-2025 participated in selection and 2018 remains the single independent historical holdout."
+}

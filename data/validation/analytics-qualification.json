@@ -1,6 +1,6 @@
 {
-  "version": "snapcount-analytics-qualification-2026.3",
-  "qualifiedAt": "2026-08-08T22:39:24.645Z",
+  "version": "snapcount-analytics-qualification-2026.4",
+  "qualifiedAt": "2026-08-09T02:42:17.951Z",
   "architecture": "offline-qualification-live-serving",
   "dataset": {
     "file": "historical-ppr-2020-2025.json.gz",
@@ -15,17 +15,18 @@
     ]
   },
   "reports": {
-    "forecast-audit-report.json": "6d0f164720d9b4edca8f17043a5fa695c62b8e6ad41a64f647c71ea95f3fc3a7",
-    "uncertainty-audit-report.json": "53ab11c8591b56e0bfcfe6ad4f02d422d55df1c5f0e6808d0bcb876258d030d2",
-    "decision-audit-report.json": "eb66f1a23840c225a5aaf41ba7b474509c321b35326a5bfa03f891342980e61b",
-    "waiver-audit-report.json": "7d9270797d8d50e67e82430485635382af0db92004ab77be42b031298d6705e4",
-    "trade-audit-report.json": "a215e43d59a5c2eb94156f44e0fe41a3b55ba936ef573f517a30633530bd0373",
-    "season-audit-report.json": "ab0f10aaef643d29eeb91875a5eca85e5c8dfd89b1758801f094015509ba2132",
-    "draft-segmented-policy.json": "b549d693225b3188383effa5b9bf086812d6acbfbc5f8cec2bce34ef6a649b29",
-    "draft-postfreeze-holdout.json": "db11d5d0c913a8fcc24ef4722c37942cfa7b5dfb6295015757a230f037fd1fa3",
-    "draft-robust-refine.json": "9dd06f47cc47747715dae307d921f6d1b7165c78ebb4f38c2b424349738114e3",
-    "draft-robust-policy.json": "cf4b21212a93af9bc1000f398b9d5057f338e5cc6a0b285be674ca7757485993",
-    "draft-a-plus-holdout-2018.json": "414e5def6e2466e69d55746df378edf0c394b7dc4dda7de2a3869b6e17c63900"
+    "forecast-audit-report.json": "90491983b274da02e6a91bf887e0145921ca5f1a30329aea41a16e732156ee4a",
+    "uncertainty-audit-report.json": "a0f0a4fd4a2977c0de255ab1bcf9e75a9ff9ef2e5af42eac0ff63c5f375cfa13",
+    "decision-audit-report.json": "24309fa3a3638f7cc72ed8e062f602087b0fbdac00f8bb4875bf97199e3f7177",
+    "waiver-audit-report.json": "364e49efedc25c0aa1569e9567afd4fa0ebddee0b19114c6566a2f6076cac388",
+    "trade-audit-report.json": "d1ae9aac889078b3ed6841990f54d972db497952d363fb3014146d15f6e5046b",
+    "season-audit-report.json": "092968e1dfafd41ccf1ad937814231d4ffbf3788d6a352402f177679bcb28e5e",
+    "draft-segmented-policy.json": "e5e8a2d48d0e2c9f9a78f5888567b9f1ca27eda77af0b09d6447fb7f198d1ef3",
+    "draft-postfreeze-holdout.json": "dfb9f66690e5110355114992dbced68e691717a3dfe7abc5fc16f72875d0cf41",
+    "draft-robust-refine.json": "174d786a8d17ff082605ff595038a5969aa6bb3a05ca77b8c8a7cf21199b2942",
+    "draft-robust-policy.json": "98d0cf634f14c42a04ed1a6f09157ce0f016f2be77af494ba7eff46c7a8f3f3e",
+    "draft-a-plus-holdout-2018.json": "e32c5a2e93aabfa2392622ce5e075e4289f68f5fe251b6a648a3bf60f457a8b5",
+    "draft-overfit-audit.json": "4e9fe3fc8100e90c3d20b779813aa0e0844c7f7f5b545eb6e843cf725f375d3f"
   },
   "grades": {
     "forecastMean": "A+",
@@ -502,6 +503,157 @@
           "winRate": 0.6041666666666666
         }
       }
+    },
+    "draftOverfitRobustness": {
+      "version": "draft-overfit-audit-2026.1",
+      "evidenceYears": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "gates": {
+        "independent2018HoldoutPass": true,
+        "frozenPolicyIsFullDevelopmentWinner": true,
+        "leaveOneSeasonOutAggregatePass": true,
+        "seasonBootstrap95Pass": true,
+        "robustnessPass": true
+      },
+      "controls": {
+        "espn-market": {
+          "aggregate": {
+            "edge": 342.66083333333336,
+            "winRate": 0.8802083333333334
+          },
+          "seasonBootstrap": {
+            "method": "season-cluster-bootstrap",
+            "seasons": 8,
+            "replicates": 200000,
+            "edge95": [
+              230.27427083333333,
+              439.459375
+            ],
+            "winRate95": [
+              0.7630208333333335,
+              0.9661458333333334
+            ]
+          },
+          "jackknifeMinimum": {
+            "edge": 316.1419642857143,
+            "winRate": 0.8630952380952381
+          }
+        },
+        "balanced": {
+          "aggregate": {
+            "edge": 68.87171875000001,
+            "winRate": 0.6484375
+          },
+          "seasonBootstrap": {
+            "method": "season-cluster-bootstrap",
+            "seasons": 8,
+            "replicates": 200000,
+            "edge95": [
+              36.151562499999976,
+              108.84140624999998
+            ],
+            "winRate95": [
+              0.5677083333333334,
+              0.7395833333333333
+            ]
+          },
+          "jackknifeMinimum": {
+            "edge": 52.477559523809525,
+            "winRate": 0.613095238095238
+          }
+        },
+        "value": {
+          "aggregate": {
+            "edge": 343.5115104166667,
+            "winRate": 0.9088541666666667
+          },
+          "seasonBootstrap": {
+            "method": "season-cluster-bootstrap",
+            "seasons": 8,
+            "replicates": 200000,
+            "edge95": [
+              249.18109374999997,
+              461.2058333333334
+            ],
+            "winRate95": [
+              0.8463541666666665,
+              0.9661458333333334
+            ]
+          },
+          "jackknifeMinimum": {
+            "edge": 293.42565476190475,
+            "winRate": 0.8958333333333334
+          }
+        },
+        "need-heavy": {
+          "aggregate": {
+            "edge": 30.901510416666646,
+            "winRate": 0.5598958333333334
+          },
+          "seasonBootstrap": {
+            "method": "season-cluster-bootstrap",
+            "seasons": 8,
+            "replicates": 200000,
+            "edge95": [
+              6.540989583333307,
+              54.92614583333333
+            ],
+            "winRate95": [
+              0.515625,
+              0.6015625
+            ]
+          },
+          "jackknifeMinimum": {
+            "edge": 24.300892857142827,
+            "winRate": 0.5505952380952381
+          }
+        },
+        "zero-rb": {
+          "aggregate": {
+            "edge": 98.1166145833333,
+            "winRate": 0.6666666666666666
+          },
+          "seasonBootstrap": {
+            "method": "season-cluster-bootstrap",
+            "seasons": 8,
+            "replicates": 200000,
+            "edge95": [
+              51.831041666666664,
+              149.83218749999992
+            ],
+            "winRate95": [
+              0.5807291666666666,
+              0.7630208333333334
+            ]
+          },
+          "jackknifeMinimum": {
+            "edge": 78.17523809523807,
+            "winRate": 0.6309523809523808
+          }
+        }
+      },
+      "individualFailures": [
+        {
+          "year": 2021,
+          "control": "need-heavy",
+          "edge": -21.56958333333338,
+          "winRate": 0.4791666666666667
+        },
+        {
+          "year": 2023,
+          "control": "need-heavy",
+          "edge": -8.219166666666695,
+          "winRate": 0.4583333333333333
+        }
+      ]
     }
   }
 }

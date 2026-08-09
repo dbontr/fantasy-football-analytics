@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const childProcess = require("node:child_process");
 const meanCalibration = require("../src/engine/mean-calibration.js");
 const uncertainty = require("../src/engine/calibration.js");
 const correlation = require("../src/engine/correlation.js");
@@ -14,8 +15,14 @@ const profile = JSON.parse(fs.readFileSync(path.join(root, "data", "analytics-ru
 const qualification = JSON.parse(fs.readFileSync(path.join(validationDir, "analytics-qualification.json"), "utf8"));
 const robustDraft = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-robust-policy.json"), "utf8"));
 const robustHoldout = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-a-plus-holdout-2018.json"), "utf8"));
+const robustRefine = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-robust-refine.json"), "utf8"));
+const draftOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-overfit-audit.json"), "utf8"));
 const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const hashFile = (file) => hashBytes(fs.readFileSync(file));
+const hashJsonFile = (file) => hashBytes(Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))));
+const gitBlob = (relativePath) => childProcess.execFileSync("git", ["show", `HEAD:${relativePath.replace(/\\/g, "/")}`], { cwd: root });
+const hashGitBlob = (relativePath) => hashBytes(gitBlob(relativePath));
+const readGitJson = (relativePath) => JSON.parse(gitBlob(relativePath).toString("utf8"));
 
 function assert(condition, message) {
   if (!condition) throw new Error(`Qualified analytics verification failed: ${message}`);
@@ -37,11 +44,22 @@ assert(profile.draft.policy === "segmented-qualified" && Object.keys(profile.dra
 assert(profile.draft.postFreezeHoldoutSeason === 2018, "Draft A+ holdout season drift");
 assert(profile.draft.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "Draft policy hash drift");
 assert(robustHoldout.admitted === true && robustHoldout.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "Draft A+ holdout evidence drift");
+const draftDefinition = { policy: robustDraft.policy, segments: robustDraft.segments, supportedTeamCounts: robustDraft.supportedTeamCounts, scoring: robustDraft.scoring };
+assert(hashBytes(Buffer.from(JSON.stringify(draftDefinition))) === robustDraft.policyDefinitionSha256, "Draft definition hash drift");
+assert(hashGitBlob("data/validation/draft-robust-policy.json") === robustHoldout.policyArtifactSha256, "Draft committed artifact provenance drift");
+assert(JSON.stringify(robustDraft) === JSON.stringify(readGitJson("data/validation/draft-robust-policy.json")), "Draft working-tree semantic drift");
+assert(hashGitBlob("data/validation/draft-robust-refine.json") === robustDraft.sourceArtifactSha256, "Draft committed development provenance drift");
+assert(JSON.stringify(robustRefine) === JSON.stringify(readGitJson("data/validation/draft-robust-refine.json")), "Draft development working-tree semantic drift");
+assert(draftOverfit.gates?.robustnessPass === true, "Draft anti-overfit robustness drift");
+assert(draftOverfit.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "Draft overfit audit policy drift");
+assert(draftOverfit.policyCanonicalSha256 === hashJsonFile(path.join(validationDir, "draft-robust-policy.json")), "Draft overfit canonical policy hash drift");
+assert(profile.draft.robustnessAuditVersion === draftOverfit.version, "Draft robustness audit version drift");
+assert(JSON.stringify(profile.draft.robustnessEvidenceYears) === JSON.stringify(draftOverfit.evidenceYears), "Draft robustness evidence-year drift");
 
 const datasetPath = path.join(validationDir, qualification.dataset.file);
 assert(hashFile(datasetPath) === qualification.dataset.sha256, "qualification dataset hash drift");
 for (const [name, expected] of Object.entries(qualification.reports || {})) {
-  assert(hashFile(path.join(validationDir, name)) === expected, `qualification report drift: ${name}`);
+  assert(hashJsonFile(path.join(validationDir, name)) === expected, `qualification report drift: ${name}`);
 }
 
 console.log(`Qualified analytics verified: ${profile.version}`);

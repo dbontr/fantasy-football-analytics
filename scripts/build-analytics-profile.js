@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const childProcess = require("node:child_process");
 const meanCalibration = require("../src/engine/mean-calibration.js");
 const uncertainty = require("../src/engine/calibration.js");
 const correlation = require("../src/engine/correlation.js");
@@ -12,7 +13,12 @@ const draftSim = require("../src/engine/draft-sim.js");
 const root = path.resolve(__dirname, "..");
 const validationDir = path.join(root, "data", "validation");
 const read = (name) => JSON.parse(fs.readFileSync(path.join(validationDir, name), "utf8"));
-const hashFile = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
+const hashFile = (file) => hashBytes(fs.readFileSync(file));
+const hashJsonFile = (file) => hashBytes(Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))));
+const gitBlob = (relativePath) => childProcess.execFileSync("git", ["show", `HEAD:${relativePath.replace(/\\/g, "/")}`], { cwd: root });
+const hashGitBlob = (relativePath) => hashBytes(gitBlob(relativePath));
+const readGitJson = (relativePath) => JSON.parse(gitBlob(relativePath).toString("utf8"));
 
 function requireGate(condition, label) {
   if (!condition) throw new Error(`Analytics qualification gate failed: ${label}`);
@@ -36,7 +42,8 @@ function main() {
   const priorDraftHoldout = read("draft-postfreeze-holdout.json");
   const robustDraft = read("draft-robust-policy.json");
   const robustDraftHoldout = read("draft-a-plus-holdout-2018.json");
-  const draftGrade = strictDraftGate(robustDraftHoldout) ? "A+" : "A";
+  const draftOverfit = read("draft-overfit-audit.json");
+  const draftGrade = strictDraftGate(robustDraftHoldout) && draftOverfit.gates?.robustnessPass === true ? "A+" : "A";
 
   requireGate(forecast.overall.frozen2024.corrected.mae < forecast.overall.frozen2024.raw.mae, "forecast MAE");
   requireGate(forecast.overall.frozen2024.corrected.rmse < forecast.overall.frozen2024.raw.rmse, "forecast RMSE");
@@ -48,18 +55,25 @@ function main() {
   requireGate(robustDraft.finalHoldoutSeason === 2018 && robustDraft.finalHoldoutInspected === false, "robust draft candidate freeze contract");
   requireGate(robustDraftHoldout.policyFrozenBeforeInspection === true, "2018 draft holdout freeze provenance");
   requireGate(robustDraftHoldout.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "robust draft policy hash parity");
-  requireGate(hashFile(path.join(validationDir, "draft-robust-policy.json")) === robustDraftHoldout.policyArtifactSha256, "robust draft artifact hash parity");
-  requireGate(hashFile(path.join(validationDir, "draft-robust-refine.json")) === robustDraft.sourceArtifactSha256, "robust draft development artifact hash parity");
+  const draftDefinition = { policy: robustDraft.policy, segments: robustDraft.segments, supportedTeamCounts: robustDraft.supportedTeamCounts, scoring: robustDraft.scoring };
+  requireGate(hashBytes(Buffer.from(JSON.stringify(draftDefinition))) === robustDraft.policyDefinitionSha256, "robust draft definition hash parity");
+  requireGate(hashGitBlob("data/validation/draft-robust-policy.json") === robustDraftHoldout.policyArtifactSha256, "robust draft committed artifact hash parity");
+  requireGate(JSON.stringify(robustDraft) === JSON.stringify(readGitJson("data/validation/draft-robust-policy.json")), "robust draft working-tree semantic drift");
+  requireGate(hashGitBlob("data/validation/draft-robust-refine.json") === robustDraft.sourceArtifactSha256, "robust draft committed development artifact hash parity");
+  requireGate(JSON.stringify(read("draft-robust-refine.json")) === JSON.stringify(readGitJson("data/validation/draft-robust-refine.json")), "robust draft development working-tree semantic drift");
   requireGate(strictDraftGate(robustDraftHoldout), "2018 robust draft all-control A+ holdout");
+  requireGate(draftOverfit.policyDefinitionSha256 === robustDraft.policyDefinitionSha256, "draft overfit audit policy hash parity");
+  requireGate(draftOverfit.policyCanonicalSha256 === hashJsonFile(path.join(validationDir, "draft-robust-policy.json")), "draft overfit audit canonical policy hash parity");
+  requireGate(draftOverfit.gates?.robustnessPass === true, "draft anti-overfit robustness");
 
   const datasetPath = path.join(validationDir, "historical-ppr-2020-2025.json.gz");
-  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json"];
-  const reportHashes = Object.fromEntries(reportNames.map((name) => [name, hashFile(path.join(validationDir, name))]));
+  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json"];
+  const reportHashes = Object.fromEntries(reportNames.map((name) => [name, hashJsonFile(path.join(validationDir, name))]));
 
   const qualifiedAt = new Date().toISOString();
   const draftSegments = robustDraft.segments || {};
   const qualification = {
-    version: "snapcount-analytics-qualification-2026.3",
+    version: "snapcount-analytics-qualification-2026.4",
     qualifiedAt,
     architecture: "offline-qualification-live-serving",
     dataset: { file: "historical-ppr-2020-2025.json.gz", sha256: hashFile(datasetPath), seasons: [2020, 2021, 2022, 2023, 2024, 2025] },
@@ -81,11 +95,16 @@ function main() {
       draftPostFreeze2019: priorDraftHoldout.result,
       draftRobustDevelopment2019To2025: robustDraft.development,
       draftFinalHoldout2018: robustDraftHoldout.result,
+      draftOverfitRobustness: {
+        version: draftOverfit.version, evidenceYears: draftOverfit.evidenceYears, gates: draftOverfit.gates,
+        controls: Object.fromEntries(Object.entries(draftOverfit.controls || {}).map(([name, row]) => [name, { aggregate: row.aggregate, seasonBootstrap: row.seasonBootstrap, jackknifeMinimum: row.jackknifeMinimum }])),
+        individualFailures: draftOverfit.individualFailures,
+      },
     },
   };
 
   const runtimeProfile = {
-    version: "snapcount-runtime-profile-2026.3",
+    version: "snapcount-runtime-profile-2026.4",
     qualifiedAt,
     qualificationSha256: crypto.createHash("sha256").update(JSON.stringify(qualification)).digest("hex"),
     mode: "serve-frozen-qualified-analytics",
@@ -105,7 +124,7 @@ function main() {
     startSit: { baseline: "espn-live-ppr", validatedMeanScale: 0, policy: "raw-live-ppr-exact-lineup" },
     waivers: { baseline: "espn-live-ppr", validatedMeanScale: 0, minimumScore: waivers.selectedThreshold },
     trades: { baseline: "espn-live-ppr", validatedMeanScale: 0, acceptScore: trades.selectedThreshold, passScore: -trades.selectedThreshold },
-    draft: { policy: "segmented-qualified", grade: draftGrade, postFreezeHoldoutSeason: 2018, policyDefinitionSha256: robustDraft.policyDefinitionSha256, supportedTeamCounts: robustDraft.supportedTeamCounts, segments: draftSegments, fallbackPolicy: robustDraft.policy },
+    draft: { policy: "segmented-qualified", grade: draftGrade, postFreezeHoldoutSeason: 2018, policyDefinitionSha256: robustDraft.policyDefinitionSha256, robustnessAuditVersion: draftOverfit.version, robustnessEvidenceYears: draftOverfit.evidenceYears, supportedTeamCounts: robustDraft.supportedTeamCounts, segments: draftSegments, fallbackPolicy: robustDraft.policy },
     season: { probabilityEngine: "monte-carlo", calibrationVersion: uncertainty.VERSION, correlationVersion: correlation.VERSION },
     context: { version: context.VERSION, policy: "admitted-mean-or-metadata-only" },
   };
