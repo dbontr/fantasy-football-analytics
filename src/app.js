@@ -488,12 +488,12 @@
     populateLeagueProfileForm();
     $("#masthead-team").textContent = team ? team.name : league ? league.name : "Any fantasy league";
     $("#masthead-week").textContent = team && league ? `${team.recordLabel} · Week ${league.currentWeek}` : league ? `${league.teams.length} teams · ${league.scoringLabel}` : leagueProfileSummary();
-    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "LEAGUE LOADED" : "MANUAL MODE";
+    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "LEAGUE LOADED" : "NO CONNECTION NEEDED";
     $("#rail-context-team").textContent = team ? team.name : league ? league.name : "Any fantasy platform";
     $("#rail-context-week").textContent = team && league ? `${team.recordLabel} · ${league.name}` : league ? `${league.teams.length} teams · choose your team` : leagueProfileSummary();
     $("#hero-lede").textContent = team
       ? `${team.name} is synced. Start with your lineup, the waiver wire, a trade, or your season outlook.`
-      : "Use SnapCount with any fantasy league — no account or link required. Set your league rules manually, or connect ESPN to autofill them.";
+      : "SnapCount works with any fantasy league. Mock drafts and every core tool run without ESPN or an account connection. Add league data only when you want automatic rosters, schedules, and live-state context.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);

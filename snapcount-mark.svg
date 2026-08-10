@@ -1,10 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
-  <title id="title">SnapCount</title>
-  <desc id="desc">Football crossing the line of scrimmage with cadence marks.</desc>
-  <rect width="64" height="64" rx="8" fill="#c8102e"/>
-  <path d="M11 9v46M53 9v46" stroke="#fff" stroke-width="3"/>
-  <path d="M7 17h8M7 32h8M7 47h8M49 17h8M49 32h8M49 47h8" stroke="#fff" stroke-width="3"/>
-  <path d="M19 32c3.5-10.5 8.6-15.5 13-15.5S41.5 21.5 45 32c-3.5 10.5-8.6 15.5-13 15.5S22.5 42.5 19 32Z" fill="#111316" stroke="#fff" stroke-width="2.5"/>
-  <path d="M32 23v18M27.5 27h9M27.5 32h9M27.5 37h9" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M23 12h5M30 12h5M37 12h5" stroke="#ffd45a" stroke-width="3"/>
+  <title id="title">SnapCount mark</title>
+  <desc id="desc">A snapped football moving across a red line of scrimmage.</desc>
+  <rect x="2" y="2" width="60" height="60" rx="11" fill="#111316"/>
+  <path d="M16 11v42" stroke="#c8102e" stroke-width="5" stroke-linecap="square"/>
+  <path d="M8 17h13M8 31h13M8 45h13" stroke="#c8102e" stroke-width="3"/>
+  <g transform="rotate(-18 37 32)">
+    <path d="M22 32c4-9 9.2-13 15-13s11 4 15 13c-4 9-9.2 13-15 13s-11-4-15-13Z" fill="#fff"/>
+    <path d="M37 23.5v17" stroke="#111316" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M32.5 27h9M31.5 32h11M32.5 37h9" stroke="#111316" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
 </svg>

@@ -2380,3 +2380,40 @@ main { max-width: 1320px; padding: 0 18px 56px; }
   .manual-league-card .connect-actions { display: grid; grid-template-columns: 1fr; }
   .manual-league-card .connect-actions button { width: 100%; }
 }
+
+/* No-connection-first product + full SnapCount lockup */
+.brand {
+  width: 246px;
+  min-width: 246px;
+  flex: 0 0 auto;
+}
+.brand-logo {
+  display: block;
+  width: 240px;
+  height: 46px;
+  object-fit: contain;
+  object-position: left center;
+}
+.league-setup-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, .72fr);
+}
+.manual-league-card { border-top-color: var(--signal); }
+.league-setup-grid .league-connect-card {
+  background: #fbfbfc;
+  border-color: #c7ccd2;
+  border-top: 5px solid #8c949e;
+  box-shadow: none;
+}
+.league-setup-grid .league-connect-card::before { display: none; }
+.league-setup-grid .league-connect-card .connect-card-head { background: #f4f5f6; }
+@media (max-width: 1040px) {
+  .league-setup-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 780px) {
+  .brand { width: 220px; min-width: 220px; }
+  .brand-logo { width: 216px; height: 42px; }
+}
+@media (max-width: 560px) {
+  .brand { width: 190px; min-width: 190px; }
+  .brand-logo { width: 186px; height: 38px; }
+}

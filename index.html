@@ -14,12 +14,11 @@
   <header class="topbar">
     <div class="network-row">
       <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
-        <span class="brand-mark" aria-hidden="true"><img src="./snapcount-mark.svg" alt=""></span>
-        <span><strong>SNAPCOUNT</strong><small>FANTASY</small></span>
+        <img class="brand-logo" src="./snapcount-logo.svg" alt="SnapCount Fantasy Football">
       </a>
       <div class="network-meta" aria-label="Current fantasy league context">
         <span>FANTASY FOOTBALL</span>
-        <strong id="masthead-team">League not connected</strong>
+        <strong id="masthead-team">Any fantasy league</strong>
         <small id="masthead-week">2026 season</small>
       </div>
     </div>
@@ -42,11 +41,11 @@
           <header class="desk-headline">
             <p class="eyebrow">FANTASY FOOTBALL DESK</p>
             <h1>Your week starts here.</h1>
-            <p id="hero-lede" class="lede">Use SnapCount with any fantasy league — no account or link required. Set your league rules manually, or connect ESPN to autofill them.</p>
+            <p id="hero-lede" class="lede">SnapCount works with any fantasy league. Mock drafts and every core tool run without ESPN or an account connection. Add league data only when you want automatic rosters, schedules, and live-state context.</p>
             <div class="action-row">
-              <button id="use-any-league" class="primary">Use any league</button>
-              <button class="secondary" data-jump="draft">Start a mock draft</button>
-              <button id="show-espn-connect" class="ghost">Connect ESPN (optional)</button>
+              <button id="use-any-league" class="secondary">Set league rules</button>
+              <button class="primary" data-jump="draft">Start a mock draft</button>
+              <button id="show-espn-connect" class="ghost">ESPN autofill (optional)</button>
             </div>
           </header>
 
@@ -62,7 +61,7 @@
             <aside id="manual-league-card" class="manual-league-card" aria-label="Use SnapCount with any fantasy league">
               <div class="connect-card-head"><span class="provider-badge universal-badge">ANY LEAGUE</span><span id="manual-profile-state" class="connection-state connected">No connection required</span></div>
               <h2>Use SnapCount anywhere</h2>
-              <p>ESPN, Yahoo, Sleeper, NFL, CBS, or a custom league. Set the rules once; every manual tool works without linking an account.</p>
+              <p>The default 12-team PPR setup is ready immediately. Change the rules only if your league differs, or import league data for opponent-aware schedule and live-state decisions.</p>
               <div class="manual-profile-primary">
                 <label>Teams<input id="manual-league-teams" type="number" min="4" max="20" value="12"></label>
                 <label>Scoring<select id="manual-league-scoring"><option value="ppr">PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option><option value="custom">Custom from projected stats</option></select></label>
@@ -104,10 +103,10 @@
             <aside class="league-connect-card" aria-label="Optional ESPN fantasy league connection">
             <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN · OPTIONAL</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
             <div id="espn-connect-empty">
-              <h2>Connect ESPN to autofill</h2>
-              <p>Optional: load your roster, opponents, schedule, and league rules automatically. Manual mode works without ESPN.</p>
+              <h2>Optional ESPN autofill</h2>
+              <p>Skip this unless you want ESPN to fill league data for you automatically. SnapCount works normally without it.</p>
               <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
-              <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Load my league</button></div>
+              <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="secondary">Autofill from ESPN</button></div>
             </div>
             <div id="espn-team-step" class="hidden">
               <h2>Which team is yours?</h2>
@@ -149,9 +148,9 @@
           <section class="rail-panel rail-context" aria-label="Current league context">
             <div class="rail-heading"><span>LEAGUE DESK</span><small>Your current context</small></div>
             <div class="rail-context-body">
-              <span id="rail-context-kicker">NOT CONNECTED</span>
-              <strong id="rail-context-team">Connect ESPN Fantasy</strong>
-              <small id="rail-context-week">Manual tools are available anytime.</small>
+              <span id="rail-context-kicker">NO CONNECTION NEEDED</span>
+              <strong id="rail-context-team">Any fantasy platform</strong>
+              <small id="rail-context-week">12-team PPR defaults are ready now.</small>
               <button class="secondary" data-jump="overview">Manage league</button>
             </div>
           </section>
@@ -287,7 +286,7 @@
         <article class="module controls season-controls">
           <p class="control-title">MY LEAGUE</p>
           <div id="season-connection-summary" class="season-connection-summary hidden"><span id="season-provider-badge" class="provider-badge espn-badge">LEAGUE</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
-          <button id="season-connect-espn" class="secondary" data-jump="overview">Connect or change ESPN league</button>
+          <button id="season-connect-espn" class="secondary" data-jump="overview">Manage or import league data</button>
           <button id="build-demo-league" class="ghost">Try a demo league</button>
           <details class="advanced-details other-provider"><summary>Use Sleeper instead</summary>
             <label>Sleeper league ID<input id="sleeper-league-id" type="text" inputmode="numeric" placeholder="League ID"></label>
@@ -300,9 +299,9 @@
             <label class="check"><input id="median-game" type="checkbox"> My league uses a median game</label>
           </details>
           <button id="run-league" class="primary">Show my season outlook</button>
-          <p id="league-source-status" class="status-line" aria-live="polite">No league loaded.</p>
+          <p id="league-source-status" class="status-line" aria-live="polite">No league data loaded. Demo mode is available without a connection.</p>
         </article>
-        <div id="league-result" class="result-space empty-state"><p>Load a league or try the demo to see playoff and championship chances.</p></div>
+        <div id="league-result" class="result-space empty-state"><p>Import any league or try the demo to see playoff and championship chances. ESPN is not required.</p></div>
       </div>
     </section>
 

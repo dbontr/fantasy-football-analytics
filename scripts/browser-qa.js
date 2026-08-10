@@ -67,7 +67,7 @@ async function main() {
       tabsScrollable: document.querySelector('.tabs')?.scrollWidth > document.querySelector('.tabs')?.clientWidth + 1,
       quickActions: document.querySelectorAll('.quick-action').length,
       background: getComputedStyle(document.body).backgroundColor,
-      brand: document.querySelector('.brand strong')?.textContent,
+      brand: document.querySelector('.brand-logo')?.getAttribute('alt'),
       title: document.title,
       primaryBackground: getComputedStyle(document.querySelector('.primary')).backgroundColor,
       legacyBrandVisible: /Oracle/i.test(document.body.innerText),
@@ -113,14 +113,28 @@ async function main() {
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
-  if (home.brand !== "SNAPCOUNT" || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
+  if (home.brand !== "SnapCount Fantasy Football" || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
   if (home.primaryBackground !== "rgb(200, 16, 46)") throw new Error("Primary action is not using the sports-red SnapCount palette");
   const homeStructure = await evaluate(`(() => ({network:Boolean(document.querySelector('.network-row')),dashboard:Boolean(document.querySelector('.home-dashboard')),rail:Boolean(document.querySelector('.home-rail')),systemDetails:Boolean(document.querySelector('.system-details')),columns:getComputedStyle(document.querySelector('.home-dashboard')).gridTemplateColumns}))()`);
   if (!homeStructure.network || !homeStructure.dashboard || !homeStructure.rail || !homeStructure.systemDetails || homeStructure.columns.split(' ').length < 2) throw new Error("Sports desk information architecture did not render on desktop");
-  const universalHome = await evaluate(`(() => ({manual:Boolean(document.querySelector('#manual-league-card #save-manual-profile')),espn:Boolean(document.querySelector('.league-connect-card #connect-espn')),logo:document.querySelector('.brand-mark img')?.getAttribute('src')||'',sc:document.querySelector('.brand-mark')?.textContent.trim()||''}))()`);
-  if (!universalHome.manual || !universalHome.espn || !universalHome.logo.includes("snapcount-mark.svg") || universalHome.sc === "SC") throw new Error(`Universal home / logo did not render: ${JSON.stringify(universalHome)}`);
+  const universalHome = await evaluate(`(() => ({manual:Boolean(document.querySelector('#manual-league-card #save-manual-profile')),espn:Boolean(document.querySelector('.league-connect-card #connect-espn')),logo:document.querySelector('.brand-logo')?.getAttribute('src')||'',primary:document.querySelector('.desk-headline .primary')?.textContent.trim()||''}))()`);
+  if (!universalHome.manual || !universalHome.espn || !universalHome.logo.includes("snapcount-logo.svg") || universalHome.primary !== "Start a mock draft") throw new Error(`Universal home / logo did not render: ${JSON.stringify(universalHome)}`);
+  const noConnectionAccess = await evaluate(`(() => ({espnState:document.querySelector('#espn-connection-state')?.textContent,espnConnectedVisible:!document.querySelector('#espn-connected')?.classList.contains('hidden'),disabledTabs:[...document.querySelectorAll('.tab')].filter((button)=>button.disabled).map((button)=>button.textContent.trim())}))()`);
+  if (noConnectionAccess.espnState !== 'Not connected' || noConnectionAccess.espnConnectedVisible || noConnectionAccess.disabledTabs.length) throw new Error(`Core tools were gated without ESPN: ${JSON.stringify(noConnectionAccess)}`);
+  await evaluate(`document.querySelector('[data-panel-target="draft"]').click(); document.querySelector('#draft-reset').click(); true`);
+  await waitFor(`document.querySelectorAll('#draft-big-board .big-board-row').length >= 50`, 10000);
+  await evaluate(`document.querySelector('#draft-advance').click(); true`);
+  await waitFor(`document.querySelector('#draft-meta')?.textContent.includes('YOUR PICK')`, 20000);
+  await evaluate(`document.querySelector('#draft-table [data-draft-player]').click(); true`);
+  await waitFor(`document.querySelector('#draft-roster')?.textContent.includes('1/') && document.querySelector('#draft-meta')?.textContent.includes('YOUR PICK')`, 20000);
+  const disconnectedMock = await evaluate(`({meta:document.querySelector('#draft-meta')?.textContent||'',roster:document.querySelector('#draft-roster')?.textContent||'',espn:document.querySelector('#espn-connection-state')?.textContent||''})`);
+  if (disconnectedMock.espn !== 'Not connected' || !disconnectedMock.meta.includes('YOUR PICK') || !disconnectedMock.roster.includes('1/')) throw new Error(`Disconnected mock draft failed: ${JSON.stringify(disconnectedMock)}`);
+  await evaluate(`document.querySelector('#draft-reset').click(); document.querySelector('[data-panel-target="overview"]').click(); true`);
+
   await evaluate(`(() => { document.querySelector('#manual-league-teams').value=10; document.querySelector('#manual-league-scoring').value='half-ppr'; document.querySelector('#manual-slot-wr').value=3; document.querySelector('#manual-slot-dst').value=0; document.querySelector('#manual-slot-k').value=0; document.querySelector('#save-manual-profile').click(); return true; })()`);
   await waitFor(`document.querySelector('#manual-profile-summary')?.textContent.includes('10-team Half PPR') && document.querySelector('#masthead-team')?.textContent.includes('Any fantasy league')`);
+
+
 
   await evaluate(`(() => {
     const imported = {
@@ -309,7 +323,7 @@ async function main() {
   const homeMobile = await snapshot("home-mobile", 390, 844);
   if (homeMobile.horizontalOverflow || homeMobile.quickActions !== 5 || homeMobile.tabRows !== 1) throw new Error("Home mobile layout failed");
 
-  const result = { home, espnSync, connectedHome, player, veteran, liveNews, rookie, rookieTablet, board, draftRoom, benchmark, draftDesktop, lineup, trade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, errors,
+  const result = { home, noConnectionAccess, disconnectedMock, espnSync, connectedHome, player, veteran, liveNews, rookie, rookieTablet, board, draftRoom, benchmark, draftDesktop, lineup, trade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, errors,
     screenshots: [".qa-home-desktop.png", ".qa-home-connected-desktop.png", ".qa-player-tablet.png", ".qa-draft-desktop.png", ".qa-trade-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
