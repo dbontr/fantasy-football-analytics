@@ -65,3 +65,28 @@ test("ESPN normalized snapshots remain compact and serializable", () => {
   assert.equal(roundTrip.teams[0].teamId, "2");
   assert.deepEqual(roundTrip.teams[0].rosterIds, []);
 });
+
+test("ESPN league normalization preserves compact head-to-head schedule pairings", () => {
+  const raw = {
+    id: 55,
+    seasonId: 2026,
+    settings: { name: "Schedule League", scheduleSettings: { playoffTeamCount: 4, matchupPeriodCount: 14 } },
+    status: { currentScoringPeriod: 6, finalScoringPeriod: 17 },
+    teams: [
+      { id: 1, name: "One", roster: { entries: [] } },
+      { id: 2, name: "Two", roster: { entries: [] } },
+      { id: 3, name: "Three", roster: { entries: [] } },
+      { id: 4, name: "Four", roster: { entries: [] } },
+    ],
+    schedule: [
+      { id: 1, matchupPeriodId: 6, home: { teamId: 1 }, away: { teamId: 4 } },
+      { id: 2, scoringPeriodId: 6, home: { teamId: 2 }, away: { teamId: 3 } },
+      { id: 3, matchupPeriodId: 7, home: { teamId: 1 }, away: { teamId: 2 } },
+    ],
+  };
+  const league = espn.normalizeLeague(raw, []);
+  assert.deepEqual(league.fantasySchedule[6], [["1", "4"], ["2", "3"]]);
+  assert.deepEqual(league.fantasySchedule[7], [["1", "2"]]);
+  assert.equal(league.regularSeasonEnd, 14);
+  assert.equal(league.championshipWeek, 17);
+});

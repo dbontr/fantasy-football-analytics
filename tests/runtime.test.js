@@ -201,3 +201,56 @@ test("static fallback keeps legacy evidence behavior", () => {
   }, validatedMeanScale: 0 });
   assert.ok(forecast.distribution.mean > 15);
 });
+
+test("future-win action evaluator uses the supplied opponent schedule and symmetric trades", () => {
+  const settings = { slots: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 1 } };
+  const userQb = makePlayer("user-qb", "QB", "DET", 10, { projectionStdDev: 1.5 });
+  const rivalQb = makePlayer("rival-qb", "QB", "GB", 20, { projectionStdDev: 1.5 });
+  const thirdQb = makePlayer("third-qb", "QB", "MIN", 13, { projectionStdDev: 1.5 });
+  const teams = [
+    { teamId: "1", name: "Us", roster: [userQb] },
+    { teamId: "2", name: "Rival", roster: [rivalQb] },
+    { teamId: "3", name: "Third", roster: [thirdQb] },
+  ];
+  const options = {
+    teams,
+    userTeamId: "1",
+    settings,
+    startWeek: 1,
+    regularSeasonEnd: 2,
+    fantasySchedule: { 1: [["1", "2"]], 2: [["1", "3"]] },
+    simulations: 2500,
+    seed: "future-win-symmetric",
+    actions: [{ id: "trade-up", type: "trade", opponentTeamId: "2", sendPlayerIds: ["user-qb"], receivePlayerIds: ["rival-qb"] }],
+  };
+  const first = engine.evaluateFutureWinActions(options);
+  const second = engine.evaluateFutureWinActions(options);
+  assert.deepEqual(first, second);
+  assert.equal(first.objective, "maximize-future-head-to-head-wins");
+  assert.equal(first.preferredActionId, "trade-up");
+  const hold = first.actions.find((row) => row.id === "hold");
+  const trade = first.actions.find((row) => row.id === "trade-up");
+  assert.ok(trade.outcome.expectedFutureHeadToHeadWins > hold.outcome.expectedFutureHeadToHeadWins + 0.5);
+  assert.ok(trade.outcome.matchupWinProbabilities.some((row) => row.week === 1 && row.opponentTeamId === "2"));
+  assert.ok(trade.opponentOutcome.averageMatchupWinProbability < hold.opponents["2"].averageMatchupWinProbability);
+  assert.ok(trade.delta.expectedFutureHeadToHeadWins95[0] > 0);
+});
+
+test("opponent-aware lineup can prefer upside when maximizing matchup win probability", () => {
+  const settings = { slots: { QB: 0, RB: 0, WR: 1, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 2 } };
+  const safe = makePlayer("safe", "WR", "DET", 10, { projectionStdDev: 1.2, reliability: 0.95 });
+  const upside = makePlayer("upside", "WR", "GB", 9, { projectionStdDev: 10, reliability: 0.7 });
+  const opponent = makePlayer("opp", "WR", "MIN", 15, { projectionStdDev: 1.4, reliability: 0.95 });
+  const result = engine.evaluateMatchupLineups({
+    userRoster: [safe, upside],
+    opponentRoster: [opponent],
+    settings,
+    week: 1,
+    scenarios: 5000,
+    seed: "matchup-upside",
+  });
+  assert.equal(result.baseline.starterIds[0], "safe");
+  assert.equal(result.preferred.starterIds[0], "upside");
+  assert.ok(result.preferred.winProbability > result.baseline.winProbability);
+  assert.ok(result.evaluationScenarios >= 3000);
+});

@@ -82,7 +82,7 @@ function main() {
   const qualifiedAt = new Date().toISOString();
   const draftSegments = robustDraft.segments || {};
   const qualification = {
-    version: "snapcount-analytics-qualification-2026.6",
+    version: "snapcount-analytics-qualification-2026.7",
     qualifiedAt,
     architecture: "offline-qualification-live-serving",
     dataset: { file: "historical-ppr-2020-2025.json.gz", sha256: hashFile(datasetPath), seasons: [2020, 2021, 2022, 2023, 2024, 2025] },
@@ -116,10 +116,22 @@ function main() {
   };
 
   const runtimeProfile = {
-    version: "snapcount-runtime-profile-2026.6",
+    version: "snapcount-runtime-profile-2026.7",
     qualifiedAt,
     qualificationSha256: crypto.createHash("sha256").update(JSON.stringify(qualification)).digest("hex"),
     mode: "serve-frozen-qualified-analytics",
+    decisionObjective: {
+      version: "snapcount-future-win-objective-2026.1",
+      primary: "maximize-future-head-to-head-wins",
+      secondary: ["championship-probability", "playoff-probability", "qualified-value-guardrails"],
+      opponentAware: true,
+      schedulePolicy: "real-connected-league-schedule-when-available",
+      minimumRecognizedStarterCoverage: 0.88,
+      status: "prospective-overlay",
+      canPromoteQualifiedTradeReject: false,
+      draftPolicyChanged: false,
+      forecastCoefficientsChanged: false,
+    },
     grades: qualification.grades,
     scoring: {
       default: "ppr",

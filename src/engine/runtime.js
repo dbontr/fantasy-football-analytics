@@ -17,7 +17,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel, meanCalibration) {
   "use strict";
 
-  const VERSION = "oracle-browser-2026.7";
+  const VERSION = "oracle-browser-2026.8-future-win";
   const POSITION_VOLATILITY = Object.freeze({ QB: 0.27, RB: 0.43, WR: 0.49, TE: 0.51, K: 0.46, DST: 0.56 });
   const STATUS_AVAILABILITY = Object.freeze({ ACTIVE: 0.995, QUESTIONABLE: 0.82, DOUBTFUL: 0.35, OUT: 0.01, IR: 0.005, PUP: 0.08, SUSPENDED: 0 });
 
@@ -600,10 +600,10 @@
     return pairs;
   }
 
-  function lineupForecastsForWeek(roster, settings, week, schedule, evidenceByPlayer = {}, evidenceByPlayerWeek = {}) {
+  function lineupForecastsForWeek(roster, settings, week, schedule, evidenceByPlayer = {}, evidenceByPlayerWeek = {}, validatedMeanScale = undefined) {
     const weeklyEvidence = evidenceByPlayerWeek?.[week] || evidenceByPlayerWeek?.[String(week)] || {};
     const mergedEvidence = Object.fromEntries((roster || []).map((player) => [String(player.id), { ...(evidenceByPlayer[String(player.id)] || {}), ...(weeklyEvidence[String(player.id)] || {}) }]));
-    const forecasts = forecastPlayers(roster, { week, evidenceByPlayer: mergedEvidence });
+    const forecasts = forecastPlayers(roster, { week, evidenceByPlayer: mergedEvidence, validatedMeanScale });
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({
       ...forecast.player,
@@ -636,7 +636,7 @@
     const lineups = {};
     const plans = {};
     for (let week = startWeek; week <= endWeek; week += 1) {
-      const selected = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek).selected;
+      const selected = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek, options.validatedMeanScale).selected;
       lineups[week] = selected;
       const plan = buildCorrelationPlan(selected, schedule, week);
       plans[week] = { plan, scratch: new Float64Array(plan.entries.length) };
@@ -734,6 +734,7 @@
           schedule,
           evidenceByPlayer,
           options.evidenceByPlayerWeek,
+          options.validatedMeanScale,
         ).selected;
       }
     }
@@ -756,6 +757,9 @@
       expectedPoints: 0,
       allPlayWins: 0,
       allPlayGames: 0,
+      futureHeadToHeadWins: 0,
+      futureHeadToHeadGames: 0,
+      matchupWins: {},
       playoffs: 0,
       championships: 0,
       seeds: Array(teams.length).fill(0),
@@ -792,6 +796,8 @@
         for (const team of teams) state[team.teamId].points += scores[team.teamId];
         for (const [left, right] of fantasyPairings(teams, week, fantasySchedule)) {
           const difference = scores[left] - scores[right];
+          const leftCredit = Math.abs(difference) <= 1e-7 ? 0.5 : difference > 0 ? 1 : 0;
+          const rightCredit = 1 - leftCredit;
           if (Math.abs(difference) <= 1e-7) {
             state[left].wins += 0.5;
             state[right].wins += 0.5;
@@ -803,6 +809,15 @@
           } else {
             state[right].wins += 1;
             state[left].losses += 1;
+          }
+          for (const [teamId, opponentId, credit] of [[left, right, leftCredit], [right, left, rightCredit]]) {
+            counters[teamId].futureHeadToHeadWins += credit;
+            counters[teamId].futureHeadToHeadGames += 1;
+            const key = `${week}|${opponentId}`;
+            const matchup = counters[teamId].matchupWins[key] || { week, opponentTeamId: opponentId, wins: 0, games: 0 };
+            matchup.wins += credit;
+            matchup.games += 1;
+            counters[teamId].matchupWins[key] = matchup;
           }
         }
         const weekScores = Object.values(scores);
@@ -850,6 +865,10 @@
         expectedWins: row.expectedWins / simulations,
         expectedPoints: row.expectedPoints / simulations,
         allPlayWinPct: row.allPlayGames ? row.allPlayWins / row.allPlayGames : 0,
+        expectedFutureHeadToHeadWins: row.futureHeadToHeadWins / simulations,
+        futureHeadToHeadGames: row.futureHeadToHeadGames / simulations,
+        averageMatchupWinProbability: row.futureHeadToHeadGames ? row.futureHeadToHeadWins / row.futureHeadToHeadGames : 0,
+        matchupWinProbabilities: Object.values(row.matchupWins).map((matchup) => ({ week: matchup.week, opponentTeamId: matchup.opponentTeamId, winProbability: matchup.games ? matchup.wins / matchup.games : 0 })).sort((a, b) => a.week - b.week),
         playoffProbability: row.playoffs / simulations,
         championshipProbability: row.championships / simulations,
         seedProbabilities: row.seeds.map((count) => count / simulations),
@@ -876,24 +895,324 @@
     return normalizeLeagueTeams(teams).map((team) => ({ ...team, roster: [...team.roster] }));
   }
 
+  function empiricalInterval(values, lower = 0.025, upper = 0.975) {
+    const sorted = Array.from(values || [], finite).sort((a, b) => a - b);
+    if (!sorted.length) return [0, 0];
+    return [quantileSorted(sorted, lower), quantileSorted(sorted, upper)];
+  }
+
+  function meanConfidence95(values) {
+    const rows = Array.from(values || [], finite);
+    if (!rows.length) return [0, 0];
+    const center = mean(rows);
+    if (rows.length < 2) return [center, center];
+    let sumSquares = 0;
+    for (const value of rows) sumSquares += (value - center) ** 2;
+    const standardError = Math.sqrt((sumSquares / (rows.length - 1)) / rows.length);
+    return [center - 1.96 * standardError, center + 1.96 * standardError];
+  }
+
+  function uniqueRosterPlayers(teams) {
+    const byId = new Map();
+    for (const team of teams || []) {
+      for (const player of team.roster || []) byId.set(String(player.id), player);
+    }
+    return [...byId.values()];
+  }
+
+  function forecastMapForWeek(players, options, week) {
+    const weeklyEvidence = options.evidenceByPlayerWeek?.[week] || options.evidenceByPlayerWeek?.[String(week)] || {};
+    const evidenceByPlayer = Object.fromEntries((players || []).map((player) => [String(player.id), {
+      ...(options.evidenceByPlayer?.[String(player.id)] || {}),
+      ...(weeklyEvidence[String(player.id)] || {}),
+    }]));
+    const forecasts = forecastPlayers(players, { week, evidenceByPlayer, validatedMeanScale: options.validatedMeanScale });
+    return new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
+  }
+
+  function lineupFromForecastMap(roster, settings, forecastById, metric = "decisionMean") {
+    const prepared = (roster || []).map((player) => {      const forecast = forecastById.get(String(player.id));
+      return { ...player, [metric]: finite(forecast?.distribution?.mean, 0) };
+    });
+    const lineup = core.optimizeLineup(prepared, settings, metric);
+    return {
+      lineup,
+      starterIds: lineup.starters.filter((row) => row.player).map((row) => String(row.player.id)),
+    };
+  }
+
+  function lineupSampleTotal(starterIds, playerSamples, scenario) {
+    let total = 0;
+    for (const id of starterIds || []) total += finite(playerSamples?.[String(id)]?.[scenario], 0);
+    return total;
+  }
+
+  function findTeam(teams, teamId) {
+    return (teams || []).find((row) => String(row.teamId) === String(teamId)) || null;
+  }
+
+  function transferPlayerMap(teams) {
+    return new Map((teams || []).flatMap((team) => (team.roster || []).map((player) => [String(player.id), player])));
+  }
+
   function applyRosterAction(teams, userTeamId, action) {
     const next = cloneLeagueTeams(teams);
-    const team = next.find((row) => String(row.teamId) === String(userTeamId));
-    if (!team) throw new RangeError(`Unknown user team ${userTeamId}`);
+    const user = findTeam(next, userTeamId);
+    if (!user) throw new RangeError(`Unknown user team ${userTeamId}`);
     if (!action || action.type === "none") return next;
-    const removeIds = new Set([
-      ...(action.sendPlayerIds || []),
-      ...(action.dropPlayerId ? [action.dropPlayerId] : []),
+    const playerMap = transferPlayerMap(next);    const sendIds = new Set((action.sendPlayerIds || []).map(String));
+    const receiveIds = new Set([
+      ...(action.receivePlayerIds || []),
+      ...(action.receivePlayers || []).map((player) => String(player.id)),
     ].map(String));
-    team.roster = team.roster.filter((player) => !removeIds.has(String(player.id)));
-    const additions = [
-      ...(action.receivePlayers || []),
-      ...(action.addPlayer ? [action.addPlayer] : []),
-    ];
+    const sentPlayers = user.roster.filter((player) => sendIds.has(String(player.id)));
+    const explicitIncoming = new Map((action.receivePlayers || []).map((player) => [String(player.id), player]));
+    let incoming = [...receiveIds].map((id) => explicitIncoming.get(id) || playerMap.get(id)).filter(Boolean);
+
+    if (action.type === "trade") {
+      const opponent = findTeam(next, action.opponentTeamId);
+      if (!opponent) throw new RangeError(`Unknown trade opponent ${action.opponentTeamId}`);
+      incoming = incoming.length ? incoming : opponent.roster.filter((player) => receiveIds.has(String(player.id)));
+      opponent.roster = opponent.roster.filter((player) => !receiveIds.has(String(player.id)));
+      for (const player of sentPlayers) if (!opponent.roster.some((row) => String(row.id) === String(player.id))) opponent.roster.push(player);
+    }
+
+    const removeIds = new Set([...sendIds, ...(action.dropPlayerId ? [String(action.dropPlayerId)] : [])]);
+    user.roster = user.roster.filter((player) => !removeIds.has(String(player.id)));
+    const additions = [...incoming, ...(action.addPlayer ? [action.addPlayer] : [])];
     for (const player of additions) {
-      if (!team.roster.some((existing) => String(existing.id) === String(player.id))) team.roster.push(player);
+      if (player && !user.roster.some((row) => String(row.id) === String(player.id))) user.roster.push(player);
     }
     return next;
+  }
+
+  function summarizeFutureWins(teamData, simulations) {
+    const expected = mean(teamData.winSamples);
+    return {
+      expectedFutureHeadToHeadWins: expected,
+      futureHeadToHeadGames: teamData.games,
+      averageMatchupWinProbability: teamData.games ? expected / teamData.games : 0,
+      matchupWinProbabilities: teamData.matchups.map((row) => ({ ...row })),
+    };
+  }
+  function evaluateFutureWinActions(options = {}) {
+    const baseTeams = normalizeLeagueTeams(options.teams);
+    const userTeamId = String(options.userTeamId ?? baseTeams[0].teamId);
+    const settings = core.cloneSettings({ ...(options.settings || {}), teams: baseTeams.length });
+    const startWeek = Math.round(clamp(options.startWeek || 1, 1, 18));
+    const regularSeasonEnd = Math.round(clamp(options.regularSeasonEnd || 14, startWeek, 18));
+    const simulations = Math.min(12_000, Math.max(400, Number(options.simulations || 2_000)));
+    const seed = String(options.seed ?? "future-win-2026");
+    const actions = [{ id: "hold", type: "none", label: "Current roster" }, ...(options.actions || []).slice(0, 12)];
+    const states = actions.map((action) => applyRosterAction(baseTeams, userTeamId, action));
+    const teamIds = baseTeams.map((team) => team.teamId);
+    const actionData = actions.map(() => Object.fromEntries(teamIds.map((teamId) => [teamId, {
+      winSamples: new Float32Array(simulations), games: 0, matchups: [],
+    }])));
+
+    for (let week = startWeek; week <= regularSeasonEnd; week += 1) {
+      const allPlayers = uniqueRosterPlayers(states.flat());
+      const forecastById = forecastMapForWeek(allPlayers, options, week);
+      for (const [left, right] of fantasyPairings(baseTeams, week, options.fantasySchedule || null)) {
+        const lineups = states.map((teams) => {
+          const leftTeam = findTeam(teams, left), rightTeam = findTeam(teams, right);
+          return {
+            left: lineupFromForecastMap(leftTeam?.roster || [], settings, forecastById),
+            right: lineupFromForecastMap(rightTeam?.roster || [], settings, forecastById),
+          };
+        });
+        const usedIds = new Set(lineups.flatMap((row) => [...row.left.starterIds, ...row.right.starterIds]));
+        const forecasts = [...usedIds].map((id) => forecastById.get(id)).filter(Boolean);
+        if (!forecasts.length) continue;
+        const simulation = simulateForecasts(forecasts, {
+          week, scenarios: simulations, schedule: options.schedule || {},
+          seed: `${seed}:week:${week}:pair:${left}|${right}`,
+        });        lineups.forEach((lineup, actionIndex) => {
+          let leftCredits = 0, rightCredits = 0;
+          for (let scenario = 0; scenario < simulations; scenario += 1) {
+            const leftScore = lineupSampleTotal(lineup.left.starterIds, simulation.playerSamples, scenario);
+            const rightScore = lineupSampleTotal(lineup.right.starterIds, simulation.playerSamples, scenario);
+            const difference = leftScore - rightScore;
+            const leftCredit = Math.abs(difference) <= 1e-7 ? 0.5 : difference > 0 ? 1 : 0;
+            const rightCredit = 1 - leftCredit;
+            actionData[actionIndex][left].winSamples[scenario] += leftCredit;
+            actionData[actionIndex][right].winSamples[scenario] += rightCredit;
+            leftCredits += leftCredit;
+            rightCredits += rightCredit;
+          }
+          actionData[actionIndex][left].games += 1;
+          actionData[actionIndex][right].games += 1;
+          actionData[actionIndex][left].matchups.push({ week, opponentTeamId: right, winProbability: leftCredits / simulations });
+          actionData[actionIndex][right].matchups.push({ week, opponentTeamId: left, winProbability: rightCredits / simulations });
+        });
+      }
+    }
+
+    const rows = actions.map((action, actionIndex) => {
+      const outcomes = Object.fromEntries(teamIds.map((teamId) => [teamId, summarizeFutureWins(actionData[actionIndex][teamId], simulations)]));
+      return {
+        id: String(action.id || `action-${actionIndex + 1}`),
+        label: String(action.label || action.id || `Action ${actionIndex + 1}`),
+        action,
+        outcome: outcomes[userTeamId],
+        opponents: Object.fromEntries(teamIds.filter((id) => id !== userTeamId).map((id) => [id, outcomes[id]])),
+        opponentOutcome: action.opponentTeamId ? outcomes[String(action.opponentTeamId)] || null : null,
+      };
+    });    const baselineSamples = actionData[0][userTeamId].winSamples;
+    const baseline = rows[0].outcome;
+    rows.forEach((row, actionIndex) => {
+      const deltaSamples = new Float32Array(simulations);
+      for (let scenario = 0; scenario < simulations; scenario += 1) {
+        deltaSamples[scenario] = actionData[actionIndex][userTeamId].winSamples[scenario] - baselineSamples[scenario];
+      }
+      const expectedDelta = mean(deltaSamples);
+      row.delta = {
+        expectedFutureHeadToHeadWins: expectedDelta,
+        expectedFutureHeadToHeadWins95: meanConfidence95(deltaSamples),
+        averageMatchupWinProbability: row.outcome.averageMatchupWinProbability - baseline.averageMatchupWinProbability,
+      };
+    });
+    const leagueSimulations = Math.min(6_000, Math.max(0, Number(options.leagueSimulations || 0)));
+    if (leagueSimulations >= 250) {
+      let preferredOriginalIndex = 0;
+      for (let index = 1; index < rows.length; index += 1) {
+        if (rows[index].outcome.expectedFutureHeadToHeadWins > rows[preferredOriginalIndex].outcome.expectedFutureHeadToHeadWins ||
+          (rows[index].outcome.expectedFutureHeadToHeadWins === rows[preferredOriginalIndex].outcome.expectedFutureHeadToHeadWins &&
+            rows[index].outcome.averageMatchupWinProbability > rows[preferredOriginalIndex].outcome.averageMatchupWinProbability)) {
+          preferredOriginalIndex = index;
+        }
+      }
+      const indexes = rows.length <= 3 ? rows.map((_, index) => index) : [...new Set([0, preferredOriginalIndex])];
+      for (const index of indexes) {
+        const simulation = simulateLeague({
+          ...options,
+          teams: states[index],
+          simulations: leagueSimulations,
+          seed: `${seed}:league-equity`,
+        });
+        const userOutcome = simulation.teams.find((team) => String(team.teamId) === userTeamId);
+        const opponentId = actions[index]?.opponentTeamId ? String(actions[index].opponentTeamId) : null;
+        const opponentOutcome = opponentId ? simulation.teams.find((team) => String(team.teamId) === opponentId) || null : null;
+        rows[index].leagueEquity = { user: userOutcome, opponent: opponentOutcome, simulations: leagueSimulations };
+      }      const baseEquity = rows[0].leagueEquity?.user;
+      if (baseEquity) {
+        for (const row of rows) {
+          if (!row.leagueEquity?.user) continue;
+          row.delta.leagueEquity = {
+            championshipProbability: row.leagueEquity.user.championshipProbability - baseEquity.championshipProbability,
+            playoffProbability: row.leagueEquity.user.playoffProbability - baseEquity.playoffProbability,
+          };
+        }
+      }
+    }
+
+    rows.sort((left, right) =>
+      right.outcome.expectedFutureHeadToHeadWins - left.outcome.expectedFutureHeadToHeadWins ||
+      right.outcome.averageMatchupWinProbability - left.outcome.averageMatchupWinProbability ||
+      left.id.localeCompare(right.id));
+    const preferred = rows[0];
+    rows.forEach((row, index) => { row.rank = index + 1; });
+    return {
+      version: VERSION,
+      objective: "maximize-future-head-to-head-wins",
+      simulations,
+      startWeek,
+      regularSeasonEnd,
+      preferredActionId: preferred.id,
+      baseline,
+      actions: rows,
+    };
+  }
+
+  function lineupCandidateKey(lineup) {
+    return lineup.starters.filter((row) => row.player).map((row) => String(row.player.id)).sort().join("|");
+  }
+
+  function lineupCandidate(forecasts, settings, metricName, metricValue) {
+    const prepared = forecasts.map((forecast) => ({ ...forecast.player, [metricName]: metricValue(forecast) }));
+    return core.optimizeLineup(prepared, settings, metricName);
+  }
+  function evaluateMatchupLineups(options = {}) {
+    const userRoster = options.userRoster || [];
+    const opponentRoster = options.opponentRoster || [];
+    if (!userRoster.length || !opponentRoster.length) throw new TypeError("Opponent-aware lineup evaluation requires both rosters");
+    const settings = core.cloneSettings(options.settings || {});
+    const week = Math.round(clamp(options.week || 1, 1, 18));
+    const scenarios = Math.min(20_000, Math.max(800, Number(options.scenarios || 5_000)));
+    const seed = String(options.seed || `matchup-lineup-${week}`);
+    const players = [...new Map([...userRoster, ...opponentRoster].map((player) => [String(player.id), player])).values()];
+    const forecastById = forecastMapForWeek(players, options, week);
+    const forecasts = [...forecastById.values()];
+    const simulation = simulateForecasts(forecasts, { week, scenarios, schedule: options.schedule || {}, seed });
+    const opponentForecasts = opponentRoster.map((player) => forecastById.get(String(player.id))).filter(Boolean);
+    const opponentLineup = lineupCandidate(opponentForecasts, settings, "candidateMean", (forecast) => forecast.distribution.mean);
+    const opponentIds = opponentLineup.starters.filter((row) => row.player).map((row) => String(row.player.id));
+    const userForecasts = userRoster.map((player) => forecastById.get(String(player.id))).filter(Boolean);
+    const candidateMap = new Map();
+    const addCandidate = (lineup, source) => {
+      const key = lineupCandidateKey(lineup);
+      if (key && !candidateMap.has(key)) candidateMap.set(key, { key, lineup, source });
+    };
+    addCandidate(lineupCandidate(userForecasts, settings, "candidateMean", (forecast) => forecast.distribution.mean), "mean");
+    for (const field of ["p25", "p50", "p75", "p90", "cvar10"]) {
+      addCandidate(lineupCandidate(userForecasts, settings, `candidate_${field}`, (forecast) => finite(forecast.distribution[field], forecast.distribution.mean)), field);
+    }
+
+    const generationScenarios = Math.min(128, Math.max(32, Math.floor(scenarios * 0.2)));
+    for (let scenario = 0; scenario < generationScenarios; scenario += 1) {
+      const prepared = userForecasts.map((forecast) => ({
+        ...forecast.player,
+        scenarioValue: finite(simulation.playerSamples[String(forecast.player.id)]?.[scenario], 0),
+      }));
+      addCandidate(core.optimizeLineup(prepared, settings, "scenarioValue"), "held-out-generator");
+      if (candidateMap.size >= 160) break;
+    }
+    const evaluationStart = generationScenarios;
+    const evaluationScenarios = scenarios - evaluationStart;
+    const candidates = [...candidateMap.values()].map((candidate) => {
+      const starterIds = candidate.lineup.starters.filter((row) => row.player).map((row) => String(row.player.id));
+      let wins = 0, points = 0;
+      for (let scenario = evaluationStart; scenario < scenarios; scenario += 1) {
+        const userScore = lineupSampleTotal(starterIds, simulation.playerSamples, scenario);
+        const opponentScore = lineupSampleTotal(opponentIds, simulation.playerSamples, scenario);
+        wins += Math.abs(userScore - opponentScore) <= 1e-7 ? 0.5 : userScore > opponentScore ? 1 : 0;
+        points += userScore;
+      }
+      return {
+        source: candidate.source,
+        starterIds,
+        lineup: candidate.lineup,
+        winProbability: wins / Math.max(1, evaluationScenarios),
+        expectedPoints: points / Math.max(1, evaluationScenarios),
+      };
+    }).sort((left, right) => right.winProbability - left.winProbability || right.expectedPoints - left.expectedPoints);
+    const baselineKey = lineupCandidateKey(lineupCandidate(userForecasts, settings, "candidateMean2", (forecast) => forecast.distribution.mean));
+    const baseline = candidates.find((row) => [...row.starterIds].sort().join("|") === baselineKey) || candidates[0];
+    const preferred = candidates[0];
+    const pairedWinDeltas = new Float32Array(evaluationScenarios);
+    for (let offset = 0, scenario = evaluationStart; scenario < scenarios; scenario += 1, offset += 1) {
+      const opponentScore = lineupSampleTotal(opponentIds, simulation.playerSamples, scenario);
+      const baselineScore = lineupSampleTotal(baseline.starterIds, simulation.playerSamples, scenario);
+      const preferredScore = lineupSampleTotal(preferred.starterIds, simulation.playerSamples, scenario);
+      const baselineCredit = Math.abs(baselineScore - opponentScore) <= 1e-7 ? 0.5 : baselineScore > opponentScore ? 1 : 0;
+      const preferredCredit = Math.abs(preferredScore - opponentScore) <= 1e-7 ? 0.5 : preferredScore > opponentScore ? 1 : 0;
+      pairedWinDeltas[offset] = preferredCredit - baselineCredit;
+    }
+    const winProbabilityGain95 = meanConfidence95(pairedWinDeltas);
+    return {
+      version: VERSION,
+      objective: "maximize-current-matchup-win-probability",
+      week,
+      scenarios,
+      generationScenarios,
+      evaluationScenarios,
+      opponentStarterIds: opponentIds,
+      baseline: { starterIds: baseline.starterIds, winProbability: baseline.winProbability, expectedPoints: baseline.expectedPoints },
+      preferred: { starterIds: preferred.starterIds, winProbability: preferred.winProbability, expectedPoints: preferred.expectedPoints },
+      winProbabilityGain: preferred.winProbability - baseline.winProbability,
+      winProbabilityGain95,
+      candidatesEvaluated: candidates.length,
+    };
   }
 
   function evaluateChampionshipActions(options = {}) {
@@ -964,6 +1283,8 @@
     calibrationMetrics,
     correlation,
     evaluateChampionshipActions,
+    evaluateFutureWinActions,
+    evaluateMatchupLineups,
     evaluatePortfolios,
     buildCorrelationPlan,
     forecastPlayer,

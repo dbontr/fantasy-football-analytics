@@ -19,6 +19,11 @@ test("runtime profile serves A+ decision analytics with explicitly downgraded fo
   assert.deepEqual(profile.players.robustnessEvidenceYears, forecastOverfit.evidenceYears);
   assert.equal(profile.players.prospectiveSuccessor.modelSha256, forecastSuccessor.candidateModelSha256);
   assert.equal(profile.players.prospectiveSuccessor.mayServeNow, false);
+  assert.equal(profile.decisionObjective.primary, "maximize-future-head-to-head-wins");
+  assert.equal(profile.decisionObjective.status, "prospective-overlay");
+  assert.equal(profile.decisionObjective.opponentAware, true);
+  assert.equal(profile.decisionObjective.canPromoteQualifiedTradeReject, false);
+  assert.equal(profile.decisionObjective.draftPolicyChanged, false);
   assert.equal(profile.startSit.validatedMeanScale, 0);
   assert.equal(profile.waivers.validatedMeanScale, 0);
   assert.equal(profile.trades.validatedMeanScale, 0);

@@ -50,6 +50,9 @@ assert(profile.players.prospectiveSuccessor?.mayServeNow === false && forecastSu
 assert(profile.season.calibrationVersion === uncertainty.VERSION, "uncertainty version drift");
 assert(profile.season.correlationVersion === correlation.VERSION, "correlation version drift");
 assert(profile.context.version === context.VERSION, "context version drift");
+assert(profile.decisionObjective?.primary === "maximize-future-head-to-head-wins", "future-win objective drift");
+assert(profile.decisionObjective?.status === "prospective-overlay" && profile.decisionObjective?.opponentAware === true, "future-win admission-status drift");
+assert(profile.decisionObjective?.canPromoteQualifiedTradeReject === false && profile.decisionObjective?.draftPolicyChanged === false && profile.decisionObjective?.forecastCoefficientsChanged === false, "future-win safety boundary drift");
 assert(Number(profile.waivers.minimumScore) >= 0, "waiver threshold missing");
 assert(Number(profile.trades.acceptScore) > 0 && Number(profile.trades.passScore) < 0, "trade thresholds missing");
 assert(profile.draft.policy === "segmented-qualified" && Object.keys(profile.draft.segments || {}).length >= 6, "draft policy missing");

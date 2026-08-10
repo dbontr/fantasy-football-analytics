@@ -105,11 +105,11 @@ async function main() {
     runtime: window.OracleBrowserEngine?.VERSION || null,
     liveIntelligence: window.OracleLiveIntelligence?.VERSION || null,
   })`);
-  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.7" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1" || modelState.liveIntelligence !== "oracle-live-intelligence-2026.2") throw new Error("Current empirical runtime/context/mean/live-intelligence bundle did not install");
+  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.8-future-win" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1" || modelState.liveIntelligence !== "oracle-live-intelligence-2026.2") throw new Error("Current empirical runtime/context/mean/live-intelligence bundle did not install");
   if (modelState.calibration !== "snapcount-calibration-2026.1" || modelState.calibrationInstalled !== modelState.calibration) throw new Error("Empirical uncertainty calibration did not install");
-  const profileState = await evaluate(`fetch('./data/analytics-runtime-profile.json').then((response) => response.json()).then((profile) => ({ mode: profile.mode, grades: profile.grades || {}, startSit: profile.startSit?.policy, draft: profile.draft?.policy }))`);
+  const profileState = await evaluate(`fetch('./data/analytics-runtime-profile.json').then((response) => response.json()).then((profile) => ({ mode: profile.mode, grades: profile.grades || {}, startSit: profile.startSit?.policy, draft: profile.draft?.policy, objective: profile.decisionObjective?.primary, objectiveStatus: profile.decisionObjective?.status }))`);
   const gradeDrift = Object.entries(profileState.grades).some(([surface, grade]) => grade !== (surface === "provenance" ? "A" : "A+"));
-  if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified") throw new Error("Frozen qualified analytics profile did not load");
+  if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified" || profileState.objective !== "maximize-future-head-to-head-wins" || profileState.objectiveStatus !== "prospective-overlay") throw new Error("Frozen qualified analytics profile / future-win objective did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
@@ -123,7 +123,7 @@ async function main() {
   await evaluate(`(() => {
     OracleEspnFantasy.loadLeague = async (_input, _season, options = {}) => {
       if (!options.browserSession) { const error = new Error("This league needs an ESPN sign-in."); error.code = "ESPN_AUTH_REQUIRED"; throw error; }
-      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2},scoringSettings:{playerRankType:'PPR'}}, status:{currentScoringPeriod:3}, members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:4362628,fullName:"Ja'Marr Chase"}}},{playerPoolEntry:{player:{id:4430878,fullName:'Jaxon Smith-Njigba'}}}]}}] } };
+      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2,matchupPeriodCount:14},scoringSettings:{playerRankType:'PPR'}}, status:{currentScoringPeriod:3,finalScoringPeriod:17}, schedule:Array.from({length:12},(_,i)=>({id:i+1,matchupPeriodId:i+3,home:{teamId:1},away:{teamId:2}})), members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:12483,fullName:'Matthew Stafford'}}},{playerPoolEntry:{player:{id:4429160,fullName:"De'Von Achane"}}},{playerPoolEntry:{player:{id:4696981,fullName:'Cam Skattebo'}}},{playerPoolEntry:{player:{id:4239993,fullName:'Tee Higgins'}}},{playerPoolEntry:{player:{id:4035687,fullName:'Michael Pittman Jr.'}}},{playerPoolEntry:{player:{id:4047650,fullName:'DK Metcalf'}}},{playerPoolEntry:{player:{id:3040151,fullName:'George Kittle'}}},{playerPoolEntry:{player:{id:3055899,fullName:'Harrison Butker'}}},{playerPoolEntry:{player:{id:-16021,fullName:'Eagles D/ST'}}}]}}] } };
     };
     document.querySelector('#espn-league-input').value='424242';
     document.querySelector('#connect-espn').click();
@@ -225,20 +225,20 @@ async function main() {
     starters: document.querySelectorAll('#lineup-result .lineup-list:first-of-type .lineup-row').length,
     text: document.querySelector('#lineup-result').textContent
   }))()`);
-  if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP")) throw new Error("Start/sit flow failed");
+  if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP") || !lineup.text.includes("WIN CHANCE VS QA RIVALS")) throw new Error("Opponent-aware start/sit flow failed");
 
   await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
   await waitFor(`document.querySelectorAll('#trade-give-1 option').length > 2 && document.querySelectorAll('#trade-get-1 option').length > 20`);
-  await evaluate(`(() => { const search=document.querySelector('#trade-search'); search.value='Achane'; search.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
+  await evaluate(`(() => { const search=document.querySelector('#trade-search'); search.value='Stafford'; search.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
   const tradeSearch = await evaluate(`document.querySelector('#trade-get-1 option:nth-child(2)')?.textContent || ''`);
-  if (!tradeSearch.includes('Achane')) throw new Error('Trade target search failed');
+  if (!tradeSearch.includes('Stafford')) throw new Error('Trade target search failed');
   await evaluate(`(() => {
     const give = document.querySelector('#trade-give-1'); const get = document.querySelector('#trade-get-1');
     give.selectedIndex = 1; get.selectedIndex = 1; document.querySelector('#analyze-trade').click(); return true;
   })()`);
   await waitFor(`Boolean(document.querySelector('#trade-check-result .trade-verdict'))`, 25000);
   const trade = await evaluate(`document.querySelector('#trade-check-result').textContent`);
-  if (!["ACCEPT", "PASS", "CLOSE CALL"].some((word) => trade.includes(word))) throw new Error("Direct trade analyzer failed");
+  if (!["ACCEPT", "PASS", "CLOSE CALL"].some((word) => trade.includes(word)) || !trade.includes("FUTURE GAME WIN CHANCE") || !trade.includes("QA Rivals")) throw new Error("Opponent-aware direct trade analyzer failed");
   const tradeDesktop = await snapshot("trade-desktop", 1440, 1000);
   if (tradeDesktop.horizontalOverflow) throw new Error("Trade desktop overflow");
 

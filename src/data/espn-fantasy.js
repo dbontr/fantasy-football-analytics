@@ -37,7 +37,7 @@
     if (!/^\d+$/.test(id)) throw new TypeError("Invalid ESPN league ID");
     const year = safeSeason(season);
     const url = new URL(`/apis/v3/games/ffl/seasons/${year}/segments/0/leagues/${id}`, ESPN_FANTASY_ORIGIN);
-    ["mTeam", "mRoster", "mSettings", "mStatus"].forEach((view) => url.searchParams.append("view", view));
+    ["mTeam", "mRoster", "mSettings", "mStatus", "mMatchup"].forEach((view) => url.searchParams.append("view", view));
     return url.href;
   }
 
@@ -110,6 +110,25 @@
     };
   }
 
+  function scheduleTeamId(side) {
+    const value = side?.teamId ?? side?.team?.id ?? side?.id;
+    return value === undefined || value === null || value === "" ? null : String(value);
+  }
+
+  function normalizeFantasySchedule(rows = []) {
+    const byWeek = {};
+    for (const row of rows || []) {
+      const week = Math.round(Number(row?.scoringPeriodId ?? row?.matchupPeriodId ?? row?.periodId ?? 0));
+      const home = scheduleTeamId(row?.home);
+      const away = scheduleTeamId(row?.away);
+      if (!(week >= 1 && week <= 18) || !home || !away || home === away) continue;
+      if (!byWeek[week]) byWeek[week] = [];
+      const key = [home, away].sort().join("|");
+      if (!byWeek[week].some((pair) => [...pair].sort().join("|") === key)) byWeek[week].push([home, away]);
+    }
+    return Object.fromEntries(Object.entries(byWeek).sort((left, right) => Number(left[0]) - Number(right[0])));
+  }
+
   function normalizeLeague(raw, localPlayers = []) {
     const indexes = buildPlayerIndexes(localPlayers);
     const members = new Map((raw?.members || []).map((member) => [String(member.id), member]));
@@ -137,6 +156,9 @@
       };
     });
     const scoringLabel = String(raw?.settings?.scoringSettings?.playerRankType || "ESPN scoring").replace(/_/g, " ");
+    const fantasySchedule = normalizeFantasySchedule(raw?.schedule || []);
+    const regularSeasonEnd = Math.max(1, Number(raw?.settings?.scheduleSettings?.matchupPeriodCount || 14));
+    const championshipWeek = Math.max(regularSeasonEnd + 1, Number(raw?.status?.finalScoringPeriod || raw?.settings?.scheduleSettings?.finalScoringPeriod || 17));
     return {
       provider: "espn",
       leagueId: String(raw?.id ?? ""),
@@ -144,6 +166,9 @@
       name: String(raw?.settings?.name || raw?.name || "ESPN Fantasy League"),
       currentWeek: Math.max(1, Number(raw?.status?.currentScoringPeriod || raw?.scoringPeriodId || 1)),
       playoffTeams: Math.max(0, Number(raw?.settings?.scheduleSettings?.playoffTeamCount || 0)),
+      regularSeasonEnd,
+      championshipWeek,
+      fantasySchedule,
       scoringLabel,
       teams,
       recognizedPlayers: teams.reduce((sum, team) => sum + team.rosterIds.length, 0),
@@ -158,6 +183,7 @@
     friendlyLoadError,
     leagueApiUrl,
     loadLeague,
+    normalizeFantasySchedule,
     normalizeLeague,
     parseLeagueInput,
   };

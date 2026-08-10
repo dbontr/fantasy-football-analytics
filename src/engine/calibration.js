@@ -183,6 +183,29 @@
       });
     };
 
+    if (typeof engine.evaluateFutureWinActions === "function") {
+      const originalFutureWinActions = engine.evaluateFutureWinActions.bind(engine);
+      engine.evaluateFutureWinActions = function calibratedFutureWinActions(options = {}) {
+        const evidence = options.evidenceByPlayer || {};
+        return originalFutureWinActions({
+          ...options,
+          teams: calibrateTeams(options.teams, evidence),
+          actions: (options.actions || []).map((action) => calibrateAction(action, evidence)),
+        });
+      };
+    }
+    if (typeof engine.evaluateMatchupLineups === "function") {
+      const originalMatchupLineups = engine.evaluateMatchupLineups.bind(engine);
+      engine.evaluateMatchupLineups = function calibratedMatchupLineups(options = {}) {
+        const evidence = options.evidenceByPlayer || {};
+        return originalMatchupLineups({
+          ...options,
+          userRoster: (options.userRoster || []).map((player) => calibratePlayer(player, evidence[String(player?.id)] || {})),
+          opponentRoster: (options.opponentRoster || []).map((player) => calibratePlayer(player, evidence[String(player?.id)] || {})),
+        });
+      };
+    }
+
     Object.defineProperty(engine, "__snapCountCalibrationVersion", { value: VERSION, configurable: false, enumerable: false });
     return true;
   }

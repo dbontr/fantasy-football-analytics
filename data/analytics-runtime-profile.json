@@ -1,8 +1,24 @@
 {
-  "version": "snapcount-runtime-profile-2026.6",
-  "qualifiedAt": "2026-08-10T16:49:02.738Z",
-  "qualificationSha256": "0b21b7e0d14cad4e309b4332b031705f63124c03e5c146f86f813673d29b589c",
+  "version": "snapcount-runtime-profile-2026.7",
+  "qualifiedAt": "2026-08-10T18:06:42.509Z",
+  "qualificationSha256": "9154fbcfca0ad56c406a6f50d16842da38813cdc1f9e05625ff95973cfbf76cb",
   "mode": "serve-frozen-qualified-analytics",
+  "decisionObjective": {
+    "version": "snapcount-future-win-objective-2026.1",
+    "primary": "maximize-future-head-to-head-wins",
+    "secondary": [
+      "championship-probability",
+      "playoff-probability",
+      "qualified-value-guardrails"
+    ],
+    "opponentAware": true,
+    "schedulePolicy": "real-connected-league-schedule-when-available",
+    "minimumRecognizedStarterCoverage": 0.88,
+    "status": "prospective-overlay",
+    "canPromoteQualifiedTradeReject": false,
+    "draftPolicyChanged": false,
+    "forecastCoefficientsChanged": false
+  },
   "grades": {
     "forecastMean": "A+",
     "forecastRobustness": "A+",

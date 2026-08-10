@@ -33,7 +33,9 @@
     "verify:draft-overfit": "node scripts/draft-overfit-audit.js --verify",
     "audit:forecast-overfit": "node scripts/forecast-overfit-audit.js",
     "verify:forecast-overfit": "node scripts/forecast-overfit-audit.js --verify",
-    "verify:forecast-successor": "node scripts/forecast-successor-candidate.js --verify"
+    "verify:forecast-successor": "node scripts/forecast-successor-candidate.js --verify",
+    "audit:future-win": "node scripts/future-win-audit.js",
+    "verify:future-win": "node scripts/future-win-audit.js --verify"
   },
   "engines": {
     "node": ">=20"
