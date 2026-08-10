@@ -5,6 +5,8 @@ const assert = require("node:assert/strict");
 const profile = require("../data/analytics-runtime-profile.json");
 const robustDraft = require("../data/validation/draft-robust-policy.json");
 const draftOverfit = require("../data/validation/draft-overfit-audit.json");
+const forecastOverfit = require("../data/validation/forecast-overfit-audit.json");
+const forecastSuccessor = require("../data/validation/forecast-successor-candidate.json");
 const core = require("../src/engine/core.js");
 
 test("runtime profile serves A+ decision analytics with explicitly downgraded forecast provenance", () => {
@@ -13,6 +15,10 @@ test("runtime profile serves A+ decision analytics with explicitly downgraded fo
   for (const [surface, grade] of Object.entries(profile.grades)) assert.equal(grade, surface === "provenance" ? "A" : "A+");
   assert.equal(profile.players.trainingProvenance.exactOriginalFitReproducible, false);
   assert.equal(profile.players.trainingProvenance.servingCoefficientsMatchStoredReport, true);
+  assert.equal(profile.players.robustnessAuditVersion, forecastOverfit.version);
+  assert.deepEqual(profile.players.robustnessEvidenceYears, forecastOverfit.evidenceYears);
+  assert.equal(profile.players.prospectiveSuccessor.modelSha256, forecastSuccessor.candidateModelSha256);
+  assert.equal(profile.players.prospectiveSuccessor.mayServeNow, false);
   assert.equal(profile.startSit.validatedMeanScale, 0);
   assert.equal(profile.waivers.validatedMeanScale, 0);
   assert.equal(profile.trades.validatedMeanScale, 0);
@@ -26,6 +32,23 @@ test("runtime profile serves A+ decision analytics with explicitly downgraded fo
   assert.deepEqual(profile.draft.robustnessEvidenceYears, draftOverfit.evidenceYears);
   for (const policy of Object.values(profile.draft.segments)) assert.deepEqual(policy, robustDraft.policy);
   assert.deepEqual(profile.draft.fallbackPolicy, robustDraft.policy);
+});
+
+test("forecast anti-overfit guard preserves abstention and clears season robustness gates", () => {
+  assert.equal(forecastOverfit.gates.robustnessPass, true);
+  assert.ok(forecastOverfit.seasonClusterBootstrap.maeImprovement95[0] > 0);
+  assert.ok(forecastOverfit.seasonClusterBootstrap.rmseImprovement95[0] > 0);
+  for (const season of forecastOverfit.evidenceYears) {
+    assert.ok(forecastOverfit.seasons[season].delta.maeImprovement > 0);
+    assert.ok(forecastOverfit.seasons[season].delta.rmseImprovement > 0);
+    assert.ok(forecastOverfit.seasons[season].delta.rankImprovement >= 0);
+  }
+  assert.deepEqual(new Set(forecastOverfit.nonImprovingPositionSeasonCells.map((row) => row.position)), new Set(["QB"]));
+  assert.equal(forecastOverfit.nonImprovingPositionSeasonCells.length, 6);
+  assert.equal(forecastOverfit.negativePositionSeasonCells.length, 0);
+  assert.equal(forecastSuccessor.status, "prospective-only-not-serving");
+  assert.equal(forecastSuccessor.restrictions.mayUse2024Or2025ForAdmission, false);
+  assert.equal(forecastSuccessor.preRegisteredAdmission.evaluationSeason, 2026);
 });
 
 test("runtime profile contains no historical training dataset", () => {

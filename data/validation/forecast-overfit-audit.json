@@ -228,7 +228,7 @@
       "oneSidedP": 0.015625
     }
   },
-  "adversePositionSeasonCells": [
+  "nonImprovingPositionSeasonCells": [
     {
       "season": 2020,
       "position": "QB",
@@ -284,6 +284,7 @@
       "n": 544
     }
   ],
+  "negativePositionSeasonCells": [],
   "gates": {
     "allSeasonMaePositive": true,
     "allSeasonRmsePositive": true,
@@ -291,6 +292,7 @@
     "leaveOneSeasonOutPositive": true,
     "seasonBootstrap95Positive": true,
     "originalFrozen2024Positive": true,
+    "noNegativePositionSeasonCells": true,
     "robustnessPass": true
   },
   "interpretation": "No material season-level overfit is detected for the exact frozen serving mean under these post-selection robustness tests. This does not prove zero overfit; 2026 remains the next prospective confirmation."

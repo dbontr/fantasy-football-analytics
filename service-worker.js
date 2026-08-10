@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.12.0-camp-evidence";
+const CACHE = "snapcount-browser-v1.12.1-a-plus-integrity";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

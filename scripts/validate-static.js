@@ -54,6 +54,9 @@ for (const [surface, grade] of Object.entries(runtimeProfile.grades || {})) {
 if (runtimeProfile.draft?.postFreezeHoldoutSeason !== 2018) throw new Error("Runtime Draft A+ holdout provenance drift");
 if (runtimeProfile.draft?.robustnessAuditVersion !== "draft-overfit-audit-2026.1") throw new Error("Runtime Draft anti-overfit audit drift");
 if (!Array.isArray(runtimeProfile.draft?.robustnessEvidenceYears) || runtimeProfile.draft.robustnessEvidenceYears.length !== 8) throw new Error("Runtime Draft robustness evidence missing");
+if (runtimeProfile.players?.robustnessAuditVersion !== "forecast-overfit-audit-2026.1") throw new Error("Runtime forecast robustness audit drift");
+if (!Array.isArray(runtimeProfile.players?.robustnessEvidenceYears) || runtimeProfile.players.robustnessEvidenceYears.length !== 6) throw new Error("Runtime forecast robustness evidence missing");
+if (runtimeProfile.players?.prospectiveSuccessor?.status !== "prospective-only-not-serving" || runtimeProfile.players?.prospectiveSuccessor?.mayServeNow !== false) throw new Error("Runtime forecast successor serving lock drift");
 const campArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "camp-2026.json"), "utf8"));
 if (campArtifact.meta?.version !== "camp-intelligence-2026.1" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10) throw new Error("Camp intelligence artifact is incomplete");
 if (campArtifact.players.some((row) => row.modelEffect !== "advisory-only")) throw new Error("Camp intelligence must remain advisory-only");

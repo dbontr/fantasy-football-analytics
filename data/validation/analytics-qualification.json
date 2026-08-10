@@ -1,6 +1,6 @@
 {
-  "version": "snapcount-analytics-qualification-2026.5",
-  "qualifiedAt": "2026-08-10T15:43:38.943Z",
+  "version": "snapcount-analytics-qualification-2026.6",
+  "qualifiedAt": "2026-08-10T16:49:02.738Z",
   "architecture": "offline-qualification-live-serving",
   "dataset": {
     "file": "historical-ppr-2020-2025.json.gz",
@@ -27,10 +27,13 @@
     "draft-robust-policy.json": "98d0cf634f14c42a04ed1a6f09157ce0f016f2be77af494ba7eff46c7a8f3f3e",
     "draft-a-plus-holdout-2018.json": "e32c5a2e93aabfa2392622ce5e075e4289f68f5fe251b6a648a3bf60f457a8b5",
     "draft-overfit-audit.json": "4e9fe3fc8100e90c3d20b779813aa0e0844c7f7f5b545eb6e843cf725f375d3f",
-    "forecast-provenance-audit.json": "bfbae5e6b69397d9ee88952fbc3c6555efb62b510daea03272ef655be9d72b8f"
+    "forecast-provenance-audit.json": "bfbae5e6b69397d9ee88952fbc3c6555efb62b510daea03272ef655be9d72b8f",
+    "forecast-overfit-audit.json": "39b444ff716489239a0a71c6134d22d3658159ced0e8212269b32bc6c947fe39",
+    "forecast-successor-candidate.json": "051e790059354d7e8bc7384ca38aea0481ba8e65a4d62233c3d222219d908704"
   },
   "grades": {
     "forecastMean": "A+",
+    "forecastRobustness": "A+",
     "uncertainty": "A+",
     "contextAdmission": "A+",
     "startSit": "A+",
@@ -39,6 +42,7 @@
     "draft": "A+",
     "season": "A+",
     "provenance": "A",
+    "successorProvenance": "A+",
     "runtimeParity": "A+"
   },
   "evidence": {
@@ -88,6 +92,125 @@
         "allowRetuneOnConsumed2024Or2025": false,
         "successorRequiresExactInputHashBeforeFit": true,
         "successorRequiresProspective2026Evidence": true
+      }
+    },
+    "forecastOverfitRobustness": {
+      "version": "forecast-overfit-audit-2026.1",
+      "evidenceYears": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "bootstrap": {
+        "replicates": 200000,
+        "seed": "0x5A17C0DE",
+        "maeImprovement95": [
+          0.08394897,
+          0.09980096
+        ],
+        "rmseImprovement95": [
+          0.02091961,
+          0.03535036
+        ]
+      },
+      "signTests": {
+        "mae": {
+          "wins": 6,
+          "total": 6,
+          "oneSidedP": 0.015625
+        },
+        "rmse": {
+          "wins": 6,
+          "total": 6,
+          "oneSidedP": 0.015625
+        },
+        "rank": {
+          "wins": 6,
+          "total": 6,
+          "oneSidedP": 0.015625
+        }
+      },
+      "gates": {
+        "allSeasonMaePositive": true,
+        "allSeasonRmsePositive": true,
+        "allSeasonRankNonnegative": true,
+        "leaveOneSeasonOutPositive": true,
+        "seasonBootstrap95Positive": true,
+        "originalFrozen2024Positive": true,
+        "noNegativePositionSeasonCells": true,
+        "robustnessPass": true
+      },
+      "nonImprovingCells": [
+        {
+          "season": 2020,
+          "position": "QB",
+          "maeImprovement": 0,
+          "rmseImprovement": 0,
+          "rankImprovement": 0,
+          "absoluteBiasImprovement": 0,
+          "n": 526
+        },
+        {
+          "season": 2021,
+          "position": "QB",
+          "maeImprovement": 0,
+          "rmseImprovement": 0,
+          "rankImprovement": 0,
+          "absoluteBiasImprovement": 0,
+          "n": 564
+        },
+        {
+          "season": 2022,
+          "position": "QB",
+          "maeImprovement": 0,
+          "rmseImprovement": 0,
+          "rankImprovement": 0,
+          "absoluteBiasImprovement": 0,
+          "n": 549
+        },
+        {
+          "season": 2023,
+          "position": "QB",
+          "maeImprovement": 0,
+          "rmseImprovement": 0,
+          "rankImprovement": 0,
+          "absoluteBiasImprovement": 0,
+          "n": 516
+        },
+        {
+          "season": 2024,
+          "position": "QB",
+          "maeImprovement": 0,
+          "rmseImprovement": 0,
+          "rankImprovement": 0,
+          "absoluteBiasImprovement": 0,
+          "n": 549
+        },
+        {
+          "season": 2025,
+          "position": "QB",
+          "maeImprovement": 0,
+          "rmseImprovement": 0,
+          "rankImprovement": 0,
+          "absoluteBiasImprovement": 0,
+          "n": 544
+        }
+      ],
+      "negativeCells": []
+    },
+    "forecastSuccessor": {
+      "version": "forecast-successor-candidate-2026.1",
+      "status": "prospective-only-not-serving",
+      "candidateModelSha256": "084b888db9af1fe9775e46cae86c9b5d9b3bc99da2b2e2e3863967db5463f7ea",
+      "evaluationSeason": 2026,
+      "restrictions": {
+        "mayServeNow": false,
+        "mayUse2024Or2025ForAdmission": false,
+        "mayUse2026ForTuning": false,
+        "mayUse2026OnceForPreRegisteredAdmission": true
       }
     },
     "uncertainty2024": {

@@ -18,6 +18,8 @@ const robustHoldout = JSON.parse(fs.readFileSync(path.join(validationDir, "draft
 const robustRefine = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-robust-refine.json"), "utf8"));
 const draftOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-overfit-audit.json"), "utf8"));
 const forecastProvenance = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-provenance-audit.json"), "utf8"));
+const forecastOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-overfit-audit.json"), "utf8"));
+const forecastSuccessor = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-successor-candidate.json"), "utf8"));
 const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const hashFile = (file) => hashBytes(fs.readFileSync(file));
 const hashJsonFile = (file) => hashBytes(Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))));
@@ -39,6 +41,12 @@ assert(profile.players.meanCalibrationVersion === meanCalibration.VERSION, "mean
 assert(profile.players.trainingProvenance?.auditVersion === forecastProvenance.version, "forecast provenance version drift");
 assert(forecastProvenance.findings?.servingModelMatchesStoredReport === true, "frozen forecast coefficient/report mismatch");
 assert(forecastProvenance.findings?.storedReportReproducesFromCommittedDataset === false, "forecast provenance expectation drift");
+assert(forecastOverfit.gates?.robustnessPass === true, "forecast anti-overfit robustness drift");
+assert(profile.players.robustnessAuditVersion === forecastOverfit.version, "forecast robustness audit version drift");
+assert(JSON.stringify(profile.players.robustnessEvidenceYears) === JSON.stringify(forecastOverfit.evidenceYears), "forecast robustness evidence-year drift");
+assert(profile.players.prospectiveSuccessor?.version === forecastSuccessor.version, "forecast successor version drift");
+assert(profile.players.prospectiveSuccessor?.modelSha256 === forecastSuccessor.candidateModelSha256, "forecast successor model hash drift");
+assert(profile.players.prospectiveSuccessor?.mayServeNow === false && forecastSuccessor.restrictions?.mayServeNow === false, "forecast successor serving lock drift");
 assert(profile.season.calibrationVersion === uncertainty.VERSION, "uncertainty version drift");
 assert(profile.season.correlationVersion === correlation.VERSION, "correlation version drift");
 assert(profile.context.version === context.VERSION, "context version drift");

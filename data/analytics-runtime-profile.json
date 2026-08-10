@@ -1,10 +1,11 @@
 {
-  "version": "snapcount-runtime-profile-2026.5",
-  "qualifiedAt": "2026-08-10T15:43:38.943Z",
-  "qualificationSha256": "488fce37f977eed7f767327549b557e4e8f8ffe925ecf5c740d785d81ac6a72c",
+  "version": "snapcount-runtime-profile-2026.6",
+  "qualifiedAt": "2026-08-10T16:49:02.738Z",
+  "qualificationSha256": "0b21b7e0d14cad4e309b4332b031705f63124c03e5c146f86f813673d29b589c",
   "mode": "serve-frozen-qualified-analytics",
   "grades": {
     "forecastMean": "A+",
+    "forecastRobustness": "A+",
     "uncertainty": "A+",
     "contextAdmission": "A+",
     "startSit": "A+",
@@ -13,6 +14,7 @@
     "draft": "A+",
     "season": "A+",
     "provenance": "A",
+    "successorProvenance": "A+",
     "runtimeParity": "A+"
   },
   "scoring": {
@@ -39,6 +41,22 @@
       "exactOriginalFitReproducible": false,
       "servingCoefficientsMatchStoredReport": true,
       "nextAdmissionEvidence": "prospective-2026"
+    },
+    "robustnessAuditVersion": "forecast-overfit-audit-2026.1",
+    "robustnessEvidenceYears": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "prospectiveSuccessor": {
+      "version": "forecast-successor-candidate-2026.1",
+      "status": "prospective-only-not-serving",
+      "modelSha256": "084b888db9af1fe9775e46cae86c9b5d9b3bc99da2b2e2e3863967db5463f7ea",
+      "evaluationSeason": 2026,
+      "mayServeNow": false
     }
   },
   "startSit": {

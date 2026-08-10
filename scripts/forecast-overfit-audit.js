@@ -130,7 +130,8 @@ function build() {
   const maeWins = SEASONS.filter((season) => seasons[season].delta.maeImprovement > 0).length;
   const rmseWins = SEASONS.filter((season) => seasons[season].delta.rmseImprovement > 0).length;
   const rankWins = SEASONS.filter((season) => seasons[season].delta.rankImprovement >= 0).length;
-  const adverseCells = cells.filter((cell) => cell.maeImprovement <= 0 || cell.rmseImprovement <= 0);
+  const nonImprovingCells = cells.filter((cell) => cell.maeImprovement <= 0 || cell.rmseImprovement <= 0);
+  const negativeCells = cells.filter((cell) => cell.maeImprovement < 0 || cell.rmseImprovement < 0);
   const gates = {
     allSeasonMaePositive: maeWins === SEASONS.length,
     allSeasonRmsePositive: rmseWins === SEASONS.length,
@@ -138,6 +139,7 @@ function build() {
     leaveOneSeasonOutPositive: Object.values(jackknife).every((row) => row.maeImprovement > 0 && row.rmseImprovement > 0),
     seasonBootstrap95Positive: quantile(bootstrapMae, 0.025) > 0 && quantile(bootstrapRmse, 0.025) > 0,
     originalFrozen2024Positive: seasons[2024].delta.maeImprovement > 0 && seasons[2024].delta.rmseImprovement > 0,
+    noNegativePositionSeasonCells: negativeCells.length === 0,
   };
   gates.robustnessPass = Object.values(gates).every(Boolean);
   return {
@@ -164,7 +166,8 @@ function build() {
       rmse: { wins: rmseWins, total: SEASONS.length, oneSidedP: round(oneSidedSignP(rmseWins, SEASONS.length)) },
       rank: { wins: rankWins, total: SEASONS.length, oneSidedP: round(oneSidedSignP(rankWins, SEASONS.length)) },
     },
-    adversePositionSeasonCells: adverseCells,
+    nonImprovingPositionSeasonCells: nonImprovingCells,
+    negativePositionSeasonCells: negativeCells,
     gates,
     interpretation: gates.robustnessPass
       ? "No material season-level overfit is detected for the exact frozen serving mean under these post-selection robustness tests. This does not prove zero overfit; 2026 remains the next prospective confirmation."
@@ -184,7 +187,8 @@ function main() {
   }
   console.log(`Bootstrap MAE improvement 95%: ${result.seasonClusterBootstrap.maeImprovement95.join(" to ")}`);
   console.log(`Bootstrap RMSE improvement 95%: ${result.seasonClusterBootstrap.rmseImprovement95.join(" to ")}`);
-  console.log(`Adverse position-season cells: ${result.adversePositionSeasonCells.length}`);
+  console.log(`Non-improving position-season cells: ${result.nonImprovingPositionSeasonCells.length}`);
+  console.log(`Negative position-season cells: ${result.negativePositionSeasonCells.length}`);
 }
 
 if (require.main === module) main();
