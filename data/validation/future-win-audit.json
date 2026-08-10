@@ -1,0 +1,134 @@
+{
+  "version": "future-win-audit-2026.1",
+  "purpose": "retrospective no-tuning diagnostic of opponent-aware lineup selection using the already-frozen 2025 uncertainty model and archived ESPN PPR projections",
+  "evidenceDiscipline": {
+    "season": 2025,
+    "status": "retrospective-consumed-evidence-not-independent-holdout",
+    "policyFrozenBeforeAuditRun": true,
+    "tuningAllowedAfterInspection": false,
+    "prospectiveConfirmation": 2026
+  },
+  "syntheticLeague": {
+    "teams": 10,
+    "rosterConstruction": "deterministic preseason-ADP snake with fixed position quotas",
+    "starterSettings": {
+      "QB": 1,
+      "RB": 2,
+      "WR": 2,
+      "TE": 1,
+      "FLEX": 1,
+      "SUPERFLEX": 0,
+      "DST": 0,
+      "K": 0,
+      "BN": 8
+    },
+    "regularSeasonEnd": 14,
+    "scenariosPerDecision": 1200
+  },
+  "result": {
+    "decisions": 140,
+    "changedDecisions": 0,
+    "baselineCredits": 70,
+    "preferredCredits": 70,
+    "creditDelta": 0,
+    "averageCreditDeltaPerDecision": 0,
+    "improvedOutcomes": 0,
+    "worsenedOutcomes": 0,
+    "weekClusterBootstrap95": [
+      0,
+      0
+    ],
+    "weeks": [
+      {
+        "week": 1,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 2,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 3,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 4,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 5,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 6,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 7,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 8,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 9,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 10,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 11,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 12,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 13,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      },
+      {
+        "week": 14,
+        "decisions": 10,
+        "creditDelta": 0,
+        "changed": 0
+      }
+    ]
+  },
+  "gates": {
+    "realizedNoninferiority": true,
+    "clusterBootstrapLowerNonnegative": true,
+    "defaultLineupOverlayAdmitted": true
+  },
+  "interpretation": "This audit can falsify obvious harm from the fixed opponent-aware lineup rule, but it is not an independent validation because 2025 outcomes were already consumed elsewhere. The untouched 2026 season remains the prospective admission evidence."
+}

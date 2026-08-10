@@ -20,6 +20,7 @@ const draftOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-
 const forecastProvenance = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-provenance-audit.json"), "utf8"));
 const forecastOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-overfit-audit.json"), "utf8"));
 const forecastSuccessor = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-successor-candidate.json"), "utf8"));
+const futureWin = JSON.parse(fs.readFileSync(path.join(validationDir, "future-win-audit.json"), "utf8"));
 const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const hashFile = (file) => hashBytes(fs.readFileSync(file));
 const hashJsonFile = (file) => hashBytes(Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))));
@@ -53,6 +54,9 @@ assert(profile.context.version === context.VERSION, "context version drift");
 assert(profile.decisionObjective?.primary === "maximize-future-head-to-head-wins", "future-win objective drift");
 assert(profile.decisionObjective?.status === "prospective-overlay" && profile.decisionObjective?.opponentAware === true, "future-win admission-status drift");
 assert(profile.decisionObjective?.canPromoteQualifiedTradeReject === false && profile.decisionObjective?.draftPolicyChanged === false && profile.decisionObjective?.forecastCoefficientsChanged === false, "future-win safety boundary drift");
+assert(futureWin.result?.decisions === 140 && futureWin.result?.changedDecisions === 0 && futureWin.result?.creditDelta === 0, "future-win retrospective result drift");
+assert(futureWin.evidenceDiscipline?.tuningAllowedAfterInspection === false && futureWin.evidenceDiscipline?.prospectiveConfirmation === 2026, "future-win evidence-discipline drift");
+assert(profile.decisionObjective?.retrospectiveDiagnostic?.auditVersion === futureWin.version && profile.decisionObjective?.retrospectiveDiagnostic?.verdict === "noninferior-no-observed-switches" && profile.decisionObjective?.retrospectiveDiagnostic?.incrementalEdgeDemonstrated === false, "future-win historical interpretation drift");
 assert(Number(profile.waivers.minimumScore) >= 0, "waiver threshold missing");
 assert(Number(profile.trades.acceptScore) > 0 && Number(profile.trades.passScore) < 0, "trade thresholds missing");
 assert(profile.draft.policy === "segmented-qualified" && Object.keys(profile.draft.segments || {}).length >= 6, "draft policy missing");

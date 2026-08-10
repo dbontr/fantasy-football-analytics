@@ -36,6 +36,7 @@ function main() {
   const forecastProvenance = read("forecast-provenance-audit.json");
   const forecastOverfit = read("forecast-overfit-audit.json");
   const forecastSuccessor = read("forecast-successor-candidate.json");
+  const futureWin = read("future-win-audit.json");
   const uncertaintyReport = read("uncertainty-audit-report.json");
   const decisions = read("decision-audit-report.json");
   const waivers = read("waiver-audit-report.json");
@@ -55,6 +56,10 @@ function main() {
   requireGate(forecastSuccessor.status === "prospective-only-not-serving" && forecastSuccessor.restrictions?.mayServeNow === false, "forecast successor must remain non-serving");
   requireGate(forecastSuccessor.inputs?.dataset?.sha256 === hashFile(path.join(validationDir, "historical-ppr-2020-2025.json.gz")), "forecast successor dataset hash parity");
   requireGate(forecastSuccessor.preRegisteredAdmission?.evaluationSeason === 2026 && forecastSuccessor.preRegisteredAdmission?.noRetuneAfterOutcomeInspection === true, "forecast successor prospective admission contract");
+  requireGate(futureWin.evidenceDiscipline?.season === 2025 && futureWin.evidenceDiscipline?.status === "retrospective-consumed-evidence-not-independent-holdout", "future-win retrospective evidence label");
+  requireGate(futureWin.evidenceDiscipline?.policyFrozenBeforeAuditRun === true && futureWin.evidenceDiscipline?.tuningAllowedAfterInspection === false && futureWin.evidenceDiscipline?.prospectiveConfirmation === 2026, "future-win no-retune contract");
+  requireGate(futureWin.result?.decisions === 140 && futureWin.result?.changedDecisions === 0 && futureWin.result?.baselineCredits === 70 && futureWin.result?.preferredCredits === 70, "future-win observed neutral result must remain explicit");
+  requireGate(futureWin.gates?.realizedNoninferiority === true && futureWin.gates?.defaultLineupOverlayAdmitted === true, "future-win retrospective noninferiority guard");
   requireGate(forecast.overall.frozen2024.corrected.rmse < forecast.overall.frozen2024.raw.rmse, "forecast RMSE");
   requireGate(uncertaintyReport.admitted === true, "uncertainty calibration");
   requireGate(decisions.releaseGatePassed === true && decisions.selectedPolicy === "raw-live-ppr", "Start/Sit policy selection");
@@ -76,13 +81,13 @@ function main() {
   requireGate(draftOverfit.gates?.robustnessPass === true, "draft anti-overfit robustness");
 
   const datasetPath = path.join(validationDir, "historical-ppr-2020-2025.json.gz");
-  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json", "forecast-provenance-audit.json", "forecast-overfit-audit.json", "forecast-successor-candidate.json"];
+  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json", "forecast-provenance-audit.json", "forecast-overfit-audit.json", "forecast-successor-candidate.json", "future-win-audit.json"];
   const reportHashes = Object.fromEntries(reportNames.map((name) => [name, hashJsonFile(path.join(validationDir, name))]));
 
   const qualifiedAt = new Date().toISOString();
   const draftSegments = robustDraft.segments || {};
   const qualification = {
-    version: "snapcount-analytics-qualification-2026.7",
+    version: "snapcount-analytics-qualification-2026.8",
     qualifiedAt,
     architecture: "offline-qualification-live-serving",
     dataset: { file: "historical-ppr-2020-2025.json.gz", sha256: hashFile(datasetPath), seasons: [2020, 2021, 2022, 2023, 2024, 2025] },
@@ -97,6 +102,7 @@ function main() {
       forecastProvenance: { version: forecastProvenance.version, findings: forecastProvenance.findings, releasePolicy: forecastProvenance.releasePolicy },
       forecastOverfitRobustness: { version: forecastOverfit.version, evidenceYears: forecastOverfit.evidenceYears, bootstrap: forecastOverfit.seasonClusterBootstrap, signTests: forecastOverfit.seasonSignTests, gates: forecastOverfit.gates, nonImprovingCells: forecastOverfit.nonImprovingPositionSeasonCells, negativeCells: forecastOverfit.negativePositionSeasonCells },
       forecastSuccessor: { version: forecastSuccessor.version, status: forecastSuccessor.status, candidateModelSha256: forecastSuccessor.candidateModelSha256, evaluationSeason: forecastSuccessor.preRegisteredAdmission.evaluationSeason, restrictions: forecastSuccessor.restrictions },
+      futureWinRetrospective: { version: futureWin.version, freezeCommit: "392628129bf57a45c2c350c2d6075e7ceb0c28dd", evidenceDiscipline: futureWin.evidenceDiscipline, result: futureWin.result, gates: futureWin.gates, verdict: "noninferior-no-observed-switches", interpretation: "Neutral retrospective safety evidence only; zero 2025 decisions switched, so this is not evidence of incremental H2H edge. Prospective 2026 remains required." },
       uncertainty2024: uncertaintyReport.overall.frozen2024.legacy,
       uncertainty2025: uncertaintyReport.overall.consistency2025.legacy,
       startSitPolicy: decisions.selectedPolicy,
@@ -116,7 +122,7 @@ function main() {
   };
 
   const runtimeProfile = {
-    version: "snapcount-runtime-profile-2026.7",
+    version: "snapcount-runtime-profile-2026.8",
     qualifiedAt,
     qualificationSha256: crypto.createHash("sha256").update(JSON.stringify(qualification)).digest("hex"),
     mode: "serve-frozen-qualified-analytics",
@@ -128,6 +134,8 @@ function main() {
       schedulePolicy: "real-connected-league-schedule-when-available",
       minimumRecognizedStarterCoverage: 0.88,
       status: "prospective-overlay",
+      activationRule: "qualified-base-policy-unless-paired-win-probability-ci-lower-bound-positive",
+      retrospectiveDiagnostic: { auditVersion: futureWin.version, freezeCommit: "392628129bf57a45c2c350c2d6075e7ceb0c28dd", season: 2025, decisions: futureWin.result.decisions, changedDecisions: futureWin.result.changedDecisions, creditDelta: futureWin.result.creditDelta, verdict: "noninferior-no-observed-switches", incrementalEdgeDemonstrated: false, prospectiveConfirmation: 2026 },
       canPromoteQualifiedTradeReject: false,
       draftPolicyChanged: false,
       forecastCoefficientsChanged: false,

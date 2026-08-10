@@ -24,6 +24,9 @@ test("runtime profile serves A+ decision analytics with explicitly downgraded fo
   assert.equal(profile.decisionObjective.opponentAware, true);
   assert.equal(profile.decisionObjective.canPromoteQualifiedTradeReject, false);
   assert.equal(profile.decisionObjective.draftPolicyChanged, false);
+  assert.equal(profile.decisionObjective.retrospectiveDiagnostic.verdict, "noninferior-no-observed-switches");
+  assert.equal(profile.decisionObjective.retrospectiveDiagnostic.changedDecisions, 0);
+  assert.equal(profile.decisionObjective.retrospectiveDiagnostic.incrementalEdgeDemonstrated, false);
   assert.equal(profile.startSit.validatedMeanScale, 0);
   assert.equal(profile.waivers.validatedMeanScale, 0);
   assert.equal(profile.trades.validatedMeanScale, 0);

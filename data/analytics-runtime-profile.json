@@ -1,7 +1,7 @@
 {
-  "version": "snapcount-runtime-profile-2026.7",
-  "qualifiedAt": "2026-08-10T18:06:42.509Z",
-  "qualificationSha256": "9154fbcfca0ad56c406a6f50d16842da38813cdc1f9e05625ff95973cfbf76cb",
+  "version": "snapcount-runtime-profile-2026.8",
+  "qualifiedAt": "2026-08-10T18:23:07.443Z",
+  "qualificationSha256": "b6d219d7832e8a06f008d2baf54152640bd3e729aade8de8dddc77126c943233",
   "mode": "serve-frozen-qualified-analytics",
   "decisionObjective": {
     "version": "snapcount-future-win-objective-2026.1",
@@ -15,6 +15,18 @@
     "schedulePolicy": "real-connected-league-schedule-when-available",
     "minimumRecognizedStarterCoverage": 0.88,
     "status": "prospective-overlay",
+    "activationRule": "qualified-base-policy-unless-paired-win-probability-ci-lower-bound-positive",
+    "retrospectiveDiagnostic": {
+      "auditVersion": "future-win-audit-2026.1",
+      "freezeCommit": "392628129bf57a45c2c350c2d6075e7ceb0c28dd",
+      "season": 2025,
+      "decisions": 140,
+      "changedDecisions": 0,
+      "creditDelta": 0,
+      "verdict": "noninferior-no-observed-switches",
+      "incrementalEdgeDemonstrated": false,
+      "prospectiveConfirmation": 2026
+    },
     "canPromoteQualifiedTradeReject": false,
     "draftPolicyChanged": false,
     "forecastCoefficientsChanged": false

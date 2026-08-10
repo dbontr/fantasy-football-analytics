@@ -59,6 +59,7 @@ if (!Array.isArray(runtimeProfile.players?.robustnessEvidenceYears) || runtimePr
 if (runtimeProfile.players?.prospectiveSuccessor?.status !== "prospective-only-not-serving" || runtimeProfile.players?.prospectiveSuccessor?.mayServeNow !== false) throw new Error("Runtime forecast successor serving lock drift");
 if (runtimeProfile.decisionObjective?.primary !== "maximize-future-head-to-head-wins" || runtimeProfile.decisionObjective?.status !== "prospective-overlay") throw new Error("Runtime future-win objective drift");
 if (runtimeProfile.decisionObjective?.canPromoteQualifiedTradeReject !== false || runtimeProfile.decisionObjective?.draftPolicyChanged !== false) throw new Error("Runtime future-win safety guard drift");
+if (runtimeProfile.decisionObjective?.retrospectiveDiagnostic?.verdict !== "noninferior-no-observed-switches" || runtimeProfile.decisionObjective?.retrospectiveDiagnostic?.changedDecisions !== 0 || runtimeProfile.decisionObjective?.retrospectiveDiagnostic?.incrementalEdgeDemonstrated !== false) throw new Error("Runtime future-win historical interpretation drift");
 const campArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "camp-2026.json"), "utf8"));
 if (campArtifact.meta?.version !== "camp-intelligence-2026.1" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10) throw new Error("Camp intelligence artifact is incomplete");
 if (campArtifact.players.some((row) => row.modelEffect !== "advisory-only")) throw new Error("Camp intelligence must remain advisory-only");

@@ -1,6 +1,6 @@
 {
-  "version": "snapcount-analytics-qualification-2026.7",
-  "qualifiedAt": "2026-08-10T18:06:42.509Z",
+  "version": "snapcount-analytics-qualification-2026.8",
+  "qualifiedAt": "2026-08-10T18:23:07.443Z",
   "architecture": "offline-qualification-live-serving",
   "dataset": {
     "file": "historical-ppr-2020-2025.json.gz",
@@ -29,7 +29,8 @@
     "draft-overfit-audit.json": "4e9fe3fc8100e90c3d20b779813aa0e0844c7f7f5b545eb6e843cf725f375d3f",
     "forecast-provenance-audit.json": "bfbae5e6b69397d9ee88952fbc3c6555efb62b510daea03272ef655be9d72b8f",
     "forecast-overfit-audit.json": "39b444ff716489239a0a71c6134d22d3658159ced0e8212269b32bc6c947fe39",
-    "forecast-successor-candidate.json": "051e790059354d7e8bc7384ca38aea0481ba8e65a4d62233c3d222219d908704"
+    "forecast-successor-candidate.json": "051e790059354d7e8bc7384ca38aea0481ba8e65a4d62233c3d222219d908704",
+    "future-win-audit.json": "0f5fa23cedb062787cf47cf9ef56e776f8aa8767958cce58d7fdca3e66b948c5"
   },
   "grades": {
     "forecastMean": "A+",
@@ -212,6 +213,124 @@
         "mayUse2026ForTuning": false,
         "mayUse2026OnceForPreRegisteredAdmission": true
       }
+    },
+    "futureWinRetrospective": {
+      "version": "future-win-audit-2026.1",
+      "freezeCommit": "392628129bf57a45c2c350c2d6075e7ceb0c28dd",
+      "evidenceDiscipline": {
+        "season": 2025,
+        "status": "retrospective-consumed-evidence-not-independent-holdout",
+        "policyFrozenBeforeAuditRun": true,
+        "tuningAllowedAfterInspection": false,
+        "prospectiveConfirmation": 2026
+      },
+      "result": {
+        "decisions": 140,
+        "changedDecisions": 0,
+        "baselineCredits": 70,
+        "preferredCredits": 70,
+        "creditDelta": 0,
+        "averageCreditDeltaPerDecision": 0,
+        "improvedOutcomes": 0,
+        "worsenedOutcomes": 0,
+        "weekClusterBootstrap95": [
+          0,
+          0
+        ],
+        "weeks": [
+          {
+            "week": 1,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 2,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 3,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 4,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 5,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 6,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 7,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 8,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 9,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 10,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 11,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 12,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 13,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          },
+          {
+            "week": 14,
+            "decisions": 10,
+            "creditDelta": 0,
+            "changed": 0
+          }
+        ]
+      },
+      "gates": {
+        "realizedNoninferiority": true,
+        "clusterBootstrapLowerNonnegative": true,
+        "defaultLineupOverlayAdmitted": true
+      },
+      "verdict": "noninferior-no-observed-switches",
+      "interpretation": "Neutral retrospective safety evidence only; zero 2025 decisions switched, so this is not evidence of incremental H2H edge. Prospective 2026 remains required."
     },
     "uncertainty2024": {
       "n": 4646,
