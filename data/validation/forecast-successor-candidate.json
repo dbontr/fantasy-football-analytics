@@ -1,0 +1,158 @@
+{
+  "version": "forecast-successor-candidate-2026.1",
+  "frozenAt": "2026-08-10T16:43:14.567Z",
+  "status": "prospective-only-not-serving",
+  "purpose": "fully reproducible successor of the frozen forecast structure; fixed admitted positions/features/lambdas, refit only on the exact 2021-2023 training rows from the hashed committed artifact",
+  "inputs": {
+    "dataset": {
+      "file": "historical-ppr-2020-2025.json.gz",
+      "sha256": "7598098a7742335382ddda16c8e32fae3cb36fb19e02a95bedd2d3f82e7c5435",
+      "generatedAt": "2026-08-08T18:38:58.414Z"
+    },
+    "legacyReport": {
+      "file": "forecast-audit-report.json",
+      "canonicalSha256": "90491983b274da02e6a91bf887e0145921ca5f1a30329aea41a16e732156ee4a"
+    },
+    "fittingCode": {
+      "file": "scripts/forecast-history-audit.js",
+      "sha256": "7c36b0f63f49ab52f7e2fde5fcd165fd0ba6af39b210a89533aac7eaf3c2ad35"
+    },
+    "trainingSeasons": [
+      2021,
+      2022,
+      2023
+    ]
+  },
+  "models": {
+    "QB": {
+      "servingAdmitted": false,
+      "candidate": null,
+      "currentServing": null,
+      "candidateMinusServing": null
+    },
+    "RB": {
+      "servingAdmitted": true,
+      "candidate": {
+        "features": [
+          "defense",
+          "fpoe",
+          "implied",
+          "target",
+          "xfp_gap"
+        ],
+        "lambda": 100,
+        "intercept": -0.417131,
+        "coefficients": {
+          "defense": 0.056282,
+          "fpoe": 0.141433,
+          "implied": 0.035168,
+          "target": -0.665494,
+          "xfp_gap": 0.091973
+        }
+      },
+      "currentServing": {
+        "intercept": -0.418743,
+        "coefficients": {
+          "defense": 0.056113,
+          "fpoe": 0.145512,
+          "implied": 0.034549,
+          "target": -0.656749,
+          "xfp_gap": 0.087485
+        }
+      },
+      "candidateMinusServing": {
+        "intercept": 0.001612,
+        "coefficients": {
+          "defense": 0.000169,
+          "fpoe": -0.004079,
+          "implied": 0.000619,
+          "target": -0.008745,
+          "xfp_gap": 0.004488
+        }
+      }
+    },
+    "WR": {
+      "servingAdmitted": true,
+      "candidate": {
+        "features": [
+          "implied",
+          "snap",
+          "practice_dnp",
+          "defense"
+        ],
+        "lambda": 400,
+        "intercept": -0.393673,
+        "coefficients": {
+          "implied": 0.054058,
+          "snap": 0.166658,
+          "practice_dnp": -0.121143,
+          "defense": 0.041291
+        }
+      },
+      "currentServing": {
+        "intercept": -0.393169,
+        "coefficients": {
+          "implied": 0.05404,
+          "snap": 0.168455,
+          "practice_dnp": -0.121268,
+          "defense": 0.04127
+        }
+      },
+      "candidateMinusServing": {
+        "intercept": -0.000504,
+        "coefficients": {
+          "implied": 0.000018,
+          "snap": -0.001797,
+          "practice_dnp": 0.000125,
+          "defense": 0.000021
+        }
+      }
+    },
+    "TE": {
+      "servingAdmitted": true,
+      "candidate": {
+        "features": [
+          "snap"
+        ],
+        "lambda": 20,
+        "intercept": -0.041005,
+        "coefficients": {
+          "snap": 0.240228
+        }
+      },
+      "currentServing": {
+        "intercept": -0.041518,
+        "coefficients": {
+          "snap": 0.239355
+        }
+      },
+      "candidateMinusServing": {
+        "intercept": 0.000513,
+        "coefficients": {
+          "snap": 0.000873
+        }
+      }
+    }
+  },
+  "candidateModelSha256": "084b888db9af1fe9775e46cae86c9b5d9b3bc99da2b2e2e3863967db5463f7ea",
+  "preRegisteredAdmission": {
+    "evaluationSeason": 2026,
+    "baseline": "same point-in-time ESPN PPR projection used by SnapCount",
+    "noRetuneAfterOutcomeInspection": true,
+    "minimumBaselinePpr": 2,
+    "gates": {
+      "overallMaeImprovement": "> 0",
+      "overallRmseImprovement": "> 0",
+      "weeklyRankImprovement": ">= 0",
+      "admittedPositionMaeNonInferiority": "RB/WR/TE each >= 0 improvement",
+      "pairedWeekBootstrapMaeLower95": "> 0"
+    },
+    "decisionRule": "Score the exact frozen production baseline first. Evaluate this exact candidate second. Do not change features, lambdas, coefficients, thresholds, or gates after any 2026 outcome is inspected."
+  },
+  "restrictions": {
+    "mayServeNow": false,
+    "mayUse2024Or2025ForAdmission": false,
+    "mayUse2026ForTuning": false,
+    "mayUse2026OnceForPreRegisteredAdmission": true
+  }
+}

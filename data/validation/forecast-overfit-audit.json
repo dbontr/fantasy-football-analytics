@@ -1,0 +1,297 @@
+{
+  "version": "forecast-overfit-audit-2026.1",
+  "purpose": "post-selection robustness audit of the exact frozen serving mean; no fitting, feature selection, coefficient tuning, or policy selection",
+  "evidenceYears": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "evidenceDiscipline": {
+    "independentFrozenTest": 2024,
+    "consistencyOnly": 2025,
+    "developmentOrRetrospective": [
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "prospectiveNext": 2026,
+    "warning": "Only the original 2024 frozen test was uninspected at admission. The multi-year checks are robustness diagnostics, not six independent holdouts."
+  },
+  "seasons": {
+    "2020": {
+      "n": 4594,
+      "raw": {
+        "n": 4594,
+        "mae": 5.07051536,
+        "rmse": 6.62337219,
+        "bias": 0.04980951,
+        "rank": 0.64540026
+      },
+      "corrected": {
+        "n": 4594,
+        "mae": 4.99331626,
+        "rmse": 6.60498905,
+        "bias": -0.20999802,
+        "rank": 0.64846729
+      },
+      "delta": {
+        "maeImprovement": 0.0771991,
+        "rmseImprovement": 0.01838314,
+        "rankImprovement": 0.00306702,
+        "absoluteBiasImprovement": -0.16018851
+      }
+    },
+    "2021": {
+      "n": 4849,
+      "raw": {
+        "n": 4849,
+        "mae": 5.0992669,
+        "rmse": 6.5626287,
+        "bias": 0.44295855,
+        "rank": 0.62694176
+      },
+      "corrected": {
+        "n": 4849,
+        "mae": 5.01084139,
+        "rmse": 6.52726731,
+        "bias": 0.13956634,
+        "rank": 0.63149832
+      },
+      "delta": {
+        "maeImprovement": 0.08842551,
+        "rmseImprovement": 0.03536139,
+        "rankImprovement": 0.00455656,
+        "absoluteBiasImprovement": 0.30339222
+      }
+    },
+    "2022": {
+      "n": 4795,
+      "raw": {
+        "n": 4795,
+        "mae": 4.86217071,
+        "rmse": 6.39604849,
+        "bias": 0.43116342,
+        "rank": 0.63430678
+      },
+      "corrected": {
+        "n": 4795,
+        "mae": 4.77186953,
+        "rmse": 6.37382794,
+        "bias": 0.08512435,
+        "rank": 0.63587071
+      },
+      "delta": {
+        "maeImprovement": 0.09030117,
+        "rmseImprovement": 0.02222054,
+        "rankImprovement": 0.00156393,
+        "absoluteBiasImprovement": 0.34603907
+      }
+    },
+    "2023": {
+      "n": 4452,
+      "raw": {
+        "n": 4452,
+        "mae": 4.78219879,
+        "rmse": 6.300848,
+        "bias": 0.43932967,
+        "rank": 0.65069789
+      },
+      "corrected": {
+        "n": 4452,
+        "mae": 4.6719176,
+        "rmse": 6.25710756,
+        "bias": 0.05047261,
+        "rank": 0.6553491
+      },
+      "delta": {
+        "maeImprovement": 0.11028119,
+        "rmseImprovement": 0.04374044,
+        "rankImprovement": 0.00465121,
+        "absoluteBiasImprovement": 0.38885706
+      }
+    },
+    "2024": {
+      "n": 4646,
+      "raw": {
+        "n": 4646,
+        "mae": 4.92007953,
+        "rmse": 6.44199138,
+        "bias": 0.30682723,
+        "rank": 0.6598106
+      },
+      "corrected": {
+        "n": 4646,
+        "mae": 4.82793171,
+        "rmse": 6.41402634,
+        "bias": -0.01806899,
+        "rank": 0.66382218
+      },
+      "delta": {
+        "maeImprovement": 0.09214782,
+        "rmseImprovement": 0.02796505,
+        "rankImprovement": 0.00401158,
+        "absoluteBiasImprovement": 0.28875824
+      }
+    },
+    "2025": {
+      "n": 4711,
+      "raw": {
+        "n": 4711,
+        "mae": 4.90494443,
+        "rmse": 6.40553844,
+        "bias": 0.58909898,
+        "rank": 0.64605963
+      },
+      "corrected": {
+        "n": 4711,
+        "mae": 4.81516496,
+        "rmse": 6.38620576,
+        "bias": 0.26253064,
+        "rank": 0.64817043
+      },
+      "delta": {
+        "maeImprovement": 0.08977947,
+        "rmseImprovement": 0.01933268,
+        "rankImprovement": 0.0021108,
+        "absoluteBiasImprovement": 0.32656834
+      }
+    }
+  },
+  "leaveOneSeasonOut": {
+    "2020": {
+      "maeImprovement": 0.09396713,
+      "rmseImprovement": 0.02955752,
+      "rankImprovement": 0.00337882,
+      "absoluteBiasImprovement": 0.33725021
+    },
+    "2021": {
+      "maeImprovement": 0.09180483,
+      "rmseImprovement": 0.02604032,
+      "rankImprovement": 0.00308107,
+      "absoluteBiasImprovement": 0.32899112
+    },
+    "2022": {
+      "maeImprovement": 0.09141019,
+      "rmseImprovement": 0.02878976,
+      "rankImprovement": 0.00368632,
+      "absoluteBiasImprovement": 0.32013709
+    },
+    "2023": {
+      "maeImprovement": 0.08762416,
+      "rmseImprovement": 0.02473878,
+      "rankImprovement": 0.00306192,
+      "absoluteBiasImprovement": 0.31243455
+    },
+    "2024": {
+      "maeImprovement": 0.0910365,
+      "rmseImprovement": 0.02761949,
+      "rankImprovement": 0.00319129,
+      "absoluteBiasImprovement": 0.32449968
+    },
+    "2025": {
+      "maeImprovement": 0.09151152,
+      "rmseImprovement": 0.02934636,
+      "rankImprovement": 0.00357571,
+      "absoluteBiasImprovement": 0.32416102
+    }
+  },
+  "seasonClusterBootstrap": {
+    "replicates": 200000,
+    "seed": "0x5A17C0DE",
+    "maeImprovement95": [
+      0.08394897,
+      0.09980096
+    ],
+    "rmseImprovement95": [
+      0.02091961,
+      0.03535036
+    ]
+  },
+  "seasonSignTests": {
+    "mae": {
+      "wins": 6,
+      "total": 6,
+      "oneSidedP": 0.015625
+    },
+    "rmse": {
+      "wins": 6,
+      "total": 6,
+      "oneSidedP": 0.015625
+    },
+    "rank": {
+      "wins": 6,
+      "total": 6,
+      "oneSidedP": 0.015625
+    }
+  },
+  "adversePositionSeasonCells": [
+    {
+      "season": 2020,
+      "position": "QB",
+      "maeImprovement": 0,
+      "rmseImprovement": 0,
+      "rankImprovement": 0,
+      "absoluteBiasImprovement": 0,
+      "n": 526
+    },
+    {
+      "season": 2021,
+      "position": "QB",
+      "maeImprovement": 0,
+      "rmseImprovement": 0,
+      "rankImprovement": 0,
+      "absoluteBiasImprovement": 0,
+      "n": 564
+    },
+    {
+      "season": 2022,
+      "position": "QB",
+      "maeImprovement": 0,
+      "rmseImprovement": 0,
+      "rankImprovement": 0,
+      "absoluteBiasImprovement": 0,
+      "n": 549
+    },
+    {
+      "season": 2023,
+      "position": "QB",
+      "maeImprovement": 0,
+      "rmseImprovement": 0,
+      "rankImprovement": 0,
+      "absoluteBiasImprovement": 0,
+      "n": 516
+    },
+    {
+      "season": 2024,
+      "position": "QB",
+      "maeImprovement": 0,
+      "rmseImprovement": 0,
+      "rankImprovement": 0,
+      "absoluteBiasImprovement": 0,
+      "n": 549
+    },
+    {
+      "season": 2025,
+      "position": "QB",
+      "maeImprovement": 0,
+      "rmseImprovement": 0,
+      "rankImprovement": 0,
+      "absoluteBiasImprovement": 0,
+      "n": 544
+    }
+  ],
+  "gates": {
+    "allSeasonMaePositive": true,
+    "allSeasonRmsePositive": true,
+    "allSeasonRankNonnegative": true,
+    "leaveOneSeasonOutPositive": true,
+    "seasonBootstrap95Positive": true,
+    "originalFrozen2024Positive": true,
+    "robustnessPass": true
+  },
+  "interpretation": "No material season-level overfit is detected for the exact frozen serving mean under these post-selection robustness tests. This does not prove zero overfit; 2026 remains the next prospective confirmation."
+}
