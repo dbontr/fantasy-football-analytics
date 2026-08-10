@@ -65,7 +65,11 @@
               <p>ESPN, Yahoo, Sleeper, NFL, CBS, or a custom league. Set the rules once; every manual tool works without linking an account.</p>
               <div class="manual-profile-primary">
                 <label>Teams<input id="manual-league-teams" type="number" min="4" max="20" value="12"></label>
-                <label>Scoring<select id="manual-league-scoring"><option value="ppr">PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option></select></label>
+                <label>Scoring<select id="manual-league-scoring"><option value="ppr">PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option><option value="custom">Custom from projected stats</option></select></label>
+              </div>
+              <div id="manual-custom-scoring-wrap" class="hidden">
+                <label>Exact scoring rules JSON<textarea id="manual-custom-scoring" rows="6" placeholder='{"rules":{"passingYards":0.04,"passingTds":6,"rushingYards":0.1,"rushingTds":6,"receivingYards":0.1,"receivingTds":6,"receptions":1}}'></textarea></label>
+                <p class="fineprint">Custom scoring is calculated only from supplied projected stat lines. Missing components or bonus probabilities fail closed instead of being approximated.</p>
               </div>
               <details class="advanced-details manual-slot-settings">
                 <summary>Lineup slots</summary>
@@ -83,6 +87,18 @@
               </details>
               <div class="connect-actions"><button id="save-manual-profile" class="primary">Use these league rules</button><button id="manual-profile-standard" class="ghost">Standard setup</button></div>
               <p id="manual-profile-summary" class="privacy-note">12-team PPR · 1 QB · 2 RB · 2 WR · 1 TE · FLEX · D/ST · K</p>
+              <details class="advanced-details league-import-details">
+                <summary>Import rosters, schedule & live league state</summary>
+                <p>Use SnapCount JSON or CSV from any platform. Imports can include every roster, weekly H2H schedule, current lineup slots/locks, live points, FAAB/waiver state, limits, deadlines, and projected stat lines for exact custom scoring.</p>
+                <label>League JSON/CSV file<input id="league-import-file" type="file" accept=".json,.csv,application/json,text/csv"></label>
+                <label>Or paste league data<textarea id="league-import-text" rows="7" placeholder="Paste SnapCount league JSON or CSV"></textarea></label>
+                <div class="connect-actions"><button id="read-league-import" class="secondary" type="button">Read league data</button><button id="league-import-example" class="ghost" type="button">Load example</button></div>
+                <div id="league-import-team-step" class="hidden">
+                  <label>My team<select id="league-import-team-select"></select></label>
+                  <div class="connect-actions"><button id="use-league-import" class="primary" type="button">Use imported league</button><button id="disconnect-league-import" class="ghost" type="button">Disconnect import</button></div>
+                </div>
+                <p id="league-import-status" class="privacy-note">JSON is the full-fidelity format. CSV supports league, roster, schedule, transaction, and projection rows.</p>
+              </details>
             </aside>
 
             <aside class="league-connect-card" aria-label="Optional ESPN fantasy league connection">
@@ -202,7 +218,7 @@
         <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
         <label>My draft spot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
         <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
-        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option></select></label>
+        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option><option value="custom">Custom league scoring</option></select></label>
         <label>QB format<select id="draft-qb-format"><option value="one-qb" selected>1 QB</option><option value="superflex">Superflex</option><option value="two-qb">2 QB</option></select></label>
         <label>How others draft<select id="draft-opponent-strategy"></select></label>
         <button id="draft-reset" class="secondary">Restart</button>
@@ -270,7 +286,7 @@
       <div class="league-grid">
         <article class="module controls season-controls">
           <p class="control-title">MY LEAGUE</p>
-          <div id="season-connection-summary" class="season-connection-summary hidden"><span class="provider-badge espn-badge">ESPN</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
+          <div id="season-connection-summary" class="season-connection-summary hidden"><span id="season-provider-badge" class="provider-badge espn-badge">LEAGUE</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
           <button id="season-connect-espn" class="secondary" data-jump="overview">Connect or change ESPN league</button>
           <button id="build-demo-league" class="ghost">Try a demo league</button>
           <details class="advanced-details other-provider"><summary>Use Sleeper instead</summary>

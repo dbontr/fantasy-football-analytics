@@ -132,3 +132,18 @@ Draft rooms maintain a reusable tracker containing drafted IDs and per-team posi
 The correlated scenario engine now builds a sparse edge plan for the players actually being simulated. Each calibrated same-game pair receives one deterministic shared Gaussian edge; dense player sets are variance-capped, and the remaining player-specific residual restores unit marginal variance. Full league simulation builds one plan per NFL week across every fantasy team, samples each selected NFL player once, and then aggregates those values to fantasy-team scores. This removes the old hand-set low-rank game/team factor weights, avoids artificial WR-WR and cross-game correlation, and keeps paired simulations deterministic. K/DST are left independent in this residual layer until a separately validated calibration exists.
 
 The browser UI maintains an ID-to-player Map after bootstrap and each live status enrichment, replacing repeated linear scans across the 700-player universe in draft/roster/status operations.
+
+
+## League-state fidelity (2026-08-10)
+
+`src/engine/league.js` is the platform-neutral boundary between external league state and SnapCount decisions. ESPN and user-supplied JSON/CSV normalize into the same `snapcount-league-state-2026.1` shape: rules, teams, ownership, current lineup entries, fantasy schedule, transaction state, and optional projected stat components.
+
+Current-week legality is represented as optimizer constraints rather than post-hoc filtering. Locked starters reserve their exact legal slot; locked bench/IR players remain unavailable; only open slots are optimized. The same constraints propagate through point-max lineup assignment, opponent-aware matchup comparison, future-win action evaluation, and Season simulation.
+
+Explicitly finalized imported scores replace the corresponding forecast distribution with a point mass for current-week simulation. A live but unfinished score remains informational. Adapters must not infer finality when their source does not prove it.
+
+Known transaction rules form a separate feasibility gate around the qualified waiver/trade policies. FAAB, acquisition count, trade deadline, roster/IR capacity, and locked-player restrictions may reject an otherwise attractive action. Incomplete imported transaction state stays visibly conditional.
+
+Custom scoring is a deterministic projection transform, not a fitted coefficient family. Linear rules operate on supplied projected stat components; position rules support structures such as TE premiums; threshold bonuses require supplied probability or expected-count projections. Missing components fail closed. This changes league scoring representation without modifying the frozen forecast or qualified Draft coefficients.
+
+See `docs/ai/league-state-schema.md` for the import contract.

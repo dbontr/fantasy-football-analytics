@@ -123,6 +123,38 @@ async function main() {
   await waitFor(`document.querySelector('#manual-profile-summary')?.textContent.includes('10-team Half PPR') && document.querySelector('#masthead-team')?.textContent.includes('Any fantasy league')`);
 
   await evaluate(`(() => {
+    const imported = {
+      name:'QA Imported League', currentWeek:1, userTeamId:'1',
+      settings:{scoring:'ppr',lineupLockType:'INDIVIDUAL_GAME',slots:{QB:1,RB:1,WR:1,TE:0,FLEX:0,SUPERFLEX:0,DST:0,K:0,BN:2}},
+      transactions:{faabBudget:100,acquisitionLimit:8,tradeDeadline:'2026-11-20T00:00:00Z',rosterLimit:5,irSlots:1,complete:true},
+      teams:[
+        {teamId:'1',name:'Imported Stars',transactions:{faabSpent:25,waiverPriority:2,acquisitions:1,irUsed:0},rosterEntries:[{playerId:'4429795',lineupSlot:'RB',locked:true,currentPoints:11.2,final:true}]},
+        {teamId:'2',name:'Imported Rivals',rosterEntries:[{playerId:'12483',lineupSlot:'QB',locked:false,currentPoints:0,final:false}]}
+      ],
+      fantasySchedule:{1:[['1','2']]}
+    };
+    document.querySelector('#league-import-text').value=JSON.stringify(imported);
+    document.querySelector('#read-league-import').click();
+    return true;
+  })()`);
+  await waitFor(`!document.querySelector('#league-import-team-step').classList.contains('hidden') && document.querySelector('#league-import-status').textContent.includes('QA Imported League')`, 10000);
+  await evaluate(`document.querySelector('#league-import-team-select').value='1'; document.querySelector('#use-league-import').click(); true`);
+  await waitFor(`document.querySelector('#masthead-team')?.textContent === 'Imported Stars' && document.querySelectorAll('#roster-strip .roster-chip').length === 1`, 10000);
+  const importedState = await evaluate(`({provider:document.querySelector('#season-provider-badge')?.textContent,faab:document.querySelector('#faab-budget')?.value,mode:document.querySelector('#waiver-mode')?.value,source:document.querySelector('#manual-profile-state')?.textContent})`);
+  if (importedState.provider !== 'IMPORT' || importedState.faab !== '75' || importedState.mode !== 'faab' || !importedState.source.includes('Autofilled from import')) throw new Error(`Universal league import did not hydrate correctly: ${JSON.stringify(importedState)}`);
+  const importedHome = await snapshot("home-imported-desktop", 1440, 1000);
+  if (importedHome.horizontalOverflow) throw new Error("Imported league home layout overflow");
+  await send("Page.reload", { ignoreCache: true });
+  await waitFor(`document.querySelector('#masthead-team')?.textContent === 'Imported Stars' && document.querySelectorAll('#roster-strip .roster-chip').length === 1`, 10000);
+  await evaluate(`document.querySelector('#disconnect-league-import').click(); true`);
+  await waitFor(`document.querySelector('#masthead-team')?.textContent.includes('Any fantasy league')`, 10000);
+
+  await evaluate(`(() => { const scoring=document.querySelector('#manual-league-scoring'); scoring.value='custom'; scoring.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`);
+  const customScoringUi = await evaluate(`({hidden:document.querySelector('#manual-custom-scoring-wrap')?.classList.contains('hidden'),draftOption:Boolean(document.querySelector('#draft-scoring option[value="custom"]'))})`);
+  if (customScoringUi.hidden || !customScoringUi.draftOption) throw new Error('Exact custom-scoring controls did not render');
+  await evaluate(`(() => { const scoring=document.querySelector('#manual-league-scoring'); scoring.value='ppr'; scoring.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`);
+
+  await evaluate(`(() => {
     OracleEspnFantasy.loadLeague = async (_input, _season, options = {}) => {
       if (!options.browserSession) { const error = new Error("This league needs an ESPN sign-in."); error.code = "ESPN_AUTH_REQUIRED"; throw error; }
       return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2,matchupPeriodCount:14},rosterSettings:{lineupLocktimeType:'INDIVIDUAL_GAME',rosterLocktimeType:'INDIVIDUAL_GAME',lineupSlotCounts:{0:1,2:2,4:2,6:1,16:1,17:1,20:7,21:1,23:1}},scoringSettings:{playerRankType:'PPR',scoringItems:[{statId:3,points:.04},{statId:4,points:4},{statId:20,points:-2},{statId:24,points:.1},{statId:25,points:6},{statId:42,points:.1},{statId:43,points:6},{statId:53,points:1}]}}, status:{currentScoringPeriod:3,finalScoringPeriod:17}, schedule:Array.from({length:12},(_,i)=>({id:i+1,matchupPeriodId:i+3,home:{teamId:1},away:{teamId:2}})), members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:12483,fullName:'Matthew Stafford'}}},{playerPoolEntry:{player:{id:4429160,fullName:"De'Von Achane"}}},{playerPoolEntry:{player:{id:4696981,fullName:'Cam Skattebo'}}},{playerPoolEntry:{player:{id:4239993,fullName:'Tee Higgins'}}},{playerPoolEntry:{player:{id:4035687,fullName:'Michael Pittman Jr.'}}},{playerPoolEntry:{player:{id:4047650,fullName:'DK Metcalf'}}},{playerPoolEntry:{player:{id:3040151,fullName:'George Kittle'}}},{playerPoolEntry:{player:{id:3055899,fullName:'Harrison Butker'}}},{playerPoolEntry:{player:{id:-16021,fullName:'Eagles D/ST'}}}]}}] } };

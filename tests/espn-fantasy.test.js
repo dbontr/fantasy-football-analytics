@@ -141,3 +141,29 @@ test("ESPN restricted flex slots are flagged when SnapCount cannot represent the
   assert.equal(normalized.supported, false);
   assert.deepEqual(normalized.unsupportedStarterSlotIds, ["3"]);
 });
+
+test("ESPN normalization preserves lineup slots, live points, and transaction metadata when present", () => {
+  const local = [{ id: "4429795", name: "Jahmyr Gibbs", position: "RB", team: "DET" }];
+  const league = espn.normalizeLeague({
+    id: 99, seasonId: 2026,
+    settings: {
+      name: "Live League",
+      rosterSettings: { lineupSlotCounts: { 2: 1, 20: 1, 21: 1 }, lineupLocktimeType: "INDIVIDUAL_GAME", rosterLocktimeType: "INDIVIDUAL_GAME" },
+      acquisitionSettings: { acquisitionBudget: 100, acquisitionLimit: 8, acquisitionType: "WAIVERS_TRADITIONAL" },
+      tradeSettings: { deadlineDate: 1800000000000 },
+    },
+    teams: [{ id: 1, name: "One", waiverRank: 3, transactionCounter: { acquisitionBudgetSpent: 27, acquisitions: 4 }, roster: { entries: [
+      { lineupSlotId: 2, locked: true, playerPoolEntry: { appliedStatTotal: 11.7, player: { id: 4429795, fullName: "Jahmyr Gibbs" } } },
+    ] } }],
+  }, local);
+  assert.deepEqual(league.teams[0].rosterEntries[0], { playerId: "4429795", lineupSlot: "RB", locked: true, currentPoints: 11.7, final: null, kickoff: null });
+  assert.equal(league.teams[0].transactions.faabSpent, 27);
+  assert.equal(league.teams[0].transactions.waiverPriority, 3);
+  assert.equal(league.transactions.faabBudget, 100);
+  assert.equal(league.transactions.acquisitionLimit, 8);
+  assert.equal(league.transactions.tradeDeadline, 1800000000000);
+  assert.equal(league.transactions.irSlots, 1);
+  assert.equal(league.transactions.rosterLockType, "INDIVIDUAL_GAME");
+  assert.equal(espn.normalizeEspnTransactions({}).faabBudget, null);
+  assert.equal(espn.normalizeEspnTransactions({}).tradeDeadline, null);
+});

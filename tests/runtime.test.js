@@ -254,3 +254,48 @@ test("opponent-aware lineup can prefer upside when maximizing matchup win probab
   assert.ok(result.preferred.winProbability > result.baseline.winProbability);
   assert.ok(result.evaluationScenarios >= 3000);
 });
+
+
+test("opponent-aware lineup cannot move a player out of a locked current slot", () => {
+  const settings = { slots: { QB: 0, RB: 0, WR: 1, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 2 } };
+  const safe = makePlayer("locked-safe", "WR", "DET", 10, { projectionStdDev: 1.2, reliability: 0.95 });
+  const upside = makePlayer("locked-upside", "WR", "GB", 9, { projectionStdDev: 10, reliability: 0.7 });
+  const opponent = makePlayer("locked-opp", "WR", "MIN", 15, { projectionStdDev: 1.4, reliability: 0.95 });
+  const result = engine.evaluateMatchupLineups({
+    userRoster: [safe, upside], opponentRoster: [opponent], settings, week: 1,
+    scenarios: 3000, seed: "matchup-locked-current-slot",
+    userLineupConstraints: { lockedAssignments: [{ playerId: "locked-safe", slot: "WR" }] },
+  });
+  assert.deepEqual(result.baseline.starterIds, ["locked-safe"]);
+  assert.deepEqual(result.preferred.starterIds, ["locked-safe"]);
+  assert.equal(result.winProbabilityGain, 0);
+});
+
+test("future-win evaluator applies current-week lineup constraints without changing future weeks", () => {
+  const settings = { slots: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 1 } };
+  const weak = makePlayer("constraint-weak", "QB", "DET", 5, { projectionStdDev: 0.5 });
+  const strong = makePlayer("constraint-strong", "QB", "GB", 25, { projectionStdDev: 0.5 });
+  const rival = makePlayer("constraint-rival", "QB", "MIN", 15, { projectionStdDev: 0.5 });
+  const result = engine.evaluateFutureWinActions({
+    teams: [{ teamId: "1", roster: [weak, strong] }, { teamId: "2", roster: [rival] }],
+    userTeamId: "1", settings, startWeek: 1, regularSeasonEnd: 2,
+    fantasySchedule: { 1: [["1", "2"]], 2: [["1", "2"]] }, simulations: 1200, seed: "future-lock-constraint",
+    lineupConstraintsByTeamWeek: { 1: { 1: { lockedAssignments: [{ playerId: "constraint-weak", slot: "QB" }] } } },
+  });
+  const hold = result.actions.find((row) => row.id === "hold");
+  assert.equal(hold.outcome.futureHeadToHeadGames, 2);
+  assert.ok(hold.outcome.matchupWinProbabilities.find((row) => row.week === 1).winProbability < 0.1);
+  assert.ok(hold.outcome.matchupWinProbabilities.find((row) => row.week === 2).winProbability > 0.9);
+});
+
+test("final live score overrides forecast uncertainty exactly", () => {
+  const player = makePlayer("finished-player", "WR", "DET", 18, { projectionStdDev: 7 });
+  const forecast = engine.forecastPlayer(player, { week: 1 });
+  const [settled] = engine.applyFinalScores([forecast], { "finished-player": 27.4 });
+  assert.equal(settled.distribution.mean, 27.4);
+  assert.equal(settled.distribution.p10, 27.4);
+  assert.equal(settled.distribution.p90, 27.4);
+  assert.equal(settled.distribution.standardDeviation, 0);
+  assert.equal(settled.availability.probability, 1);
+  assert.equal(settled.finalScoreApplied, true);
+});

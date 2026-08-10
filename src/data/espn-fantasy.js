@@ -133,6 +133,7 @@
     "0": "QB", "2": "RB", "4": "WR",
     "6": "TE", "7": "SUPERFLEX", "16": "DST", "17": "K", "20": "BN", "23": "FLEX",
   });
+  const ESPN_ENTRY_SLOT_MAP = Object.freeze({ ...ESPN_SLOT_MAP, "21": "IR" });
 
   function scoringPreset(scoringSettings = {}) {
     const reception = (scoringSettings.scoringItems || []).find((row) => Number(row?.statId) === 53);
@@ -187,19 +188,45 @@
     };
   }
 
+
+  function normalizeEspnTransactions(settings = {}) {
+    const acquisitions = settings.acquisitionSettings || {};
+    const trades = settings.tradeSettings || {};
+    const counts = settings.rosterSettings?.lineupSlotCounts || {};
+    const rosterLimit = Object.entries(counts).filter(([slotId]) => String(slotId) !== "21").reduce((sum, [, value]) => sum + Math.max(0, Number(value || 0)), 0);
+    const numberOrNull = (value) => value === null || value === undefined || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
+    return {
+      faabBudget: numberOrNull(acquisitions.acquisitionBudget),
+      acquisitionLimit: numberOrNull(acquisitions.acquisitionLimit),
+      tradeDeadline: numberOrNull(trades.deadlineDate),
+      rosterLimit: rosterLimit || null,
+      irSlots: Math.max(0, Number(counts[21] || counts["21"] || 0)),
+      waiverType: acquisitions.acquisitionType ? String(acquisitions.acquisitionType) : null,
+      rosterLockType: settings.rosterSettings?.rosterLocktimeType ? String(settings.rosterSettings.rosterLocktimeType) : null,
+      lockDroppedPlayersAfterKickoff: null,
+      complete: false,
+    };
+  }
+
   function normalizeLeague(raw, localPlayers = []) {
     const indexes = buildPlayerIndexes(localPlayers);
     const members = new Map((raw?.members || []).map((member) => [String(member.id), member]));
     const teams = (raw?.teams || []).map((team, index) => {
       const entries = team?.roster?.entries || [];
       const rosterIds = [];
+      const rosterEntries = [];
       const unmatchedPlayers = [];
       for (const entry of entries) {
         const espnPlayer = entry?.playerPoolEntry?.player || entry?.player || null;
         if (!espnPlayer) continue;
         const local = matchLocalPlayer(espnPlayer, indexes);
-        if (local) rosterIds.push(String(local.id));
-        else if (espnPlayer.fullName || espnPlayer.name) unmatchedPlayers.push(String(espnPlayer.fullName || espnPlayer.name));
+        if (local) {
+          const playerId = String(local.id);
+          rosterIds.push(playerId);
+          const rawPoints = entry?.playerPoolEntry?.appliedStatTotal ?? entry?.playerPoolEntry?.appliedStatsTotal ?? entry?.appliedStatTotal;
+          const currentPoints = rawPoints === null || rawPoints === undefined || rawPoints === "" ? null : Number(rawPoints);
+          rosterEntries.push({ playerId, lineupSlot: ESPN_ENTRY_SLOT_MAP[String(entry?.lineupSlotId ?? "")] || "", locked: typeof entry?.locked === "boolean" ? entry.locked : typeof entry?.lineupLocked === "boolean" ? entry.lineupLocked : null, currentPoints: Number.isFinite(currentPoints) ? currentPoints : null, final: null, kickoff: null });
+        } else if (espnPlayer.fullName || espnPlayer.name) unmatchedPlayers.push(String(espnPlayer.fullName || espnPlayer.name));
       }
       const ownerId = String(team?.primaryOwner || team?.owners?.[0] || "");
       const record = recordSummary(team);
@@ -209,6 +236,14 @@
         abbrev: String(team?.abbrev || "").trim(),
         ownerName: String(members.get(ownerId)?.displayName || "").trim(),
         rosterIds: [...new Set(rosterIds)],
+        rosterEntries,
+        transactions: {
+          faabSpent: team?.transactionCounter?.acquisitionBudgetSpent === null || team?.transactionCounter?.acquisitionBudgetSpent === undefined ? null : Math.max(0, Number(team.transactionCounter.acquisitionBudgetSpent)),
+          faabRemaining: null,
+          waiverPriority: team?.waiverRank === null || team?.waiverRank === undefined ? null : Number.isFinite(Number(team.waiverRank)) ? Number(team.waiverRank) : null,
+          acquisitions: team?.transactionCounter?.acquisitions === null || team?.transactionCounter?.acquisitions === undefined ? null : Math.max(0, Number(team.transactionCounter.acquisitions)),
+          irUsed: entries.filter((entry) => String(entry?.lineupSlotId ?? "") === "21").length,
+        },
         unmatchedPlayers,
         ...record,
       };
@@ -229,6 +264,7 @@
       championshipWeek,
       fantasySchedule,
       settings: leagueSettings,
+      transactions: normalizeEspnTransactions(raw?.settings || {}),
       scoringLabel,
       teams,
       recognizedPlayers: teams.reduce((sum, team) => sum + team.rosterIds.length, 0),
@@ -245,6 +281,7 @@
     loadLeague,
     normalizeFantasySchedule,
     normalizeEspnSettings,
+    normalizeEspnTransactions,
     normalizeLeague,
     parseLeagueInput,
   };

@@ -332,6 +332,24 @@
     }));
   }
 
+  function applyFinalScores(forecasts, finalScoresByPlayer = {}) {
+    return (forecasts || []).map((forecast) => {
+      const value = Number(finalScoresByPlayer?.[String(forecast.player.id)]);
+      if (!Number.isFinite(value)) return forecast;
+      return {
+        ...forecast,
+        availability: { ...(forecast.availability || {}), probability: 1 },
+        activeDistribution: { mean: value, standardDeviation: 0 },
+        distribution: { mean: value, variance: 0, standardDeviation: 0, p10: value, p25: value, p50: value, p75: value, p90: value, cvar10: value },
+        probabilities: { active: 1, boom: 0, bust: 0 },
+        uncertainty: { aleatoric: 0, epistemic: 0, availability: 0, role: 0, evidenceConflict: 0 },
+        drivers: [...(forecast.drivers || []), { family: "live-score", label: "final game score", impact: value - Number(forecast.baseline?.mean || 0), confidence: 1 }],
+        edge: { points: value - Number(forecast.baseline?.mean || 0), percent: forecast.baseline?.mean > 0 ? (value - forecast.baseline.mean) / forecast.baseline.mean : 0 },
+        finalScoreApplied: true,
+      };
+    });
+  }
+
   function gameContext(player, schedule, week) {
     const team = String(player.team || "FA");
     const row = schedule?.[team]?.weeks?.[Math.max(0, Number(week || 1) - 1)] || null;
@@ -600,16 +618,16 @@
     return pairs;
   }
 
-  function lineupForecastsForWeek(roster, settings, week, schedule, evidenceByPlayer = {}, evidenceByPlayerWeek = {}, validatedMeanScale = undefined) {
+  function lineupForecastsForWeek(roster, settings, week, schedule, evidenceByPlayer = {}, evidenceByPlayerWeek = {}, validatedMeanScale = undefined, constraints = {}, finalScoresByPlayer = {}) {
     const weeklyEvidence = evidenceByPlayerWeek?.[week] || evidenceByPlayerWeek?.[String(week)] || {};
     const mergedEvidence = Object.fromEntries((roster || []).map((player) => [String(player.id), { ...(evidenceByPlayer[String(player.id)] || {}), ...(weeklyEvidence[String(player.id)] || {}) }]));
-    const forecasts = forecastPlayers(roster, { week, evidenceByPlayer: mergedEvidence, validatedMeanScale });
+    const forecasts = applyFinalScores(forecastPlayers(roster, { week, evidenceByPlayer: mergedEvidence, validatedMeanScale }), finalScoresByPlayer);
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({
       ...forecast.player,
       weekProjection: forecast.distribution.mean,
     }));
-    const lineup = core.optimizeLineup(prepared, settings, "weekProjection");
+    const lineup = core.optimizeLineup(prepared, settings, "weekProjection", constraints);
     const selected = lineup.starters
       .filter((row) => row.player)
       .map((row) => byId.get(String(row.player.id)))
@@ -636,7 +654,9 @@
     const lineups = {};
     const plans = {};
     for (let week = startWeek; week <= endWeek; week += 1) {
-      const selected = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek, options.validatedMeanScale).selected;
+      const constraints = options.lineupConstraintsByWeek?.[week] || options.lineupConstraintsByWeek?.[String(week)] || {};
+      const finalScores = options.finalScoresByPlayerWeek?.[week] || options.finalScoresByPlayerWeek?.[String(week)] || {};
+      const selected = lineupForecastsForWeek(roster, settings, week, schedule, options.evidenceByPlayer, options.evidenceByPlayerWeek, options.validatedMeanScale, constraints, finalScores).selected;
       lineups[week] = selected;
       const plan = buildCorrelationPlan(selected, schedule, week);
       plans[week] = { plan, scratch: new Float64Array(plan.entries.length) };
@@ -735,6 +755,8 @@
           evidenceByPlayer,
           options.evidenceByPlayerWeek,
           options.validatedMeanScale,
+          options.lineupConstraintsByTeamWeek?.[week]?.[String(team.teamId)] || options.lineupConstraintsByTeamWeek?.[String(week)]?.[String(team.teamId)] || {},
+          options.finalScoresByTeamWeek?.[week]?.[String(team.teamId)] || options.finalScoresByTeamWeek?.[String(week)]?.[String(team.teamId)] || {},
         ).selected;
       }
     }
@@ -926,15 +948,17 @@
       ...(options.evidenceByPlayer?.[String(player.id)] || {}),
       ...(weeklyEvidence[String(player.id)] || {}),
     }]));
-    const forecasts = forecastPlayers(players, { week, evidenceByPlayer, validatedMeanScale: options.validatedMeanScale });
+    const teamScores = options.finalScoresByTeamWeek?.[week] || options.finalScoresByTeamWeek?.[String(week)] || {};
+    const finalScores = Object.assign({}, ...Object.values(teamScores || {}));
+    const forecasts = applyFinalScores(forecastPlayers(players, { week, evidenceByPlayer, validatedMeanScale: options.validatedMeanScale }), finalScores);
     return new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
   }
 
-  function lineupFromForecastMap(roster, settings, forecastById, metric = "decisionMean") {
+  function lineupFromForecastMap(roster, settings, forecastById, metric = "decisionMean", constraints = {}) {
     const prepared = (roster || []).map((player) => {      const forecast = forecastById.get(String(player.id));
       return { ...player, [metric]: finite(forecast?.distribution?.mean, 0) };
     });
-    const lineup = core.optimizeLineup(prepared, settings, metric);
+    const lineup = core.optimizeLineup(prepared, settings, metric, constraints);
     return {
       lineup,
       starterIds: lineup.starters.filter((row) => row.player).map((row) => String(row.player.id)),
@@ -1016,9 +1040,10 @@
       for (const [left, right] of fantasyPairings(baseTeams, week, options.fantasySchedule || null)) {
         const lineups = states.map((teams) => {
           const leftTeam = findTeam(teams, left), rightTeam = findTeam(teams, right);
+          const weekConstraints = options.lineupConstraintsByTeamWeek?.[week] || options.lineupConstraintsByTeamWeek?.[String(week)] || {};
           return {
-            left: lineupFromForecastMap(leftTeam?.roster || [], settings, forecastById),
-            right: lineupFromForecastMap(rightTeam?.roster || [], settings, forecastById),
+            left: lineupFromForecastMap(leftTeam?.roster || [], settings, forecastById, "decisionMean", weekConstraints[String(left)] || {}),
+            right: lineupFromForecastMap(rightTeam?.roster || [], settings, forecastById, "decisionMean", weekConstraints[String(right)] || {}),
           };
         });
         const usedIds = new Set(lineups.flatMap((row) => [...row.left.starterIds, ...row.right.starterIds]));
@@ -1128,9 +1153,9 @@
     return lineup.starters.filter((row) => row.player).map((row) => String(row.player.id)).sort().join("|");
   }
 
-  function lineupCandidate(forecasts, settings, metricName, metricValue) {
+  function lineupCandidate(forecasts, settings, metricName, metricValue, constraints = {}) {
     const prepared = forecasts.map((forecast) => ({ ...forecast.player, [metricName]: metricValue(forecast) }));
-    return core.optimizeLineup(prepared, settings, metricName);
+    return core.optimizeLineup(prepared, settings, metricName, constraints);
   }
   function evaluateMatchupLineups(options = {}) {
     const userRoster = options.userRoster || [];
@@ -1145,7 +1170,7 @@
     const forecasts = [...forecastById.values()];
     const simulation = simulateForecasts(forecasts, { week, scenarios, schedule: options.schedule || {}, seed });
     const opponentForecasts = opponentRoster.map((player) => forecastById.get(String(player.id))).filter(Boolean);
-    const opponentLineup = lineupCandidate(opponentForecasts, settings, "candidateMean", (forecast) => forecast.distribution.mean);
+    const opponentLineup = lineupCandidate(opponentForecasts, settings, "candidateMean", (forecast) => forecast.distribution.mean, options.opponentLineupConstraints || {});
     const opponentIds = opponentLineup.starters.filter((row) => row.player).map((row) => String(row.player.id));
     const userForecasts = userRoster.map((player) => forecastById.get(String(player.id))).filter(Boolean);
     const candidateMap = new Map();
@@ -1153,9 +1178,9 @@
       const key = lineupCandidateKey(lineup);
       if (key && !candidateMap.has(key)) candidateMap.set(key, { key, lineup, source });
     };
-    addCandidate(lineupCandidate(userForecasts, settings, "candidateMean", (forecast) => forecast.distribution.mean), "mean");
+    addCandidate(lineupCandidate(userForecasts, settings, "candidateMean", (forecast) => forecast.distribution.mean, options.userLineupConstraints || {}), "mean");
     for (const field of ["p25", "p50", "p75", "p90", "cvar10"]) {
-      addCandidate(lineupCandidate(userForecasts, settings, `candidate_${field}`, (forecast) => finite(forecast.distribution[field], forecast.distribution.mean)), field);
+      addCandidate(lineupCandidate(userForecasts, settings, `candidate_${field}`, (forecast) => finite(forecast.distribution[field], forecast.distribution.mean), options.userLineupConstraints || {}), field);
     }
 
     const generationScenarios = Math.min(128, Math.max(32, Math.floor(scenarios * 0.2)));
@@ -1164,7 +1189,7 @@
         ...forecast.player,
         scenarioValue: finite(simulation.playerSamples[String(forecast.player.id)]?.[scenario], 0),
       }));
-      addCandidate(core.optimizeLineup(prepared, settings, "scenarioValue"), "held-out-generator");
+      addCandidate(core.optimizeLineup(prepared, settings, "scenarioValue", options.userLineupConstraints || {}), "held-out-generator");
       if (candidateMap.size >= 160) break;
     }
     const evaluationStart = generationScenarios;
@@ -1186,7 +1211,7 @@
         expectedPoints: points / Math.max(1, evaluationScenarios),
       };
     }).sort((left, right) => right.winProbability - left.winProbability || right.expectedPoints - left.expectedPoints);
-    const baselineKey = lineupCandidateKey(lineupCandidate(userForecasts, settings, "candidateMean2", (forecast) => forecast.distribution.mean));
+    const baselineKey = lineupCandidateKey(lineupCandidate(userForecasts, settings, "candidateMean2", (forecast) => forecast.distribution.mean, options.userLineupConstraints || {}));
     const baseline = candidates.find((row) => [...row.starterIds].sort().join("|") === baselineKey) || candidates[0];
     const preferred = candidates[0];
     const pairedWinDeltas = new Float32Array(evaluationScenarios);
@@ -1280,6 +1305,7 @@
 
   return {
     VERSION,
+    applyFinalScores,
     calibrationMetrics,
     correlation,
     evaluateChampionshipActions,

@@ -131,3 +131,18 @@ test("qualified live ranking stays policy-identical across a full draft", () => 
   assert.deepEqual(state.picks, replay.state.picks);
   assert.deepEqual(state.rosters["1"], replay.state.rosters["1"]);
 });
+
+
+test("custom draft context uses exact projected stat-line scoring and fails closed when incomplete", () => {
+  const row = players(20)[4];
+  row.projectionStats = { passingYards: 4200, passingTds: 32 };
+  row.weeklyProjectionStats = Array(18).fill(null).map(() => ({ passingYards: 250, passingTds: 2 }));
+  const settings = core.cloneSettings({
+    scoring: "custom",
+    customScoring: { rules: { passingYards: 0.04, passingTds: 6 } },
+  });
+  const custom = draft.createRoomContext([row], settings);
+  assert.equal(custom.byId.get(row.id).projectedPoints, 360);
+  assert.equal(custom.byId.get(row.id).weeklyProjection, 22);
+  assert.throws(() => draft.createRoomContext([{ ...row, projectionStats: null }], settings), /missing projected stat components/i);
+});

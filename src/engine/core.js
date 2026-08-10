@@ -700,48 +700,57 @@
     return assignment;
   }
 
-  function optimizeLineup(roster, settings = {}, metric = "weeklyProjection") {
+  function optimizeLineup(roster, settings = {}, metric = "weeklyProjection", options = {}) {
     const players = (roster || []).map(normalizePlayer);
     const slots = expandedStarterSlots(settings).sort((a, b) => {
       const sizeA = slotEligibility(a.slot)?.size || 99;
       const sizeB = slotEligibility(b.slot)?.size || 99;
       return sizeA - sizeB || a.slot.localeCompare(b.slot);
     });
-    if (!slots.length) {
-      return { starters: [], bench: players, total: 0, filled: 0, slots: 0 };
+    if (!slots.length) return { starters: [], bench: players, total: 0, filled: 0, slots: 0, locked: 0 };
+
+    const playerById = new Map(players.map((player) => [String(player.id), player]));
+    const lockedAssignments = Array.isArray(options.lockedAssignments) ? options.lockedAssignments : [];
+    const lockedBenchIds = new Set((options.lockedBenchPlayerIds || []).map(String));
+    const reservedSlotKeys = new Set();
+    const lockedStarterIds = new Set();
+    const lockedRows = new Map();
+    for (const assignment of lockedAssignments) {
+      const player = playerById.get(String(assignment?.playerId ?? ""));
+      if (!player) continue;
+      const candidate = assignment?.slotKey
+        ? slots.find((row) => row.key === String(assignment.slotKey) && !reservedSlotKeys.has(row.key))
+        : slots.find((row) => row.slot === String(assignment?.slot || "").toUpperCase() && !reservedSlotKeys.has(row.key));
+      if (!candidate || !slotEligibility(candidate.slot)?.has(player.position)) continue;
+      reservedSlotKeys.add(candidate.key);
+      lockedStarterIds.add(String(player.id));
+      lockedRows.set(candidate.key, { slot: candidate.slot, slotKey: candidate.key, player, locked: true });
     }
-    const dummyCount = slots.length;
-    const costs = slots.map((slot) => {
+
+    const availablePlayers = players.filter((player) => !lockedStarterIds.has(String(player.id)) && !lockedBenchIds.has(String(player.id)));
+    const openSlots = slots.filter((slot) => !reservedSlotKeys.has(slot.key));
+    const dummyCount = openSlots.length;
+    const costs = openSlots.map((slot) => {
       const eligible = slotEligibility(slot.slot);
-      const real = players.map((player) => (
-        eligible?.has(player.position)
-          ? -finite(player[metric], finite(player.projectedPoints, 0))
-          : 1_000_000
-      ));
+      const real = availablePlayers.map((player) => eligible?.has(player.position) ? -finite(player[metric], finite(player.projectedPoints, 0)) : 1_000_000);
       return [...real, ...Array(dummyCount).fill(0)];
     });
-    const assignment = minimumCostAssignment(costs);
-    const usedIds = new Set();
-    let total = 0;
-    const starters = slots.map((slot, index) => {
+    const assignment = openSlots.length ? minimumCostAssignment(costs) : [];
+    const usedIds = new Set(lockedStarterIds);
+    let total = [...lockedRows.values()].reduce((sum, row) => sum + finite(row.player?.[metric], finite(row.player?.projectedPoints, 0)), 0);
+    const optimizedRows = new Map();
+    openSlots.forEach((slot, index) => {
       const column = assignment[index];
-      const player = column >= 0 && column < players.length ? players[column] : null;
+      const player = column >= 0 && column < availablePlayers.length ? availablePlayers[column] : null;
       const eligible = player && slotEligibility(slot.slot)?.has(player.position);
-      if (!eligible) return { slot: slot.slot, slotKey: slot.key, player: null };
-      usedIds.add(player.id);
+      if (!eligible) return optimizedRows.set(slot.key, { slot: slot.slot, slotKey: slot.key, player: null, locked: false });
+      usedIds.add(String(player.id));
       total += finite(player[metric], finite(player.projectedPoints, 0));
-      return { slot: slot.slot, slotKey: slot.key, player };
+      optimizedRows.set(slot.key, { slot: slot.slot, slotKey: slot.key, player, locked: false });
     });
-    const bench = players
-      .filter((player) => !usedIds.has(player.id))
-      .sort((a, b) => finite(b[metric]) - finite(a[metric]));
-    return {
-      starters,
-      bench,
-      total: Number(total.toFixed(2)),
-      filled: starters.filter((row) => row.player).length,
-      slots: starters.length,
-    };
+    const starters = slots.map((slot) => lockedRows.get(slot.key) || optimizedRows.get(slot.key) || { slot: slot.slot, slotKey: slot.key, player: null, locked: false });
+    const bench = players.filter((player) => !usedIds.has(String(player.id))).sort((a, b) => finite(b[metric]) - finite(a[metric]));
+    return { starters, bench, total: Number(total.toFixed(2)), filled: starters.filter((row) => row.player).length, slots: starters.length, locked: lockedRows.size };
   }
 
   function optimizeWeeklyLineup(roster, settings = {}, week = 1) {
