@@ -2332,3 +2332,51 @@ main { max-width: 1320px; padding: 0 18px 56px; }
 @media (max-width: 640px) {
   .camp-read { grid-template-columns: 1fr; }
 }
+
+/* Universal league + SnapCount mark */
+.brand-mark {
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.brand-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.league-setup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.manual-league-card {
+  min-height: 410px;
+  padding: 22px 24px 20px;
+  border: 1px solid #c7ccd2;
+  border-top: 5px solid #111316;
+  background: #fff;
+  color: var(--ink);
+}
+.manual-league-card .connect-card-head { margin: -22px -24px 18px; padding: 12px 18px; border-bottom: 1px solid #d5d9de; background: #f4f5f6; }
+.manual-league-card h2 { margin: 0 0 9px; font-size: 30px; letter-spacing: -.025em; }
+.manual-league-card p { color: #626a74; line-height: 1.55; }
+.manual-league-card label { color: #363b42; }
+.manual-league-card input, .manual-league-card select { background: #fff; color: var(--ink); border-color: #bfc5cc; }
+.universal-badge { background: #111316; color: #fff; }
+.manual-profile-primary { display: grid; grid-template-columns: minmax(100px,.65fr) minmax(150px,1.35fr); gap: 10px; margin-top: 18px; }
+.manual-slot-settings { margin-top: 14px; }
+.slot-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; padding-top: 12px; }
+.slot-grid label { min-width: 0; font-size: 11px; }
+.slot-grid input { width: 100%; }
+.manual-league-card .connect-actions { margin-top: 18px; }
+
+@media (max-width: 1040px) {
+  .league-setup-grid { grid-template-columns: 1fr; }
+  .manual-league-card, .league-connect-card { min-height: 0; }
+}
+@media (max-width: 560px) {
+  .manual-league-card { padding: 18px; }
+  .manual-league-card .connect-card-head { margin: -18px -18px 16px; }
+  .manual-profile-primary { grid-template-columns: 1fr 1fr; }
+  .slot-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .manual-league-card .connect-actions { display: grid; grid-template-columns: 1fr; }
+  .manual-league-card .connect-actions button { width: 100%; }
+}

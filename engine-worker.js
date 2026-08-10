@@ -2,6 +2,7 @@
 
 importScripts(
   "./src/engine/core.js",
+  "./src/engine/league.js",
   "./src/engine/rookies.js",
   "./src/engine/correlation.js",
   "./src/engine/mean-calibration.js",

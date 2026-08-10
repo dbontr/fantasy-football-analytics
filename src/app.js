@@ -2,6 +2,7 @@
   "use strict";
 
   const core = window.FantasyOracleCore;
+  const leagueApi = window.SnapCountLeague;
   const engine = window.OracleBrowserEngine;
   const rookieModel = window.OracleRookies;
   const evidenceApi = window.OracleEvidence;
@@ -43,11 +44,14 @@
     marketByWeek: new Map(),
     draftBoard: null,
     draftRenderToken: 0,
+    draftBusy: false,
+    playerRunToken: 0,
     ledger: new evidenceApi.EvidenceLedger(),
     rosterIds: [],
     draftState: null,
     leagueTeams: null,
     leagueMeta: null,
+    leagueProfile: null,
     espnLeague: null,
     espnConnection: null,
     espnNeedsSession: false,
@@ -149,6 +153,111 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function currentLeagueProfile() {
+    if (state.leagueProfile) return state.leagueProfile;
+    return leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+  }
+
+  function currentLeagueSettings() {
+    return core.cloneSettings(currentLeagueProfile().settings);
+  }
+
+  function scoringLabel(scoring) {
+    if (scoring === "half-ppr") return "Half PPR";
+    if (scoring === "standard") return "Standard";
+    if (scoring === "superflex") return "PPR Superflex";
+    return "PPR";
+  }
+
+  function leagueProfileSummary(profile = currentLeagueProfile()) {
+    const settings = core.cloneSettings(profile.settings);
+    const slots = settings.slots;
+    const starters = [
+      slots.QB ? `${slots.QB} QB` : null,
+      slots.RB ? `${slots.RB} RB` : null,
+      slots.WR ? `${slots.WR} WR` : null,
+      slots.TE ? `${slots.TE} TE` : null,
+      slots.FLEX ? `${slots.FLEX} FLEX` : null,
+      slots.SUPERFLEX ? `${slots.SUPERFLEX} SF` : null,
+      slots.DST ? `${slots.DST} D/ST` : null,
+      slots.K ? `${slots.K} K` : null,
+    ].filter(Boolean).join(" · ");
+    return `${settings.teams}-team ${scoringLabel(settings.scoring)} · ${starters || "custom starters"}`;
+  }
+
+  function leagueProfileFromForm(source = "manual") {
+    return leagueApi.normalizeProfile({
+      source,
+      teams: Number($("#manual-league-teams")?.value || 12),
+      scoring: $("#manual-league-scoring")?.value || "ppr",
+      slots: {
+        QB: Number($("#manual-slot-qb")?.value || 0),
+        RB: Number($("#manual-slot-rb")?.value || 0),
+        WR: Number($("#manual-slot-wr")?.value || 0),
+        TE: Number($("#manual-slot-te")?.value || 0),
+        FLEX: Number($("#manual-slot-flex")?.value || 0),
+        SUPERFLEX: Number($("#manual-slot-superflex")?.value || 0),
+        DST: Number($("#manual-slot-dst")?.value || 0),
+        K: Number($("#manual-slot-k")?.value || 0),
+        BN: Number($("#manual-slot-bn")?.value || 0),
+      },
+    });
+  }
+
+  function populateLeagueProfileForm(profile = currentLeagueProfile()) {
+    const settings = core.cloneSettings(profile.settings);
+    if (!$("#manual-league-teams")) return;
+    $("#manual-league-teams").value = String(settings.teams);
+    $("#manual-league-scoring").value = ["ppr", "half-ppr", "standard"].includes(settings.scoring) ? settings.scoring : "ppr";
+    const ids = { QB: "qb", RB: "rb", WR: "wr", TE: "te", FLEX: "flex", SUPERFLEX: "superflex", DST: "dst", K: "k", BN: "bn" };
+    for (const [slot, id] of Object.entries(ids)) $("#manual-slot-" + id).value = String(settings.slots[slot] || 0);
+    $("#manual-profile-summary").textContent = leagueProfileSummary(profile);
+    const imported = profile.source === "espn";
+    $("#manual-profile-state").textContent = imported ? "Autofilled from ESPN" : profile.source === "manual-override" ? "Manual override" : "No connection required";
+  }
+
+  function syncDraftControlsToLeagueProfile() {
+    if (state.draftState?.picks?.length) return;
+    const settings = currentLeagueSettings();
+    $("#draft-teams").value = String(settings.teams);
+    if (["ppr", "half-ppr", "standard"].includes(settings.scoring)) $("#draft-scoring").value = settings.scoring;
+    $("#draft-qb-format").value = Number(settings.slots.QB) >= 2 ? "two-qb" : Number(settings.slots.SUPERFLEX) > 0 ? "superflex" : "one-qb";
+    const rosterSize = Object.values(settings.slots).reduce((sum, value) => sum + Math.max(0, Number(value || 0)), 0);
+    if (rosterSize >= 6 && rosterSize <= 24) $("#draft-rounds").value = String(rosterSize);
+  }
+
+  async function saveManualLeagueProfile() {
+    state.leagueProfile = leagueProfileFromForm(state.espnConnection ? "manual-override" : "manual");
+    if (state.leagueMeta) state.leagueMeta.settings = currentLeagueSettings();
+    await store.set("league-profile", state.leagueProfile);
+    populateLeagueProfileForm();
+    syncDraftControlsToLeagueProfile();
+    if (!state.draftState?.picks?.length) resetDraft();
+    renderEspnConnection();
+    status(`League rules saved: ${leagueProfileSummary()}.`, "good");
+  }
+
+  async function resetManualLeagueProfile() {
+    state.leagueProfile = leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+    await store.set("league-profile", state.leagueProfile);
+    populateLeagueProfileForm();
+    syncDraftControlsToLeagueProfile();
+    if (!state.draftState?.picks?.length) resetDraft();
+    renderEspnConnection();
+    status("Standard manual league rules restored.", "good");
+  }
+
+  function focusManualLeagueSetup() {
+    $("#manual-league-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => $("#manual-league-teams")?.focus(), 250);
+  }
+
+  function focusEspnSetup() {
+    $(".league-connect-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => $("#espn-league-input")?.focus(), 250);
+  }
+
+
   function espnTeamById(teamId) {
     return state.espnLeague?.teams?.find((team) => String(team.teamId) === String(teamId)) || null;
   }
@@ -190,11 +299,7 @@
   }
 
   function rosterStarterCoverage(roster) {
-    const slots = core.expandedStarterSlots(core.DEFAULT_SETTINGS);
-    if (!slots.length) return 1;
-    const lineup = core.optimizeLineup(roster || [], core.DEFAULT_SETTINGS, "weeklyProjection");
-    const filled = lineup.starters.filter((row) => row.player).length;
-    return filled / slots.length;
+    return leagueApi.starterCoverage(roster || [], currentLeagueSettings());
   }
 
   function hasReliableLeagueRosterCoverage(teams = currentLeagueTeamsForDecisions()) {
@@ -232,14 +337,15 @@
     const team = espnTeamById(state.espnConnection?.teamId);
     const authNeeded = state.espnNeedsSession && !league;
     $("#overview").classList.toggle("league-connected", Boolean(team));
-    $("#masthead-team").textContent = team ? team.name : league ? league.name : "League not connected";
-    $("#masthead-week").textContent = team && league ? `${team.recordLabel} · Week ${league.currentWeek}` : league ? `${league.teams.length} teams · ${league.scoringLabel}` : "2026 season";
-    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "LEAGUE LOADED" : "NOT CONNECTED";
-    $("#rail-context-team").textContent = team ? team.name : league ? league.name : "Connect ESPN Fantasy";
-    $("#rail-context-week").textContent = team && league ? `${team.recordLabel} · ${league.name}` : league ? `${league.teams.length} teams · choose your team` : "Manual tools are available anytime.";
+    populateLeagueProfileForm();
+    $("#masthead-team").textContent = team ? team.name : league ? league.name : "Any fantasy league";
+    $("#masthead-week").textContent = team && league ? `${team.recordLabel} · Week ${league.currentWeek}` : league ? `${league.teams.length} teams · ${league.scoringLabel}` : leagueProfileSummary();
+    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "LEAGUE LOADED" : "MANUAL MODE";
+    $("#rail-context-team").textContent = team ? team.name : league ? league.name : "Any fantasy platform";
+    $("#rail-context-week").textContent = team && league ? `${team.recordLabel} · ${league.name}` : league ? `${league.teams.length} teams · choose your team` : leagueProfileSummary();
     $("#hero-lede").textContent = team
       ? `${team.name} is synced. Start with your lineup, the waiver wire, a trade, or your season outlook.`
-      : "Connect ESPN or jump into a tool. SnapCount turns projections, injuries, matchups, news, and simulations into the next move for your team.";
+      : "Use SnapCount with any fantasy league — no account or link required. Set your league rules manually, or connect ESPN to autofill them.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);
@@ -254,7 +360,7 @@
     if (!team) return;
     const rosterNote = `${team.rosterIds.length} players recognized${team.unmatchedPlayers.length ? ` · ${team.unmatchedPlayers.length} unmatched` : ""}`;
     $("#espn-connected-team").textContent = team.name;
-    $("#espn-connected-meta").textContent = `${league.name} · ${team.recordLabel} · ${rosterNote}`;
+    $("#espn-connected-meta").textContent = `${league.name} · ${team.recordLabel} · ${rosterNote}${state.leagueMeta?.settingsWarning ? ` · ${state.leagueMeta.settingsWarning}` : ""}`;
     $("#home-league-label").textContent = league.name;
     $("#home-team-name").textContent = team.name;
     $("#home-team-record").textContent = `${team.recordLabel} · Week ${league.currentWeek} · ${rosterNote}`;
@@ -275,6 +381,15 @@
     };
     state.rosterIds = (team.rosterIds || []).map(String).filter((id) => playerById(id));
     state.leagueTeams = hydratedEspnTeams();
+    const espnSettings = state.espnLeague.settings || null;
+    if (espnSettings?.supported && state.leagueProfile?.source !== "manual-override") {
+      state.leagueProfile = leagueApi.normalizeProfile({ ...espnSettings, source: "espn", provider: "espn" });
+    } else if (!state.leagueProfile) {
+      state.leagueProfile = leagueApi.normalizeProfile({ source: "manual", teams: state.leagueTeams.length || 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+    }
+    const settingsProblems = [];
+    if (espnSettings?.unsupportedStarterSlotIds?.length) settingsProblems.push(`starter slots ${espnSettings.unsupportedStarterSlotIds.join(", ")}`);
+    if (espnSettings?.unsupportedScoringStatIds?.length) settingsProblems.push(`custom scoring stats ${espnSettings.unsupportedScoringStatIds.join(", ")}`);
     state.leagueMeta = {
       playoffTeams: state.espnLeague.playoffTeams || Math.min(6, state.leagueTeams.length),
       playoffByes: (state.espnLeague.playoffTeams || 6) === 6 ? 2 : 0,
@@ -282,6 +397,9 @@
       championshipWeek: state.espnLeague.championshipWeek || 17,
       fantasySchedule: state.espnLeague.fantasySchedule || null,
       scheduleSource: Object.keys(state.espnLeague.fantasySchedule || {}).length ? "espn" : "fallback",
+      settings: currentLeagueSettings(),
+      settingsSource: state.leagueProfile?.source || "manual",
+      settingsWarning: settingsProblems.length ? `ESPN uses ${settingsProblems.join(" and ")}; manual SnapCount rules remain active.` : null,
     };
     setDecisionWeek(state.espnLeague.currentWeek);
     if ($("#regular-season-end")) $("#regular-season-end").value = String(state.leagueMeta.regularSeasonEnd);
@@ -290,7 +408,10 @@
       store.set("roster-ids", state.rosterIds),
       store.set("espn-connection", state.espnConnection),
       store.set("espn-snapshot", state.espnLeague),
+      store.set("league-profile", state.leagueProfile),
     ]);
+    populateLeagueProfileForm();
+    syncDraftControlsToLeagueProfile();
     renderRoster();
     renderEspnConnection();
     $("#league-source-status").textContent = `${state.espnLeague.name} · ${team.name} loaded from ESPN.`;
@@ -350,7 +471,9 @@
     state.espnNeedsSession = false;
     state.leagueTeams = null;
     state.leagueMeta = null;
-    await Promise.all([store.remove("espn-connection"), store.remove("espn-snapshot")]);
+    state.leagueProfile = leagueApi.normalizeProfile({ ...currentLeagueProfile(), ...currentLeagueProfile().settings, source: "manual", provider: null });
+    await Promise.all([store.remove("espn-connection"), store.remove("espn-snapshot"), store.set("league-profile", state.leagueProfile)]);
+    populateLeagueProfileForm();
     renderEspnConnection();
     $("#league-source-status").textContent = "No league loaded.";
     status("ESPN league disconnected. Your current roster is still saved locally.", "good");
@@ -460,7 +583,7 @@
   function draftPolicyForSettings(settings) {
     const profile = servingPolicy("draft");
     if (profile.policy !== "segmented-qualified" || !profile.segments) return profile.fallbackPolicy || null;
-    if (!(profile.supportedTeamCounts || []).includes(Number(settings.teams))) return profile.fallbackPolicy || null;
+    if (!leagueApi.isQualifiedPprDraftScope(settings) || !(profile.supportedTeamCounts || []).includes(Number(settings.teams))) return profile.fallbackPolicy || null;
     const anchors = [
       { bucket: "early", pick: 1 },
       { bucket: "middle", pick: Math.ceil(settings.teams / 2) },
@@ -471,19 +594,21 @@
   }
 
   function baselineWeekProjection(player, week) {
-    const value = Number(player?.weeklyProjections?.[Math.max(0, week - 1)]);
+    const adapted = leagueApi.playerForScoring(player, currentLeagueSettings());
+    const value = Number(adapted?.weeklyProjections?.[Math.max(0, week - 1)]);
     if (Number.isFinite(value)) return value;
-    return Number(player?.weeklyProjection || 0);
+    return Number(adapted?.weeklyProjection || 0);
   }
 
   function decisionPlayerForWeek(player, week, surface = "startSit") {
-    const forecast = engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week), validatedMeanScale: servingMeanScale(surface) });
-    const weekly = Array.isArray(player.weeklyProjections)
-      ? [...player.weeklyProjections]
-      : Array.from({ length: 18 }, () => Number(player.weeklyProjection || 0));
+    const scoringPlayer = leagueApi.playerForScoring(player, currentLeagueSettings());
+    const forecast = engine.forecastPlayer(scoringPlayer, { week, evidence: decisionEvidence(player, week), validatedMeanScale: servingMeanScale(surface) });
+    const weekly = Array.isArray(scoringPlayer.weeklyProjections)
+      ? [...scoringPlayer.weeklyProjections]
+      : Array.from({ length: 18 }, () => Number(scoringPlayer.weeklyProjection || 0));
     weekly[Math.max(0, Math.min(17, week - 1))] = forecast.distribution.mean;
     return {
-      ...player,
+      ...scoringPlayer,
       weeklyProjections: weekly,
       decisionProjection: forecast.distribution.mean,
       decisionAvailability: forecast.availability.probability,
@@ -574,7 +699,11 @@
     let leaguePlayers = [...new Map(teams.flatMap((team) => team.roster || []).map((player) => [String(player.id), player])).values()];
     await ensureLiveDecisionStatus(leaguePlayers);
     await ensureDecisionIntelligence(refreshDecisionPlayers(leaguePlayers));
-    teams = teams.map((team) => ({ ...team, roster: refreshDecisionPlayers(team.roster || []) }));
+    const settings = currentLeagueSettings();
+    teams = teams.map((team) => ({
+      ...team,
+      roster: refreshDecisionPlayers(team.roster || []).map((player) => leagueApi.playerForScoring(player, settings)),
+    }));
     leaguePlayers = [...new Map(teams.flatMap((team) => team.roster || []).map((player) => [String(player.id), player])).values()];
     const evidenceByPlayer = Object.fromEntries(leaguePlayers.map((player) => [String(player.id), staticDecisionEvidence(player)]));
     const evidenceByPlayerWeek = {};
@@ -594,6 +723,7 @@
       evidenceByPlayer,
       evidenceByPlayerWeek,
       validatedMeanScale: servingMeanScale(surface),
+      settings,
     };
   }
 
@@ -611,7 +741,7 @@
       teams: prepared.teams,
       userTeamId: connectedUserTeamId(),
       actions,
-      settings: core.DEFAULT_SETTINGS,
+      settings: prepared.settings,
       schedule: state.schedule,
       fantasySchedule: fantasyScheduleForLeague(),
       startWeek,
@@ -693,19 +823,34 @@
     const player = playerById($("#player-select").value);
     if (!player) return;
     const week = Number($("#player-week").value || 1);
-    await ensureMarketWeek(week);
-    const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
+    const token = ++state.playerRunToken;
+    const marketPromise = ensureMarketWeek(week).catch(() => null);
+    await Promise.race([marketPromise, new Promise((resolve) => setTimeout(resolve, 350))]);
+    const scenarios = Number($("#player-scenarios").value);
+    const renderCurrent = async () => {
+      const forecast = engine.forecastPlayer(player, { week, evidence: temporaryEvidence(player) });
+      const simulation = await runWorker("scenario", { forecasts: [forecast], options: { week, scenarios, schedule: state.schedule, seed: `player-${player.id}-${week}` } });
+      if (token !== state.playerRunToken || String($("#player-select").value) !== String(player.id)) return false;
+      renderPlayerResult(forecast, simulation.playerSummaries[String(player.id)]);
+      return true;
+    };
     $("#run-player").disabled = true;
     status("Checking this player…");
     try {
-      const simulation = await runWorker("scenario", { forecasts: [forecast], options: { week, scenarios: Number($("#player-scenarios").value), schedule: state.schedule, seed: `player-${player.id}-${week}` } });
-      renderPlayerResult(forecast, simulation.playerSummaries[String(player.id)]);
-      status("Player check ready.", "good");
+      const rendered = await renderCurrent();
+      if (rendered) status("Player check ready. Live context can refresh in the background.", "good");
     } catch (error) {
       status(error.message, "error");
     } finally {
       $("#run-player").disabled = false;
     }
+    marketPromise.then(async (market) => {
+      if (!market || token !== state.playerRunToken || String($("#player-select").value) !== String(player.id)) return;
+      try {
+        const rendered = await renderCurrent();
+        if (rendered) status("Player check updated with live market context.", "good");
+      } catch (_) { /* local-first result remains valid */ }
+    });
   }
 
   function rookieProfileMarkup(player) {
@@ -868,13 +1013,16 @@
 
   function currentDraftSettings() {
     const scoring = $("#draft-scoring").value || "ppr";
-    const slots = scoring === "superflex" ? { SUPERFLEX: 1, BN: 6 } : { SUPERFLEX: 0, BN: 6 };
+    const qbFormat = $("#draft-qb-format")?.value || "one-qb";
+    const profileSlots = { ...currentLeagueSettings().slots };
+    if (qbFormat === "two-qb") { profileSlots.QB = 2; profileSlots.SUPERFLEX = 0; }
+    else if (qbFormat === "superflex") { profileSlots.QB = Math.max(1, Number(profileSlots.QB || 0)); profileSlots.SUPERFLEX = Math.max(1, Number(profileSlots.SUPERFLEX || 0)); }
+    else { profileSlots.QB = Math.max(1, Number(profileSlots.QB || 0)); profileSlots.SUPERFLEX = 0; }
     return core.cloneSettings({
       teams: Number($("#draft-teams").value || 12),
       rounds: Number($("#draft-rounds").value || 16),
       draftPosition: Number($("#draft-position").value || 6),
-      scoring,
-      slots,
+      scoring, qbFormat, slots: profileSlots,
     });
   }
 
@@ -915,7 +1063,7 @@
   function resetDraft() {
     const settings = currentDraftSettings();
     $("#draft-position").max = String(settings.teams);
-    if (settings.draftPosition > settings.teams) $("#draft-position").value = String(settings.teams);
+    $("#draft-position").value = String(settings.draftPosition);
     state.draftState = core.createDraftState(settings);
     renderDraft();
   }
@@ -934,10 +1082,7 @@
       const take = row.returnChance <= 0.22 ? "Take him now — he probably won't make it back" : row.rookieTailScore >= 1.5 ? "High-upside rookie worth considering" : row.vona >= 8 ? "Strong value at this pick" : row.need > 0 ? `Fills a ${row.position} need` : (row.reasons?.[0] || "Good value for your roster");
       return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}</strong><span>${esc(row.position)} · ${esc(row.team)}</span></td><td class="draft-take">${esc(take)}</td><td><strong>${pct(row.returnChance)}</strong></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record pick" : "Draft him"}</button></td></tr>`;
     }).join("");
-    $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => {
-      state.draftState = core.applyDraftPick(state.draftState, button.dataset.draftPlayer, settings);
-      renderDraft();
-    }));
+    $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => draftPlayerChoice(button.dataset.draftPlayer)));
   }
 
   function renderDraftPanels(settings) {
@@ -963,7 +1108,11 @@
     const summary = core.draftPickSummary(state.draftState, settings);
     renderDraftManualOptions(settings);
     $("#draft-next").textContent = summary.remaining > 0 ? `P${summary.pickNumber} / T${summary.teamId}` : "COMPLETE";
-    $("#draft-meta").textContent = `${state.draftState.picks.length} picks · ${summary.isUserPick ? "YOUR PICK" : `team ${summary.teamId}`}`;
+    const qualification = leagueApi.isQualifiedPprDraftScope(settings) ? "A+ QUALIFIED PPR" : "CUSTOM FORMAT · TRANSFER POLICY";
+    $("#draft-meta").textContent = `${state.draftState.picks.length} picks · ${summary.remaining <= 0 ? "DRAFT COMPLETE" : summary.isUserPick ? "YOUR PICK" : `team ${summary.teamId}`} · ${qualification}`;
+    const mode = $("#draft-mode").value;
+    $("#draft-advance").disabled = state.draftBusy || mode === "live" || summary.isUserPick || summary.remaining <= 0;
+    $("#draft-advance").textContent = mode === "live" ? "Record real picks below" : summary.remaining <= 0 ? "Draft complete" : summary.isUserPick ? "You’re on the clock" : state.draftState.picks.length ? "Advance room" : "Start mock";
     const initial = draftSim.qualifyRecommendations(
       core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36),
       state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
@@ -984,20 +1133,73 @@
     }
   }
 
-  async function advanceDraftToUser() {
-    if ($("#draft-mode").value === "live") return status("Live Helper does not invent opponent picks. Record the actual picks instead.", "error");
+  async function advanceDraftToUser(options = {}) {
+    if ($("#draft-mode").value === "live") {
+      if (!options.quiet) status("Live Draft Helper never invents picks. Record the real room below.", "good");
+      return { cpuPicks: 0, state: state.draftState };
+    }
+    if (state.draftBusy) return null;
     const settings = currentDraftSettings();
-    const result = await runWorker("draft-room-advance", { options: { players: state.players, state: state.draftState, settings, userTeamId: settings.draftPosition, strategy: $("#draft-opponent-strategy").value || "mixed", board: draftBoardPayload(), seed: "oracle-room-2026" } });
-    state.draftState = result.state;
+    state.draftBusy = true;
     renderDraft();
-    status(`Simulated ${result.cpuPicks} realistic room pick${result.cpuPicks === 1 ? "" : "s"}.`, "good");
+    if (!options.quiet) status("Simulating the room to your next pick…");
+    try {
+      const result = await runWorker("draft-room-advance", { options: { players: state.players, state: state.draftState, settings, userTeamId: settings.draftPosition, strategy: $("#draft-opponent-strategy").value || "mixed", board: draftBoardPayload(), seed: "oracle-room-2026" } });
+      state.draftState = result.state;
+      return result;
+    } catch (error) {
+      status(`Mock draft stopped: ${error.message}`, "error");
+      throw error;
+    } finally {
+      state.draftBusy = false;
+      await renderDraft();
+    }
   }
-  function recordNextDraftPick() {
+
+  async function draftPlayerChoice(id) {
+    if (!id || state.draftBusy) return;
+    const settings = currentDraftSettings();
+    const before = core.draftPickSummary(state.draftState, settings);
+    if ($("#draft-mode").value === "sim" && !before.isUserPick) return status("Start the mock first so the CPU room advances to your pick.", "error");
+    state.draftState = core.applyDraftPick(state.draftState, id, settings);
+    $("#draft-pick-search").value = "";
+    await renderDraft();
+    const after = core.draftPickSummary(state.draftState, settings);
+    if (after.remaining <= 0) return status("Mock draft complete. Your final roster is ready.", "good");
+    if ($("#draft-mode").value === "sim") {
+      status("Pick locked. Other teams are drafting…");
+      const result = await advanceDraftToUser({ quiet: true });
+      const next = core.draftPickSummary(state.draftState, settings);
+      if (next.remaining <= 0) status("Mock draft complete. Your final roster is ready.", "good");
+      else if ((result?.cpuPicks || 0) === 0) status(`Back-to-back pick — you’re still on the clock at pick ${next.pickNumber}.`, "good");
+      else status(`You’re on the clock at pick ${next.pickNumber}. ${result.cpuPicks} opponent pick${result.cpuPicks === 1 ? "" : "s"} simulated.`, "good");
+    } else {
+      status(`Recorded pick ${after.pickNumber - 1}. Enter the next real pick.`, "good");
+    }
+  }
+
+  async function recordNextDraftPick() {
     const id = $("#draft-manual-player").value;
     if (!id) return;
-    state.draftState = core.applyDraftPick(state.draftState, id, currentDraftSettings());
-    $("#draft-pick-search").value = "";
-    renderDraft();
+    await draftPlayerChoice(id);
+  }
+
+  async function restartDraft() {
+    if (state.draftBusy) return;
+    resetDraft();
+    if ($("#draft-mode").value === "sim") {
+      const summary = core.draftPickSummary(state.draftState, currentDraftSettings());
+      if (!summary.isUserPick) await advanceDraftToUser();
+      else status("Mock draft ready. You have the first pick.", "good");
+    } else status("Live Draft Helper ready. Record the real picks below.", "good");
+  }
+
+  async function changeDraftMode() {
+    resetDraft();
+    $("#draft-flow-help").textContent = $("#draft-mode").value === "live"
+      ? "Live Draft Helper: record the real picks from ESPN, Yahoo, Sleeper, NFL, CBS, or any other draft room. SnapCount never invents opponent picks."
+      : "Mock Draft: choose your player when you’re on the clock. CPU teams automatically make the intervening picks and bring the room back to you.";
+    await renderDraft();
   }
 
   function undoDraftPick() {
@@ -1052,7 +1254,8 @@
     const rosterSet = new Set(roster.map((player) => String(player.id)));
     const giveOptions = [`<option value="">${roster.length ? "Choose a player" : "Add your roster first"}</option>`, ...roster.sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999)).map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}</option>`)].join("");
     const tradeQuery = $("#trade-search")?.value || "";
-    const getPool = rankedPlayers().filter((player) => !rosterSet.has(String(player.id)) && playerMatchesSearch(player, tradeQuery)).slice(0, tradeQuery ? 120 : 320);
+    const connected = Boolean(state.leagueTeams?.length);
+    const getPool = rankedPlayers().filter((player) => !rosterSet.has(String(player.id)) && (!connected || Boolean(leagueTeamForPlayer(player.id))) && playerMatchesSearch(player, tradeQuery)).slice(0, tradeQuery ? 120 : 320);
     const getOptions = [`<option value="">Choose a player</option>`, ...getPool.map((player) => { const owner = leagueTeamForPlayer(player.id); return `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}${owner ? ` · ${esc(owner.name)}` : ""}</option>`; })].join("");
     giveIds.forEach((selector) => { const previous = $(selector).value; $(selector).innerHTML = giveOptions; if ([...$(selector).options].some((option) => option.value === previous)) $(selector).value = previous; });
     getIds.forEach((selector) => { const previous = $(selector).value; $(selector).innerHTML = getOptions; if ([...$(selector).options].some((option) => option.value === previous)) $(selector).value = previous; });
@@ -1106,12 +1309,13 @@
     const decisionPool = opponent ? [...roster, ...(opponent.roster || [])] : roster;
     status(opponent ? `Checking your Week ${week} matchup against ${opponent.name}…` : "Checking your roster and the latest player updates…");
     const contextState = await prepareDecisionContext(decisionPool, week);
-    roster = refreshDecisionPlayers(roster);
-    if (opponent) opponent = { ...opponent, roster: refreshDecisionPlayers(opponent.roster || []) };
+    const settings = currentLeagueSettings();
+    roster = refreshDecisionPlayers(roster).map((player) => leagueApi.playerForScoring(player, settings));
+    if (opponent) opponent = { ...opponent, roster: refreshDecisionPlayers(opponent.roster || []).map((player) => leagueApi.playerForScoring(player, settings)) };
     const forecasts = roster.map((player) => engine.forecastPlayer(player, { week, evidence: decisionEvidence(player, week), validatedMeanScale: servingMeanScale("startSit") }));
     const byId = new Map(forecasts.map((forecast) => [String(forecast.player.id), forecast]));
     const prepared = forecasts.map((forecast) => ({ ...forecast.player, weekProjection: forecast.distribution.mean }));
-    const baselineLineup = core.optimizeLineup(prepared, core.DEFAULT_SETTINGS, "weekProjection");
+    const baselineLineup = core.optimizeLineup(prepared, settings, "weekProjection");
     let lineup = baselineLineup;
     let matchup = null;
     $("#run-lineup").disabled = true;
@@ -1123,7 +1327,7 @@
         matchup = await runWorker("matchup-lineups", { options: {
           userRoster: roster,
           opponentRoster: opponent.roster,
-          settings: core.DEFAULT_SETTINGS,
+          settings,
           week,
           schedule: state.schedule,
           evidenceByPlayer,
@@ -1134,7 +1338,7 @@
         if (matchup.preferred?.starterIds?.length && matchup.winProbabilityGain95?.[0] > 0) {
           const preferredSet = new Set(matchup.preferred.starterIds.map(String));
           const preferredPlayers = prepared.filter((player) => preferredSet.has(String(player.id)));
-          const assigned = core.optimizeLineup(preferredPlayers, core.DEFAULT_SETTINGS, "weekProjection");
+          const assigned = core.optimizeLineup(preferredPlayers, settings, "weekProjection");
           lineup = {
             ...assigned,
             bench: prepared.filter((player) => !preferredSet.has(String(player.id))).sort((a, b) => b.weekProjection - a.weekProjection),
@@ -1182,8 +1386,7 @@
   async function runWaivers() {
     let roster = rosterPlayers();
     if (!roster.length) return status("Build a roster in the Lineup tab first.", "error");
-    const rosterSet = new Set(state.rosterIds.map(String));
-    let freeAgents = state.players.filter((player) => !rosterSet.has(String(player.id)));
+    let freeAgents = leagueApi.availablePlayers(state.players, state.leagueTeams, state.rosterIds);
     const week = Number($("#waiver-week").value || 1);
     const mode = $("#waiver-mode").value || "priority";
     const budget = Math.max(0, Number($("#faab-budget").value || 0));
@@ -1194,12 +1397,13 @@
       const intelligencePool = [...freeAgents].sort((a, b) => baselineWeekProjection(b, week) - baselineWeekProjection(a, week)).slice(0, 180);
       contextState = await prepareDecisionContext([...roster, ...intelligencePool], week);
       roster = refreshDecisionPlayers(roster);
-      freeAgents = state.players.filter((player) => !rosterSet.has(String(player.id)));
+      freeAgents = leagueApi.availablePlayers(state.players, state.leagueTeams, state.rosterIds);
       const intelligenceIds = new Set(intelligencePool.map((player) => String(player.id)));
       const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week, "waivers"));
       const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week, "waivers") : player);
       status("Finding the pickups that help you most…");
-      let suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings: core.DEFAULT_SETTINGS, limit: 12, week, policy: { minimumScore: Number(servingPolicy("waivers").minimumScore || 0.25) } });
+      const settings = currentLeagueSettings();
+      let suggestions = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings, limit: 12, week, policy: { minimumScore: Number(servingPolicy("waivers").minimumScore || 0.25) } });
       if (suggestions.length && hasRealFantasySchedule() && connectedUserTeamId() && hasReliableLeagueRosterCoverage(currentLeagueTeamsForDecisions())) {
         const endWeek = futureWinRegularSeasonEnd(week);
         const preparedLeague = await prepareLeagueWinContext(week, endWeek, "waivers");
@@ -1214,7 +1418,7 @@
             }
           }
           const actions = candidates.map((row, index) => ({ id: `waiver-${index + 1}`, type: "waiver", label: `Add ${row.add.name}`, dropPlayerId: String(row.drop.id), addPlayer: playerById(row.add.id) || row.add }));
-          const future = await runWorker("future-win-actions", { options: { teams: preparedLeague.teams, userTeamId: connectedUserTeamId(), actions, settings: core.DEFAULT_SETTINGS, schedule: state.schedule, fantasySchedule: fantasyScheduleForLeague(), startWeek: week, regularSeasonEnd: endWeek, evidenceByPlayer: preparedLeague.evidenceByPlayer, evidenceByPlayerWeek: preparedLeague.evidenceByPlayerWeek, validatedMeanScale: preparedLeague.validatedMeanScale, simulations: 1200, seed: `waiver-future-${week}` } });
+          const future = await runWorker("future-win-actions", { options: { teams: preparedLeague.teams, userTeamId: connectedUserTeamId(), actions, settings: preparedLeague.settings, schedule: state.schedule, fantasySchedule: fantasyScheduleForLeague(), startWeek: week, regularSeasonEnd: endWeek, evidenceByPlayer: preparedLeague.evidenceByPlayer, evidenceByPlayerWeek: preparedLeague.evidenceByPlayerWeek, validatedMeanScale: preparedLeague.validatedMeanScale, simulations: 1200, seed: `waiver-future-${week}` } });
           const futureById = new Map((future.actions || []).map((row) => [row.id, row]));
           suggestions = candidates.map((row, index) => ({ ...row, futureWin: futureById.get(`waiver-${index + 1}`) || null }))
             .filter((row) => Number(row.futureWin?.delta?.expectedFutureHeadToHeadWins || 0) > 0)
@@ -1270,7 +1474,8 @@
       const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week, "trades"));
       const give = giveIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
       const receive = getIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
-      const analysis = core.analyzeTrade({ roster: decisionRoster, give, receive, players: state.players, settings: core.DEFAULT_SETTINGS, week });
+      const settings = currentLeagueSettings();
+      const analysis = core.analyzeTrade({ roster: decisionRoster, give, receive, players: state.players.map((player) => leagueApi.playerForScoring(player, settings)), settings, week });
       const tradePolicy = servingPolicy("trades");
       const acceptScore = Number(tradePolicy.acceptScore || 28), passScore = Number(tradePolicy.passScore || -28);
       const ownerIds = [...new Set(getIds.map((id) => leagueTeamForPlayer(id)?.teamId).filter(Boolean).map(String))]
@@ -1333,7 +1538,7 @@
             userRoster: decisionUserRoster,
             opponentRoster: decisionOpponentRoster,
             players: state.players,
-            settings: core.DEFAULT_SETTINGS,
+            settings: preparedLeague.settings,
             week,
             includeTwoForTwo: true,
             maxEvaluations: 450,
@@ -1362,7 +1567,7 @@
           teams: preparedLeague.teams,
           userTeamId: connectedUserTeamId(),
           actions,
-          settings: core.DEFAULT_SETTINGS,
+          settings: preparedLeague.settings,
           schedule: state.schedule,
           fantasySchedule: fantasyScheduleForLeague(),
           startWeek: week,
@@ -1393,7 +1598,7 @@
         userRoster: decisionUserRoster,
         opponentRoster: decisionOpponentRoster,
         players: state.players,
-        settings: core.DEFAULT_SETTINGS,
+        settings: currentLeagueSettings(),
         week,
         includeTwoForTwo: true,
         maxEvaluations: 700,
@@ -1512,7 +1717,7 @@
   }
 
   async function runLeague() {
-    if (!state.leagueTeams) balancedLeague(10);
+    if (!state.leagueTeams) balancedLeague(currentLeagueSettings().teams);
     const scenarios = Number($("#league-scenarios").value || 1500);
     const regularSeasonEnd = Number($("#regular-season-end").value || 14);
     const championshipWeek = Number($("#championship-week").value || 17);
@@ -1523,7 +1728,8 @@
     let contextState = { live: { failed: [] }, history: {} };
     try {
       contextState = await prepareDecisionContext(leaguePlayers);
-      state.leagueTeams = state.leagueTeams.map((team) => ({ ...team, roster: refreshDecisionPlayers(team.roster) }));
+      const settings = currentLeagueSettings();
+      state.leagueTeams = state.leagueTeams.map((team) => ({ ...team, roster: refreshDecisionPlayers(team.roster).map((player) => leagueApi.playerForScoring(player, settings)) }));
       leaguePlayers = [...new Map(state.leagueTeams.flatMap((team) => team.roster).map((player) => [String(player.id), player])).values()];
       const evidenceByPlayer = Object.fromEntries(leaguePlayers.map((player) => [String(player.id), staticDecisionEvidence(player)]));
       const evidenceByPlayerWeek = {};
@@ -1534,7 +1740,7 @@
       $("#league-source-status").textContent = `Testing ${scenarios.toLocaleString()} possible seasons…`;
       const result = await runWorker("league", { options: {
         teams: state.leagueTeams,
-        settings: core.DEFAULT_SETTINGS,
+        settings,
         schedule: state.schedule,
         fantasySchedule: fantasyScheduleForLeague(),
         startWeek,
@@ -1587,17 +1793,20 @@
   }
 
   async function clearLocalState() {
-    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot")]);
+    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-profile")]);
     state.rosterIds = [];
     state.ledger = new evidenceApi.EvidenceLedger();
     state.ensembleWeights = { market: 0.55, opportunity: 0.45 };
     state.leagueTeams = null;
     state.leagueMeta = null;
+    state.leagueProfile = leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
     state.espnLeague = null;
     state.espnConnection = null;
     state.espnNeedsSession = false;
     state.draftBoard = null;
     $("#draft-custom-board").value = "";
+    populateLeagueProfileForm();
+    syncDraftControlsToLeagueProfile();
     resetDraft();
     renderRoster();
     renderEspnConnection();
@@ -1610,6 +1819,10 @@
   function bindEvents() {
     $$(".tab").forEach((tab) => tab.addEventListener("click", () => activatePanel(tab.dataset.panelTarget)));
     $$('[data-jump]').forEach((button) => button.addEventListener("click", () => activatePanel(button.dataset.jump)));
+    $("#use-any-league").addEventListener("click", focusManualLeagueSetup);
+    $("#show-espn-connect").addEventListener("click", focusEspnSetup);
+    $("#save-manual-profile").addEventListener("click", () => saveManualLeagueProfile().catch((error) => status(error.message, "error")));
+    $("#manual-profile-standard").addEventListener("click", () => resetManualLeagueProfile().catch((error) => status(error.message, "error")));
     $("#connect-espn").addEventListener("click", () => connectEspnLeague().catch(() => {}));
     $("#connect-espn-session").addEventListener("click", () => connectEspnLeague({ browserSession: true }).catch(() => {}));
     $("#cancel-espn-session").addEventListener("click", () => { state.espnNeedsSession = false; renderEspnConnection(); status(""); });
@@ -1631,7 +1844,7 @@
     $("#sync-live-intelligence").addEventListener("click", syncLiveIntelligence);
     $("#player-select").addEventListener("change", () => renderNewsPulse());
     $("#save-evidence").addEventListener("click", saveEvidence);
-    $("#draft-reset").addEventListener("click", resetDraft);
+    $("#draft-reset").addEventListener("click", () => restartDraft().catch((error) => status(error.message, "error")));
     $("#draft-advance").addEventListener("click", advanceDraftToUser);
     $("#draft-undo").addEventListener("click", undoDraftPick);
     $("#draft-record-pick").addEventListener("click", recordNextDraftPick);
@@ -1639,11 +1852,12 @@
     $("#draft-clear-board").addEventListener("click", clearDraftBoard);
     $("#draft-benchmark").addEventListener("click", runDraftBenchmark);
     $("#draft-board-position").addEventListener("change", renderDraftBigBoard);
-    $("#draft-mode").addEventListener("change", () => { $("#draft-advance").textContent = $("#draft-mode").value === "live" ? "Live Draft Helper" : "Sim to my pick"; renderDraft(); });
+    $("#draft-mode").addEventListener("change", () => changeDraftMode().catch((error) => status(error.message, "error")));
     $("#draft-teams").addEventListener("change", resetDraft);
     $("#draft-position").addEventListener("change", resetDraft);
     $("#draft-rounds").addEventListener("change", resetDraft);
     $("#draft-scoring").addEventListener("change", resetDraft);
+    $("#draft-qb-format").addEventListener("change", resetDraft);
     $("#roster-add-button").addEventListener("click", () => addRosterPlayer($("#roster-add").value));
     $("#roster-demo").addEventListener("click", loadDemoRoster);
     $("#roster-clear").addEventListener("click", async () => { state.rosterIds = []; await persistRoster(); renderRoster(); });
@@ -1652,7 +1866,7 @@
     $("#waiver-mode").addEventListener("change", () => $("#faab-budget-label").classList.toggle("hidden", $("#waiver-mode").value !== "faab"));
     $("#analyze-trade").addEventListener("click", analyzeSelectedTrade);
     $("#run-trades").addEventListener("click", runTrades);
-    $("#build-demo-league").addEventListener("click", () => { balancedLeague(10); status("Balanced demo league ready.", "good"); });
+    $("#build-demo-league").addEventListener("click", () => { balancedLeague(currentLeagueSettings().teams); status("Balanced demo league ready for your league size.", "good"); });
     $("#import-sleeper-league").addEventListener("click", importSleeperLeague);
     $("#run-league").addEventListener("click", runLeague);
     $("#sync-sleeper").addEventListener("click", () => syncSleeper().catch(() => {}));
@@ -1707,16 +1921,20 @@
         : `${season} committed PPR fallback · ${qualified} · ${state.rookieArtifact?.players?.length || 0} rookie priors`;
       fillPlayerSelects();
 
-      const [savedLedger, savedRoster, savedWeights, savedBoard, savedEspnConnection, savedEspnSnapshot] = await Promise.all([
+      const [savedLedger, savedRoster, savedWeights, savedBoard, savedLeagueProfile, savedEspnConnection, savedEspnSnapshot] = await Promise.all([
         store.get("evidence-ledger", []),
         store.get("roster-ids", []),
         store.get("ensemble-weights", null),
         store.get("draft-custom-board", ""),
+        store.get("league-profile", null),
         store.get("espn-connection", null),
         store.get("espn-snapshot", null),
       ]);
       state.ledger = new evidenceApi.EvidenceLedger(Array.isArray(savedLedger) ? savedLedger : []);
       state.rosterIds = Array.isArray(savedRoster) ? savedRoster.map(String).filter((id) => playerById(id)) : [];
+      state.leagueProfile = savedLeagueProfile ? leagueApi.normalizeProfile(savedLeagueProfile) : leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+      populateLeagueProfileForm();
+      syncDraftControlsToLeagueProfile();
       if (savedWeights && typeof savedWeights === "object") state.ensembleWeights = savedWeights;
       if (savedBoard) {
         $("#draft-custom-board").value = savedBoard;

@@ -129,6 +129,64 @@
     return Object.fromEntries(Object.entries(byWeek).sort((left, right) => Number(left[0]) - Number(right[0])));
   }
 
+  const ESPN_SLOT_MAP = Object.freeze({
+    "0": "QB", "2": "RB", "4": "WR",
+    "6": "TE", "7": "SUPERFLEX", "16": "DST", "17": "K", "20": "BN", "23": "FLEX",
+  });
+
+  function scoringPreset(scoringSettings = {}) {
+    const reception = (scoringSettings.scoringItems || []).find((row) => Number(row?.statId) === 53);
+    const receptionPoints = Number(reception?.points);
+    if (Number.isFinite(receptionPoints)) {
+      if (receptionPoints >= 0.75) return "ppr";
+      if (receptionPoints <= 0.25) return "standard";
+      return "half-ppr";
+    }
+    const label = String(scoringSettings.playerRankType || "").toUpperCase();
+    if (label.includes("HALF")) return "half-ppr";
+    if (label.includes("STANDARD")) return "standard";
+    return "ppr";
+  }
+
+  const BASE_OFFENSIVE_SCORING = Object.freeze({ "3": 0.04, "4": 4, "20": -2, "24": 0.1, "25": 6, "42": 0.1, "43": 6 });
+
+  function unsupportedOffensiveScoring(scoringSettings = {}) {
+    const unsupported = [];
+    for (const row of scoringSettings.scoringItems || []) {
+      const statId = String(row?.statId ?? "");
+      if (!(statId in BASE_OFFENSIVE_SCORING)) continue;
+      const points = Number(row?.points);
+      if (Number.isFinite(points) && Math.abs(points - BASE_OFFENSIVE_SCORING[statId]) > 1e-9) unsupported.push(statId);
+    }
+    return [...new Set(unsupported)].sort((a, b) => Number(a) - Number(b));
+  }
+
+  function normalizeEspnSettings(settings = {}, teamCount = 12) {
+    const roster = settings.rosterSettings || {};
+    const counts = roster.lineupSlotCounts || {};
+    const slots = { QB: 0, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 0 };
+    const unsupportedStarterSlotIds = [];
+    for (const [slotId, rawCount] of Object.entries(counts)) {
+      const count = Math.max(0, Math.round(Number(rawCount || 0)));
+      if (!count) continue;
+      const mapped = ESPN_SLOT_MAP[String(slotId)];
+      if (mapped) slots[mapped] += count;
+      else if (String(slotId) !== "21") unsupportedStarterSlotIds.push(String(slotId));
+    }
+    const unsupportedScoringStatIds = unsupportedOffensiveScoring(settings.scoringSettings || {});
+    return {
+      teams: Math.max(4, Math.min(20, Math.round(Number(teamCount || 12)))),
+      scoring: scoringPreset(settings.scoringSettings || {}),
+      slots,
+      irSlots: Math.max(0, Math.round(Number(counts[21] || counts["21"] || 0))),
+      lineupLockType: String(roster.lineupLocktimeType || "UNKNOWN"),
+      rosterLockType: String(roster.rosterLocktimeType || "UNKNOWN"),
+      supported: unsupportedStarterSlotIds.length === 0 && unsupportedScoringStatIds.length === 0,
+      unsupportedStarterSlotIds: unsupportedStarterSlotIds.sort((a, b) => Number(a) - Number(b)),
+      unsupportedScoringStatIds,
+    };
+  }
+
   function normalizeLeague(raw, localPlayers = []) {
     const indexes = buildPlayerIndexes(localPlayers);
     const members = new Map((raw?.members || []).map((member) => [String(member.id), member]));
@@ -157,6 +215,7 @@
     });
     const scoringLabel = String(raw?.settings?.scoringSettings?.playerRankType || "ESPN scoring").replace(/_/g, " ");
     const fantasySchedule = normalizeFantasySchedule(raw?.schedule || []);
+    const leagueSettings = normalizeEspnSettings(raw?.settings || {}, teams.length || 12);
     const regularSeasonEnd = Math.max(1, Number(raw?.settings?.scheduleSettings?.matchupPeriodCount || 14));
     const championshipWeek = Math.max(regularSeasonEnd + 1, Number(raw?.status?.finalScoringPeriod || raw?.settings?.scheduleSettings?.finalScoringPeriod || 17));
     return {
@@ -169,6 +228,7 @@
       regularSeasonEnd,
       championshipWeek,
       fantasySchedule,
+      settings: leagueSettings,
       scoringLabel,
       teams,
       recognizedPlayers: teams.reduce((sum, team) => sum + team.rosterIds.length, 0),
@@ -184,6 +244,7 @@
     leagueApiUrl,
     loadLeague,
     normalizeFantasySchedule,
+    normalizeEspnSettings,
     normalizeLeague,
     parseLeagueInput,
   };

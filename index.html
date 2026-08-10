@@ -14,7 +14,7 @@
   <header class="topbar">
     <div class="network-row">
       <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
-        <span class="brand-mark" aria-hidden="true">SC</span>
+        <span class="brand-mark" aria-hidden="true"><img src="./snapcount-mark.svg" alt=""></span>
         <span><strong>SNAPCOUNT</strong><small>FANTASY</small></span>
       </a>
       <div class="network-meta" aria-label="Current fantasy league context">
@@ -42,11 +42,11 @@
           <header class="desk-headline">
             <p class="eyebrow">FANTASY FOOTBALL DESK</p>
             <h1>Your week starts here.</h1>
-            <p id="hero-lede" class="lede">Connect ESPN or jump into a tool. SnapCount turns projections, injuries, matchups, news, and simulations into the next move for your team.</p>
+            <p id="hero-lede" class="lede">Use SnapCount with any fantasy league — no account or link required. Set your league rules manually, or connect ESPN to autofill them.</p>
             <div class="action-row">
-              <button class="primary" data-jump="lineup">Set my lineup</button>
-              <button class="secondary" data-jump="waivers">Check waivers</button>
-              <button class="ghost" data-jump="draft">Draft Center</button>
+              <button id="use-any-league" class="primary">Use any league</button>
+              <button class="secondary" data-jump="draft">Start a mock draft</button>
+              <button id="show-espn-connect" class="ghost">Connect ESPN (optional)</button>
             </div>
           </header>
 
@@ -58,11 +58,38 @@
             <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
           </section>
 
-          <aside class="league-connect-card" aria-label="Connect ESPN fantasy league">
-            <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
+          <div class="league-setup-grid">
+            <aside id="manual-league-card" class="manual-league-card" aria-label="Use SnapCount with any fantasy league">
+              <div class="connect-card-head"><span class="provider-badge universal-badge">ANY LEAGUE</span><span id="manual-profile-state" class="connection-state connected">No connection required</span></div>
+              <h2>Use SnapCount anywhere</h2>
+              <p>ESPN, Yahoo, Sleeper, NFL, CBS, or a custom league. Set the rules once; every manual tool works without linking an account.</p>
+              <div class="manual-profile-primary">
+                <label>Teams<input id="manual-league-teams" type="number" min="4" max="20" value="12"></label>
+                <label>Scoring<select id="manual-league-scoring"><option value="ppr">PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option></select></label>
+              </div>
+              <details class="advanced-details manual-slot-settings">
+                <summary>Lineup slots</summary>
+                <div class="slot-grid">
+                  <label>QB<input id="manual-slot-qb" type="number" min="0" max="4" value="1"></label>
+                  <label>RB<input id="manual-slot-rb" type="number" min="0" max="6" value="2"></label>
+                  <label>WR<input id="manual-slot-wr" type="number" min="0" max="8" value="2"></label>
+                  <label>TE<input id="manual-slot-te" type="number" min="0" max="4" value="1"></label>
+                  <label>FLEX<input id="manual-slot-flex" type="number" min="0" max="4" value="1"></label>
+                  <label>SUPERFLEX<input id="manual-slot-superflex" type="number" min="0" max="3" value="0"></label>
+                  <label>D/ST<input id="manual-slot-dst" type="number" min="0" max="2" value="1"></label>
+                  <label>K<input id="manual-slot-k" type="number" min="0" max="2" value="1"></label>
+                  <label>Bench<input id="manual-slot-bn" type="number" min="0" max="20" value="6"></label>
+                </div>
+              </details>
+              <div class="connect-actions"><button id="save-manual-profile" class="primary">Use these league rules</button><button id="manual-profile-standard" class="ghost">Standard setup</button></div>
+              <p id="manual-profile-summary" class="privacy-note">12-team PPR · 1 QB · 2 RB · 2 WR · 1 TE · FLEX · D/ST · K</p>
+            </aside>
+
+            <aside class="league-connect-card" aria-label="Optional ESPN fantasy league connection">
+            <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN · OPTIONAL</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
             <div id="espn-connect-empty">
-              <h2>Connect ESPN Fantasy</h2>
-              <p>Load your real roster, opponents, record, current week, and league context.</p>
+              <h2>Connect ESPN to autofill</h2>
+              <p>Optional: load your roster, opponents, schedule, and league rules automatically. Manual mode works without ESPN.</p>
               <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
               <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Load my league</button></div>
             </div>
@@ -86,8 +113,9 @@
               <p id="espn-connected-meta">ESPN Fantasy</p>
               <div class="connect-actions"><button id="refresh-espn" class="secondary">Refresh ESPN</button><button id="disconnect-espn" class="ghost">Disconnect</button></div>
             </div>
-            <p class="privacy-note">SnapCount never asks for your ESPN password or cookie values. Private-league sign-in uses your existing browser session directly with ESPN.</p>
-          </aside>
+            <p class="privacy-note">ESPN is optional. SnapCount never asks for your ESPN password or cookie values; private-league sign-in uses your existing browser session directly with ESPN.</p>
+            </aside>
+          </div>
         </div>
 
         <aside class="home-rail" aria-label="Fantasy tools">
@@ -174,10 +202,11 @@
         <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
         <label>My draft spot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
         <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
-        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>ESPN PPR</option><option value="standard">Standard</option><option value="superflex">Superflex</option></select></label>
+        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option></select></label>
+        <label>QB format<select id="draft-qb-format"><option value="one-qb" selected>1 QB</option><option value="superflex">Superflex</option><option value="two-qb">2 QB</option></select></label>
         <label>How others draft<select id="draft-opponent-strategy"></select></label>
-        <button id="draft-reset" class="secondary">Start over</button>
-        <button id="draft-advance" class="primary">Sim to my pick</button>
+        <button id="draft-reset" class="secondary">Restart</button>
+        <button id="draft-advance" class="primary">Start mock</button>
         <button id="draft-undo" class="ghost">Undo last pick</button>
         <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
       </div>
@@ -188,11 +217,11 @@
       </article>
       <div class="draft-layout">
         <article class="module draft-side">
-          <div class="table-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>Record the picks</h2></div><span id="draft-meta"></span></div>
+          <div class="table-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>Run the room</h2></div><span id="draft-meta"></span></div>
           <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
           <label>Player picked<select id="draft-manual-player"></select></label>
           <button id="draft-record-pick" class="secondary">Record this pick</button>
-          <p class="helper-copy">In Live Draft Helper, enter each real pick from your ESPN draft. SnapCount immediately updates who you should take next.</p>
+          <p id="draft-flow-help" class="helper-copy">Mock Draft: CPU teams advance automatically after every pick you make. Live Draft Helper: record the real picks from ESPN, Yahoo, Sleeper, NFL, CBS, or any other draft room.</p>
           <details class="advanced-details"><summary>Use Yahoo, NFL, or another ranking list</summary>
             <label>Paste rankings<textarea id="draft-custom-board" rows="7" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
             <div class="action-row compact"><button id="draft-import-board" class="secondary">Use these rankings</button><button id="draft-clear-board" class="ghost">Use built-in market</button></div>
@@ -274,6 +303,7 @@
   <footer><span>SNAPCOUNT · FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
 
   <script src="./src/engine/core.js"></script>
+  <script src="./src/engine/league.js"></script>
   <script src="./src/engine/rookies.js"></script>
   <script src="./src/engine/correlation.js"></script>
   <script src="./src/engine/mean-calibration.js"></script>

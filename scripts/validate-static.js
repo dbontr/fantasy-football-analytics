@@ -7,10 +7,13 @@ const root = path.resolve(__dirname, "..");
 const required = [
   "index.html",
   "styles.css",
+  "favicon.svg",
+  "snapcount-mark.svg",
   ".nojekyll",
   "engine-worker.js",
   "src/app.js",
   "src/engine/core.js",
+  "src/engine/league.js",
   "src/engine/runtime.js",
   "src/engine/rookies.js",
   "src/engine/correlation.js",

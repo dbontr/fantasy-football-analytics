@@ -90,3 +90,54 @@ test("ESPN league normalization preserves compact head-to-head schedule pairings
   assert.equal(league.regularSeasonEnd, 14);
   assert.equal(league.championshipWeek, 17);
 });
+
+test("ESPN league normalization imports supported lineup slots and scoring preset", () => {
+  const league = espn.normalizeLeague({
+    id: 88,
+    seasonId: 2026,
+    settings: {
+      name: "Half PPR Superflex",
+      rosterSettings: {
+        lineupLocktimeType: "INDIVIDUAL_GAME",
+        lineupSlotCounts: { 0: 1, 2: 2, 4: 3, 6: 1, 7: 1, 16: 0, 17: 0, 20: 7, 21: 2, 23: 1 },
+      },
+      scoringSettings: { playerRankType: "PPR", scoringItems: [{ statId: 53, points: 0.5 }] },
+    },
+    teams: Array.from({ length: 10 }, (_, index) => ({ id: index + 1, name: `Team ${index + 1}`, roster: { entries: [] } })),
+  }, []);
+  assert.equal(league.settings.teams, 10);
+  assert.equal(league.settings.scoring, "half-ppr");
+  assert.deepEqual(league.settings.slots, { QB: 1, RB: 2, WR: 3, TE: 1, FLEX: 1, SUPERFLEX: 1, DST: 0, K: 0, BN: 7 });
+  assert.equal(league.settings.irSlots, 2);
+  assert.equal(league.settings.lineupLockType, "INDIVIDUAL_GAME");
+  assert.equal(league.settings.supported, true);
+});
+
+test("ESPN settings flag unsupported IDP starter slots instead of pretending exact coverage", () => {
+  const normalized = espn.normalizeEspnSettings({
+    rosterSettings: { lineupSlotCounts: { 0: 1, 8: 2, 20: 6 } },
+    scoringSettings: { playerRankType: "PPR", scoringItems: [{ statId: 53, points: 1 }] },
+  }, 12);
+  assert.equal(normalized.supported, false);
+  assert.deepEqual(normalized.unsupportedStarterSlotIds, ["8"]);
+});
+test("ESPN custom offensive scoring is flagged instead of silently treated as standard PPR", () => {
+  const normalized = espn.normalizeEspnSettings({
+    rosterSettings: { lineupSlotCounts: { 0: 1, 2: 2, 4: 2, 6: 1, 20: 7, 23: 1 } },
+    scoringSettings: { playerRankType: "PPR", scoringItems: [
+      { statId: 3, points: 0.04 }, { statId: 4, points: 6 }, { statId: 20, points: -2 },
+      { statId: 24, points: 0.1 }, { statId: 25, points: 6 }, { statId: 42, points: 0.1 },
+      { statId: 43, points: 6 }, { statId: 53, points: 1 },
+    ] },
+  }, 12);
+  assert.equal(normalized.supported, false);
+  assert.deepEqual(normalized.unsupportedScoringStatIds, ["4"]);
+});
+test("ESPN restricted flex slots are flagged when SnapCount cannot represent their exact eligibility", () => {
+  const normalized = espn.normalizeEspnSettings({
+    rosterSettings: { lineupSlotCounts: { 0: 1, 2: 2, 3: 1, 4: 2, 6: 1, 20: 7 } },
+    scoringSettings: { playerRankType: "PPR", scoringItems: [{ statId: 53, points: 1 }] },
+  }, 12);
+  assert.equal(normalized.supported, false);
+  assert.deepEqual(normalized.unsupportedStarterSlotIds, ["3"]);
+});

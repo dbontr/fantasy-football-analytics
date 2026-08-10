@@ -5,10 +5,13 @@
   const rookies = typeof module !== "undefined" && module.exports
     ? require("./rookies.js")
     : root.OracleRookies;
-  const api = factory(core, rookies);
+  const league = typeof module !== "undefined" && module.exports
+    ? require("./league.js")
+    : root.SnapCountLeague;
+  const api = factory(core, rookies, league);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OracleDraftSim = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftSim(core, rookies) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftSim(core, rookies, league) {
   "use strict";
 
   const VERSION = "oracle-draft-sim-2026.2";
@@ -92,7 +95,7 @@
     const imported = board?.byId?.[normalized.id] ?? board?.byName?.[normalizeName(normalized.name)];
     if (Number.isFinite(Number(imported))) return Number(imported);
     if (Number.isFinite(normalized.adp)) return normalized.adp;
-    return core.rankForScoring(normalized, settings.scoring || "ppr") || 9999;
+    return core.rankForScoring(normalized, settings.scoring || "ppr", settings.qbFormat) || 9999;
   }
 
   function rosterForTeam(state, teamId, byId) {
@@ -123,21 +126,7 @@
   }
 
   function scoringPlayer(player, settings) {
-    const normalized = core.normalizePlayer(player);
-    if (settings?.scoring !== "standard") return normalized;
-    const season = Number(player?.standardProjectedPoints);
-    const weekly = Number(player?.standardWeeklyProjection);
-    if (!Number.isFinite(season) || !Number.isFinite(weekly)) return normalized;
-    const ratio = normalized.weeklyProjection > 0 ? weekly / normalized.weeklyProjection : 1;
-    return core.normalizePlayer({
-      ...normalized,
-      projectedPoints: season,
-      weeklyProjection: weekly,
-      weeklyProjections: Array.isArray(player?.standardWeeklyProjections) ? player.standardWeeklyProjections : normalized.weeklyProjections,
-      floorProjection: normalized.floorProjection * ratio,
-      ceilingProjection: normalized.ceilingProjection * ratio,
-      projectionStdDev: normalized.projectionStdDev * ratio,
-    });
+    return league?.playerForScoring ? league.playerForScoring(player, settings) : core.normalizePlayer(player);
   }
 
   function createRoomContext(players, settings, board = null) {

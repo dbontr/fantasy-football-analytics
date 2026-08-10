@@ -117,13 +117,15 @@ async function main() {
   if (home.primaryBackground !== "rgb(200, 16, 46)") throw new Error("Primary action is not using the sports-red SnapCount palette");
   const homeStructure = await evaluate(`(() => ({network:Boolean(document.querySelector('.network-row')),dashboard:Boolean(document.querySelector('.home-dashboard')),rail:Boolean(document.querySelector('.home-rail')),systemDetails:Boolean(document.querySelector('.system-details')),columns:getComputedStyle(document.querySelector('.home-dashboard')).gridTemplateColumns}))()`);
   if (!homeStructure.network || !homeStructure.dashboard || !homeStructure.rail || !homeStructure.systemDetails || homeStructure.columns.split(' ').length < 2) throw new Error("Sports desk information architecture did not render on desktop");
-  const connectCard = await evaluate(`Boolean(document.querySelector('.league-connect-card') && document.querySelector('#connect-espn'))`);
-  if (!connectCard) throw new Error("ESPN league connection card did not render");
+  const universalHome = await evaluate(`(() => ({manual:Boolean(document.querySelector('#manual-league-card #save-manual-profile')),espn:Boolean(document.querySelector('.league-connect-card #connect-espn')),logo:document.querySelector('.brand-mark img')?.getAttribute('src')||'',sc:document.querySelector('.brand-mark')?.textContent.trim()||''}))()`);
+  if (!universalHome.manual || !universalHome.espn || !universalHome.logo.includes("snapcount-mark.svg") || universalHome.sc === "SC") throw new Error(`Universal home / logo did not render: ${JSON.stringify(universalHome)}`);
+  await evaluate(`(() => { document.querySelector('#manual-league-teams').value=10; document.querySelector('#manual-league-scoring').value='half-ppr'; document.querySelector('#manual-slot-wr').value=3; document.querySelector('#manual-slot-dst').value=0; document.querySelector('#manual-slot-k').value=0; document.querySelector('#save-manual-profile').click(); return true; })()`);
+  await waitFor(`document.querySelector('#manual-profile-summary')?.textContent.includes('10-team Half PPR') && document.querySelector('#masthead-team')?.textContent.includes('Any fantasy league')`);
 
   await evaluate(`(() => {
     OracleEspnFantasy.loadLeague = async (_input, _season, options = {}) => {
       if (!options.browserSession) { const error = new Error("This league needs an ESPN sign-in."); error.code = "ESPN_AUTH_REQUIRED"; throw error; }
-      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2,matchupPeriodCount:14},scoringSettings:{playerRankType:'PPR'}}, status:{currentScoringPeriod:3,finalScoringPeriod:17}, schedule:Array.from({length:12},(_,i)=>({id:i+1,matchupPeriodId:i+3,home:{teamId:1},away:{teamId:2}})), members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:12483,fullName:'Matthew Stafford'}}},{playerPoolEntry:{player:{id:4429160,fullName:"De'Von Achane"}}},{playerPoolEntry:{player:{id:4696981,fullName:'Cam Skattebo'}}},{playerPoolEntry:{player:{id:4239993,fullName:'Tee Higgins'}}},{playerPoolEntry:{player:{id:4035687,fullName:'Michael Pittman Jr.'}}},{playerPoolEntry:{player:{id:4047650,fullName:'DK Metcalf'}}},{playerPoolEntry:{player:{id:3040151,fullName:'George Kittle'}}},{playerPoolEntry:{player:{id:3055899,fullName:'Harrison Butker'}}},{playerPoolEntry:{player:{id:-16021,fullName:'Eagles D/ST'}}}]}}] } };
+      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2,matchupPeriodCount:14},rosterSettings:{lineupLocktimeType:'INDIVIDUAL_GAME',rosterLocktimeType:'INDIVIDUAL_GAME',lineupSlotCounts:{0:1,2:2,4:2,6:1,16:1,17:1,20:7,21:1,23:1}},scoringSettings:{playerRankType:'PPR',scoringItems:[{statId:3,points:.04},{statId:4,points:4},{statId:20,points:-2},{statId:24,points:.1},{statId:25,points:6},{statId:42,points:.1},{statId:43,points:6},{statId:53,points:1}]}}, status:{currentScoringPeriod:3,finalScoringPeriod:17}, schedule:Array.from({length:12},(_,i)=>({id:i+1,matchupPeriodId:i+3,home:{teamId:1},away:{teamId:2}})), members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:12483,fullName:'Matthew Stafford'}}},{playerPoolEntry:{player:{id:4429160,fullName:"De'Von Achane"}}},{playerPoolEntry:{player:{id:4696981,fullName:'Cam Skattebo'}}},{playerPoolEntry:{player:{id:4239993,fullName:'Tee Higgins'}}},{playerPoolEntry:{player:{id:4035687,fullName:'Michael Pittman Jr.'}}},{playerPoolEntry:{player:{id:4047650,fullName:'DK Metcalf'}}},{playerPoolEntry:{player:{id:3040151,fullName:'George Kittle'}}},{playerPoolEntry:{player:{id:3055899,fullName:'Harrison Butker'}}},{playerPoolEntry:{player:{id:-16021,fullName:'Eagles D/ST'}}}]}}] } };
     };
     document.querySelector('#espn-league-input').value='424242';
     document.querySelector('#connect-espn').click();
@@ -136,6 +138,8 @@ async function main() {
   await waitFor(`!document.querySelector('#league-command-strip').classList.contains('hidden') && document.querySelectorAll('#roster-strip .roster-chip').length===3`, 10000);
   const espnSync = await evaluate(`(() => ({team:document.querySelector('#espn-connected-team').textContent,league:document.querySelector('#home-league-label').textContent,roster:document.querySelectorAll('#roster-strip .roster-chip').length,week:document.querySelector('#lineup-week').value}))()`);
   if (espnSync.team !== 'QA Champions' || espnSync.league !== 'QA Sunday League' || espnSync.roster !== 3 || espnSync.week !== '3') throw new Error("ESPN league sync flow failed");
+  const importedRules = await evaluate(`({state:document.querySelector('#manual-profile-state')?.textContent,summary:document.querySelector('#manual-profile-summary')?.textContent})`);
+  if (!importedRules.state.includes('Autofilled from ESPN') || !importedRules.summary.includes('PPR')) throw new Error(`ESPN league rules did not autofill universal profile: ${JSON.stringify(importedRules)}`);
   const masthead = await evaluate(`({team:document.querySelector('#masthead-team')?.textContent,week:document.querySelector('#masthead-week')?.textContent})`);
   if (masthead.team !== 'QA Champions' || !masthead.week.includes('Week 3')) throw new Error("Persistent league masthead did not hydrate");
   const connectedHome = await snapshot("home-connected-desktop", 1440, 1000);
@@ -205,9 +209,13 @@ async function main() {
   await evaluate(`(() => { const s=document.querySelector('#draft-pick-search'); s.value=''; s.dispatchEvent(new Event('input',{bubbles:true})); document.querySelector('#draft-advance').click(); return true; })()`);
   await waitFor(`document.querySelector('#draft-meta')?.textContent.includes('YOUR PICK')`, 20000);
   const draftRoom = await evaluate(`document.querySelectorAll('#draft-table tr').length`);
+  const draftSettingsVisible = await evaluate(`({teams:Number(document.querySelector('#draft-teams')?.value||0),position:Number(document.querySelector('#draft-position')?.value||0)})`);
+  if (!(draftSettingsVisible.position >= 1 && draftSettingsVisible.position <= draftSettingsVisible.teams)) throw new Error(`Draft position display escaped league size: ${JSON.stringify(draftSettingsVisible)}`);
   if (draftRoom < 10) throw new Error("Draft recommendations did not render");
   await evaluate(`document.querySelector('#draft-table [data-draft-player]').click(); true`);
-  await waitFor(`document.querySelector('#draft-roster')?.textContent.includes('1/16')`, 8000);
+  await waitFor(`document.querySelector('#draft-roster')?.textContent.includes('1/16') && document.querySelector('#draft-meta')?.textContent.includes('YOUR PICK')`, 20000);
+  const mockFlow = await evaluate(`({picks:parseInt(document.querySelector('#draft-meta')?.textContent || '0', 10) || 0, roster:document.querySelector('#draft-roster')?.textContent || '', meta:document.querySelector('#draft-meta')?.textContent || ''})`);
+  if (mockFlow.picks <= 1 || !mockFlow.meta.includes('YOUR PICK')) throw new Error(`Mock draft did not auto-advance after user pick: ${JSON.stringify(mockFlow)}`);
   await evaluate(`document.querySelector('#draft-benchmark').closest('details').open=true; document.querySelector('#draft-benchmark-count').value='40'; document.querySelector('#draft-benchmark').click(); true`);
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('Comparison finished')`, 45000);
   const benchmark = await evaluate(`document.querySelector('#draft-benchmark-result').textContent`);
@@ -228,7 +236,7 @@ async function main() {
   if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP") || !lineup.text.includes("WIN CHANCE VS QA RIVALS")) throw new Error("Opponent-aware start/sit flow failed");
 
   await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
-  await waitFor(`document.querySelectorAll('#trade-give-1 option').length > 2 && document.querySelectorAll('#trade-get-1 option').length > 20`);
+  await waitFor(`document.querySelectorAll('#trade-give-1 option').length > 2 && document.querySelectorAll('#trade-get-1 option').length > 2`);
   await evaluate(`(() => { const search=document.querySelector('#trade-search'); search.value='Stafford'; search.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
   const tradeSearch = await evaluate(`document.querySelector('#trade-get-1 option:nth-child(2)')?.textContent || ''`);
   if (!tradeSearch.includes('Stafford')) throw new Error('Trade target search failed');
@@ -251,11 +259,13 @@ async function main() {
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('waiver recommendations are ready')`, 35000);
   const waivers = await evaluate(`document.querySelector('#waiver-result').textContent`);
   if (!waivers.includes("Add") && !waivers.includes("No pickup")) throw new Error("Friendly waiver flow failed");
+  if (["De'Von Achane","Cam Skattebo","Tee Higgins","DK Metcalf","George Kittle"].some((name)=>waivers.includes(name))) throw new Error(`Waiver pool exposed a player rostered by QA Rivals: ${waivers}`);
 
   await evaluate(`document.querySelector('[data-panel-target="league"]').click(); document.querySelector('#build-demo-league').click(); document.querySelector('#league-scenarios').value='500'; document.querySelector('#run-league').click(); true`);
-  await waitFor(`document.querySelectorAll('#league-result tbody tr').length >= 10`, 35000);
+  await waitFor(`document.querySelectorAll('#league-result tbody tr').length >= Number(document.querySelector('#manual-league-teams')?.value || 4)`, 35000);
   const season = await evaluate(`(() => ({rows:document.querySelectorAll('#league-result tbody tr').length,text:document.querySelector('#league-result').textContent,status:document.querySelector('#league-source-status').textContent}))()`);
-  if (season.rows < 10 || !season.text.includes("Make playoffs") || !season.text.includes("Win league") || !season.status.includes("Season outlook ready")) throw new Error("Season outlook failed");
+  const expectedSeasonTeams = await evaluate(`Number(document.querySelector('#manual-league-teams')?.value || 4)`);
+  if (season.rows < expectedSeasonTeams || !season.text.includes("Make playoffs") || !season.text.includes("Win league") || !season.status.includes("Season outlook ready")) throw new Error("Season outlook failed");
 
   await evaluate(`document.querySelector('[data-panel-target="draft"]').click(); true`);
   const draftMobile = await snapshot("draft-mobile", 390, 844);

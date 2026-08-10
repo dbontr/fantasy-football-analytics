@@ -1,15 +1,17 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.13.1-future-win-audit";
+const CACHE = "snapcount-browser-v1.14.0-universal-league";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./manifest.webmanifest",
   "./favicon.svg",
+  "./snapcount-mark.svg",
   "./engine-worker.js",
   "./src/app.js",
   "./src/engine/core.js",
+  "./src/engine/league.js",
   "./src/engine/rookies.js",
   "./src/engine/correlation.js",
   "./src/engine/mean-calibration.js",

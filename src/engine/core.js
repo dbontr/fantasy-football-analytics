@@ -137,8 +137,8 @@
       floor: Math.max(0, normalized.floorProjection * ratio),
       ceiling: Math.max(projection, normalized.ceilingProjection * ratio),
     };
-  }  function rankForScoring(player, scoring) {
-    if (scoring === "superflex") {
+  }  function rankForScoring(player, scoring, qbFormat = "") {
+    if (scoring === "superflex" || qbFormat === "superflex" || qbFormat === "two-qb") {
       return player.superflexRank || player.pprRank || player.adp || 9999;
     }
     if (scoring === "standard") {
@@ -265,7 +265,7 @@
     const normalized = normalizePlayer(player);
     const replacement = finite(replacementLevels?.[normalized.position], 0);
     const vorp = normalized.projectedPoints - replacement;
-    const rank = rankForScoring(normalized, settings?.scoring || "ppr");
+    const rank = rankForScoring(normalized, settings?.scoring || "ppr", settings?.qbFormat);
     const rankBonus = Math.max(0, 180 - rank) * 0.11;
     const durability = normalized.previousPoints > 0
       ? Math.min(12, normalized.previousPoints * 0.025)
@@ -309,7 +309,7 @@
       const vorp = player.projectedPoints - replacement;
       const need = starterNeed(player.position, roster, config);
       const cliff = tierCliffs.get(player.id) || 0;
-      const rank = rankForScoring(player, config.scoring);
+      const rank = rankForScoring(player, config.scoring, config.qbFormat);
       const adpPressure = player.adp === null
         ? 0
         : clamp((pickNumber - player.adp) * 0.34, -9, 12);
@@ -336,18 +336,18 @@
         need,
         reasons,
       };
-    }).sort((a, b) => b.score - a.score || rankForScoring(a, config.scoring) - rankForScoring(b, config.scoring))
+    }).sort((a, b) => b.score - a.score || rankForScoring(a, config.scoring, config.qbFormat) - rankForScoring(b, config.scoring, config.qbFormat))
       .slice(0, Math.max(1, limit));
   }
 
   function marketRank(player, settings = {}) {
     const normalized = normalizePlayer(player);
-    return normalized.adp || rankForScoring(normalized, settings.scoring || "ppr") || 9999;
+    return normalized.adp || rankForScoring(normalized, settings.scoring || "ppr", settings.qbFormat) || 9999;
   }
 
   function draftSpread(player, settings = {}) {
     const rank = marketRank(player, settings);
-    const positionScale = player.position === "QB" && settings.scoring === "superflex" ? 0.82 : 1;
+    const positionScale = player.position === "QB" && (settings.scoring === "superflex" || settings.qbFormat === "superflex" || settings.qbFormat === "two-qb") ? 0.82 : 1;
     return clamp((4.5 + rank * 0.12) * positionScale, 4.5, 28);
   }
 
@@ -545,8 +545,8 @@
     const market = normalizedPlayers
       .filter((player) => !draftedIds.has(player.id))
       .map((player) => {
-        const rank = player.adp || rankForScoring(player, config.scoring) || 9999;
-        const positionScale = player.position === "QB" && config.scoring === "superflex" ? 0.82 : 1;
+        const rank = player.adp || rankForScoring(player, config.scoring, config.qbFormat) || 9999;
+        const positionScale = player.position === "QB" && (config.scoring === "superflex" || config.qbFormat === "superflex" || config.qbFormat === "two-qb") ? 0.82 : 1;
         return {
           player,
           id: player.id,
