@@ -1,6 +1,6 @@
 {
-  "version": "snapcount-analytics-qualification-2026.4",
-  "qualifiedAt": "2026-08-09T02:42:17.951Z",
+  "version": "snapcount-analytics-qualification-2026.5",
+  "qualifiedAt": "2026-08-10T15:43:38.943Z",
   "architecture": "offline-qualification-live-serving",
   "dataset": {
     "file": "historical-ppr-2020-2025.json.gz",
@@ -26,7 +26,8 @@
     "draft-robust-refine.json": "174d786a8d17ff082605ff595038a5969aa6bb3a05ca77b8c8a7cf21199b2942",
     "draft-robust-policy.json": "98d0cf634f14c42a04ed1a6f09157ce0f016f2be77af494ba7eff46c7a8f3f3e",
     "draft-a-plus-holdout-2018.json": "e32c5a2e93aabfa2392622ce5e075e4289f68f5fe251b6a648a3bf60f457a8b5",
-    "draft-overfit-audit.json": "4e9fe3fc8100e90c3d20b779813aa0e0844c7f7f5b545eb6e843cf725f375d3f"
+    "draft-overfit-audit.json": "4e9fe3fc8100e90c3d20b779813aa0e0844c7f7f5b545eb6e843cf725f375d3f",
+    "forecast-provenance-audit.json": "bfbae5e6b69397d9ee88952fbc3c6555efb62b510daea03272ef655be9d72b8f"
   },
   "grades": {
     "forecastMean": "A+",
@@ -37,7 +38,7 @@
     "trades": "A+",
     "draft": "A+",
     "season": "A+",
-    "provenance": "A+",
+    "provenance": "A",
     "runtimeParity": "A+"
   },
   "evidence": {
@@ -71,6 +72,22 @@
         "rmse": 6.386205758343418,
         "bias": 0.2625306434607481,
         "rank": 0.6481704348818879
+      }
+    },
+    "forecastProvenance": {
+      "version": "forecast-provenance-audit-2026.1",
+      "findings": {
+        "storedReportPredatesCommittedDataset": true,
+        "exactOriginalTrainingArtifactPreserved": false,
+        "servingModelMatchesStoredReport": true,
+        "storedReportReproducesFromCommittedDataset": false,
+        "servingBehaviorFrozen": true
+      },
+      "releasePolicy": {
+        "allowServingFrozenModel": true,
+        "allowRetuneOnConsumed2024Or2025": false,
+        "successorRequiresExactInputHashBeforeFit": true,
+        "successorRequiresProspective2026Evidence": true
       }
     },
     "uncertainty2024": {

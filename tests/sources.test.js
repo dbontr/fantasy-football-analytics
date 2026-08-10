@@ -107,7 +107,7 @@ test("ESPN PPR snapshot uses only the allowlisted fantasy filter header", async 
 
 test("PPR snapshot enrichment replaces mean projections but preserves local context", () => {
   const local = [{ id: "1", name: "Test WR", position: "WR", team: "DET", weeklyProjection: 10, weeklyProjections: Array(18).fill(10), projectedPoints: 170, floorProjection: 5, ceilingProjection: 18, projectionStdDev: 4, opportunity: { targetShare: 0.2 } }];
-  const snapshot = { players: [{ player: { id: 1, active: true, injuryStatus: "ACTIVE", stats: [
+  const snapshot = { players: [{ player: { id: 1, active: true, injuryStatus: "ACTIVE", ownership: { averageDraftPosition: 18.4, averageDraftPositionPercentChange: -1.2, auctionValueAverage: 31.5, percentOwned: 98.3, percentStarted: 82.1, date: 1786375822860 }, rankings: { "0": [{ rankSourceId: 0, rankType: "PPR", averageRank: 17.25 }] }, stats: [
     { seasonId: 2026, statSourceId: 1, statSplitTypeId: 1, scoringPeriodId: 1, appliedTotal: 19 },
     { seasonId: 2026, statSourceId: 1, statSplitTypeId: 1, scoringPeriodId: 2, appliedTotal: 21 },
     { seasonId: 2026, statSourceId: 1, statSplitTypeId: 0, scoringPeriodId: 0, appliedTotal: 330 },

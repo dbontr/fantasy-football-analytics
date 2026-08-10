@@ -373,6 +373,16 @@
         projectionStdDev: Number(player.projectionStdDev || 0) * ratio,
         injuryStatus: match.injuryStatus || player.injuryStatus,
         active: match.active === false ? false : player.active,
+        market: {
+          averageDraftPosition: Number.isFinite(Number(match.ownership?.averageDraftPosition)) ? Number(match.ownership.averageDraftPosition) : null,
+          averageDraftPositionPercentChange: Number.isFinite(Number(match.ownership?.averageDraftPositionPercentChange)) ? Number(match.ownership.averageDraftPositionPercentChange) : null,
+          auctionValueAverage: Number.isFinite(Number(match.ownership?.auctionValueAverage)) ? Number(match.ownership.auctionValueAverage) : null,
+          auctionValueAverageChange: Number.isFinite(Number(match.ownership?.auctionValueAverageChange)) ? Number(match.ownership.auctionValueAverageChange) : null,
+          percentOwned: Number.isFinite(Number(match.ownership?.percentOwned)) ? Number(match.ownership.percentOwned) : null,
+          percentStarted: Number.isFinite(Number(match.ownership?.percentStarted)) ? Number(match.ownership.percentStarted) : null,
+          snapshotDate: Number.isFinite(Number(match.ownership?.date)) ? Number(match.ownership.date) : null,
+          consensusPprRank: Number.isFinite(Number((match.rankings?.["0"] || []).find((row) => row.rankSourceId === 0 && row.rankType === "PPR")?.averageRank)) ? Number((match.rankings?.["0"] || []).find((row) => row.rankSourceId === 0 && row.rankType === "PPR")?.averageRank) : null,
+        },
         projectionSource: "espn-live-ppr",
       };
     });

@@ -2296,3 +2296,39 @@ main { max-width: 1320px; padding: 0 18px 56px; }
   }
   .league-command-strip > button { min-width: 0; }
 }
+/* Camp / preseason evidence: advisory, intentionally separate from qualified score. */
+.camp-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: .05em;
+  vertical-align: 1px;
+}
+.camp-up { color: #2166a8; }
+.camp-down { color: var(--signal); }
+.camp-mixed, .camp-neutral { color: #66707a; }
+.camp-read {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr);
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #d2d6db;
+  background: #f8f9fa;
+}
+.camp-read h3 { margin: 2px 0 5px; }
+.camp-read p, .camp-read small { color: #5b6476; }
+.camp-read small { grid-column: 1 / -1; }
+.camp-facts { display: grid; gap: 6px; align-content: start; }
+.camp-facts span { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid #dfe3e8; padding-bottom: 5px; font-size: 12px; color: #5b6476; }
+.camp-facts b { color: var(--ink); }
+.news-item .camp-pill { float: right; }
+@media (max-width: 640px) {
+  .camp-read { grid-template-columns: 1fr; }
+}

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.11.1-overfit-guard";
+const CACHE = "snapcount-browser-v1.12.0-camp-evidence";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ const STATIC_ASSETS = [
   "./data/coaches-2026.json",
   "./data/health-calibration-2026.json",
   "./data/rookies-2026.json",
+  "./data/camp-2026.json",
 ];
 
 self.addEventListener("install", (event) => {

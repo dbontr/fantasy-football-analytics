@@ -45,3 +45,13 @@ A+ is a serving qualification, not a claim that every model embellishment wins.
 A surface earns A+ when the offline qualifier has a frozen, leakage-controlled rule for what may run live, the rule clears its relevant historical utility/calibration gate, and runtime parity/hash checks prevent the live implementation from drifting. A candidate transform that fails may be rejected in favor of a stronger market baseline; that rejection is itself part of the A+ selection system.
 
 The runtime profile carries only qualified policy parameters, versions, grades, and a qualification hash. It contains no historical player-week training data.
+
+## 2026-08-10 prospective-evidence hardening
+
+- Runtime profile 2026.5 leaves every qualified decision/accuracy surface at A+ but downgrades **training provenance to A**. The frozen serving coefficients still match the stored forecast qualification report exactly, but that report was generated before the final committed historical dataset snapshot and cannot be recreated coefficient-for-coefficient from the final artifact. `forecast-provenance-audit-2026.1` makes this defect explicit and release-gated.
+- Full `qualify:analytics` is now intentionally locked before rebuilding anything. 2024/2025 are consumed forecast evidence and must not be used to silently create a replacement mean model. A future successor must freeze an exact input SHA-256 before fitting and then be judged against genuinely prospective 2026 evidence.
+- `data/forward/` starts an append-only 2026 evidence stream containing point-in-time live ESPN PPR/market inputs, current camp signals, public news classification, Sleeper movement, and preseason usage before future regular-season outcomes are attached.
+- Training-camp evidence is split into role/reps, performance, availability, preseason usage, and market movement rather than one undifferentiated sentiment scalar. Reporter-explicit first-team snap counts are stored when extractable; boxscore opportunities are never mislabeled as snaps.
+- `data/camp-2026.json` is derived offline from public ESPN camp reports because detailed article bodies are not browser-CORS accessible. Raw article bodies are discarded after classification. The deployed artifact keeps only compact player signals/source hashes and is `advisory-only`.
+- Camp evidence and live ESPN ADP/ownership metadata are visible in the UI, including Draft badges, but `camp.signal` has no mean driver and does not alter the frozen Draft score. Automated tests assert that an extreme camp signal cannot move the forecast mean.
+- Prospective validation, not additional 2018-2025 tuning, is the admission path for any future camp-sentiment coefficient.

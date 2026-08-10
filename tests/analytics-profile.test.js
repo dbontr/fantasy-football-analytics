@@ -7,10 +7,12 @@ const robustDraft = require("../data/validation/draft-robust-policy.json");
 const draftOverfit = require("../data/validation/draft-overfit-audit.json");
 const core = require("../src/engine/core.js");
 
-test("runtime profile serves all A+ frozen qualified analytics", () => {
+test("runtime profile serves A+ decision analytics with explicitly downgraded forecast provenance", () => {
   assert.equal(profile.mode, "serve-frozen-qualified-analytics");
   assert.ok(Object.keys(profile.grades).length >= 8);
-  for (const grade of Object.values(profile.grades)) assert.equal(grade, "A+");
+  for (const [surface, grade] of Object.entries(profile.grades)) assert.equal(grade, surface === "provenance" ? "A" : "A+");
+  assert.equal(profile.players.trainingProvenance.exactOriginalFitReproducible, false);
+  assert.equal(profile.players.trainingProvenance.servingCoefficientsMatchStoredReport, true);
   assert.equal(profile.startSit.validatedMeanScale, 0);
   assert.equal(profile.waivers.validatedMeanScale, 0);
   assert.equal(profile.trades.validatedMeanScale, 0);

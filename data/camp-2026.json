@@ -1,0 +1,1265 @@
+{
+  "meta": {
+    "version": "camp-intelligence-2026.1",
+    "season": 2026,
+    "capturedAt": "2026-08-10T15:33:11.532Z",
+    "source": "ESPN public NFL news metadata plus offline-derived camp observations",
+    "policy": "Derived signals only. Raw article bodies are never persisted. Camp evidence is advisory-only until prospective validation admits a model effect.",
+    "stories": 19
+  },
+  "players": [
+    {
+      "id": "4576297",
+      "name": "AJ Barner",
+      "team": "SEA",
+      "position": "TE",
+      "observations": [
+        {
+          "storyId": "49427699",
+          "published": "2026-08-09T05:17:12Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0.45,
+          "evidenceKeys": [
+            "availability.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0,
+      "roleScore": 0,
+      "performanceScore": 0,
+      "availabilityRisk": 0.45,
+      "conflict": 0,
+      "confidence": 0.21643038677912796,
+      "direction": "neutral",
+      "evidenceKeys": [
+        "availability.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4374302",
+      "name": "Amon-Ra St. Brown",
+      "team": "DET",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49419620",
+          "published": "2026-08-09T20:05:54Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0.45,
+          "evidenceKeys": [
+            "availability.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0,
+      "roleScore": 0,
+      "performanceScore": 0,
+      "availabilityRisk": 0.45,
+      "conflict": 0,
+      "confidence": 0.2199864610279376,
+      "direction": "neutral",
+      "evidenceKeys": [
+        "availability.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "3052587",
+      "name": "Baker Mayfield",
+      "team": "TB",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49419613",
+          "published": "2026-08-09T19:38:49Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21987484773069688,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4430807",
+      "name": "Bijan Robinson",
+      "team": "ATL",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49448429",
+          "published": "2026-08-09T01:41:39Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0.45,
+          "evidenceKeys": [
+            "availability.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0,
+      "roleScore": 0,
+      "performanceScore": 0,
+      "availabilityRisk": 0.45,
+      "conflict": 0,
+      "confidence": 0.2156001320525242,
+      "direction": "neutral",
+      "evidenceKeys": [
+        "availability.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4685553",
+      "name": "Brenen Thompson",
+      "team": "LAC",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49424976",
+          "published": "2026-08-09T21:24:33Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.22031176684654058,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4432577",
+      "name": "C.J. Stroud",
+      "team": "HOU",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49419567",
+          "published": "2026-08-09T04:10:22Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21617164086407042,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4431611",
+      "name": "Caleb Williams",
+      "team": "CHI",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49448378",
+          "published": "2026-08-10T01:59:19Z",
+          "score": -0.55,
+          "roleScore": 0,
+          "performanceScore": -0.55,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": -0.55,
+      "roleScore": 0,
+      "performanceScore": -0.55,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.22146214417273782,
+      "direction": "down",
+      "evidenceKeys": [
+        "performance.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "3925357",
+      "name": "Calvin Ridley",
+      "team": "TEN",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49419824",
+          "published": "2026-08-10T00:30:12Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0.45,
+          "evidenceKeys": [
+            "availability.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0,
+      "roleScore": 0,
+      "performanceScore": 0,
+      "availabilityRisk": 0.45,
+      "conflict": 0,
+      "confidence": 0.22108665142343212,
+      "direction": "neutral",
+      "evidenceKeys": [
+        "availability.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4430841",
+      "name": "Carson Beck",
+      "team": "ARI",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49426382",
+          "published": "2026-08-10T02:07:55Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2214985021328705,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4362238",
+      "name": "Chase Brown",
+      "team": "CIN",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49448120",
+          "published": "2026-08-09T17:49:42Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21942726623276468,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "2972515",
+      "name": "Cooper Rush",
+      "team": "ATL",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49448429",
+          "published": "2026-08-09T01:41:39Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.9,
+      "roleScore": 0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2455386646961911,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "3917792",
+      "name": "Daniel Jones",
+      "team": "IND",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49448214",
+          "published": "2026-08-09T18:32:30Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.9,
+      "roleScore": 0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2516960395899156,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4039050",
+      "name": "Devin Duvernay",
+      "team": "ARI",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49426382",
+          "published": "2026-08-10T02:07:55Z",
+          "score": -0.9,
+          "roleScore": -0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.demoted"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": -0.9,
+      "roleScore": -0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.25461308020441614,
+      "direction": "down",
+      "evidenceKeys": [
+        "role.demoted"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4362628",
+      "name": "Ja'Marr Chase",
+      "team": "CIN",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49448120",
+          "published": "2026-08-09T17:49:42Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21942726623276468,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "2578570",
+      "name": "Jacoby Brissett",
+      "team": "ARI",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49426382",
+          "published": "2026-08-10T02:07:55Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        },
+        {
+          "storyId": "49426382",
+          "published": "2026-08-10T02:07:55Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team",
+            "role.demoted"
+          ],
+          "firstTeamSnaps": 11,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.45,
+      "roleScore": 0.45,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0.45,
+      "confidence": 0.27850786292604374,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team",
+        "role.demoted"
+      ],
+      "reportedFirstTeamSnaps": 11,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "3915511",
+      "name": "Joe Burrow",
+      "team": "CIN",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49448120",
+          "published": "2026-08-09T17:49:42Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21942726623276468,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4567048",
+      "name": "Kenneth Walker III",
+      "team": "KC",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49427699",
+          "published": "2026-08-09T05:17:12Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21643038677912796,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4608686",
+      "name": "Kyle Monangai",
+      "team": "CHI",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49448378",
+          "published": "2026-08-10T01:59:19Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        },
+        {
+          "storyId": "49448378",
+          "published": "2026-08-10T01:59:19Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0.45,
+          "evidenceKeys": [
+            "availability.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5454545454545454,
+      "roleScore": 0.5454545454545454,
+      "performanceScore": 0,
+      "availabilityRisk": 0.45,
+      "conflict": 0.42975206611570244,
+      "confidence": 0.25490481497238016,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team",
+        "availability.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4360248",
+      "name": "Kyle Pitts Sr.",
+      "team": "ATL",
+      "position": "TE",
+      "observations": [
+        {
+          "storyId": "49448429",
+          "published": "2026-08-09T01:41:39Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.9,
+      "roleScore": 0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2455386646961911,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4432708",
+      "name": "Marvin Harrison Jr.",
+      "team": "ARI",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49426382",
+          "published": "2026-08-10T02:07:55Z",
+          "score": -0.55,
+          "roleScore": 0,
+          "performanceScore": -0.55,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": -0.55,
+      "roleScore": 0,
+      "performanceScore": -0.55,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2214985021328705,
+      "direction": "down",
+      "evidenceKeys": [
+        "performance.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4701936",
+      "name": "Matthew Golden",
+      "team": "GB",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49376941",
+          "published": "2026-08-09T20:54:33Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.22018747565520336,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "3039707",
+      "name": "Mitchell Trubisky",
+      "team": "TEN",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49419824",
+          "published": "2026-08-10T00:30:12Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.22108665142343212,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4360939",
+      "name": "Rashod Bateman",
+      "team": "BAL",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49434567",
+          "published": "2026-08-09T18:39:05Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21962941387726032,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4431492",
+      "name": "Roman Wilson",
+      "team": "PIT",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49449169",
+          "published": "2026-08-09T02:17:48Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2157385170336367,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4243315",
+      "name": "Salvon Ahmed",
+      "team": "CHI",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49448378",
+          "published": "2026-08-10T01:59:19Z",
+          "score": -0.9,
+          "roleScore": -0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.demoted"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": -0.9,
+      "roleScore": -0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2545571448811351,
+      "direction": "down",
+      "evidenceKeys": [
+        "role.demoted"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4239996",
+      "name": "Travis Etienne Jr.",
+      "team": "NO",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49424731",
+          "published": "2026-08-09T19:40:59Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.8999999999999999,
+      "roleScore": 0.8999999999999999,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 1.1102230246251565e-16,
+      "confidence": 0.2521288756107852,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4685415",
+      "name": "Travis Hunter",
+      "team": "JAX",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49427691",
+          "published": "2026-08-09T18:40:48Z",
+          "score": 0.5,
+          "roleScore": 0,
+          "performanceScore": 0.5,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "performance.positive"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.5,
+      "roleScore": 0,
+      "performanceScore": 0.5,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.21963645330049605,
+      "direction": "up",
+      "evidenceKeys": [
+        "performance.positive"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4361307",
+      "name": "Trey McBride",
+      "team": "ARI",
+      "position": "TE",
+      "observations": [
+        {
+          "storyId": "49426382",
+          "published": "2026-08-10T02:07:55Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.9,
+      "roleScore": 0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.25461308020441614,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4360689",
+      "name": "Tyler Shough",
+      "team": "NO",
+      "position": "QB",
+      "observations": [
+        {
+          "storyId": "49424731",
+          "published": "2026-08-09T19:40:59Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team",
+            "role.demoted"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0,
+      "roleScore": 0,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.2521288756107852,
+      "direction": "neutral",
+      "evidenceKeys": [
+        "role.first_team",
+        "role.demoted"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4426385",
+      "name": "Zach Charbonnet",
+      "team": "SEA",
+      "position": "RB",
+      "observations": [
+        {
+          "storyId": "49427699",
+          "published": "2026-08-09T05:17:12Z",
+          "score": 0.9,
+          "roleScore": 0.9,
+          "performanceScore": 0,
+          "availabilityRisk": 0,
+          "evidenceKeys": [
+            "role.first_team"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0.9,
+      "roleScore": 0.9,
+      "performanceScore": 0,
+      "availabilityRisk": 0,
+      "conflict": 0,
+      "confidence": 0.24681597966019686,
+      "direction": "up",
+      "evidenceKeys": [
+        "role.first_team"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    },
+    {
+      "id": "4869748",
+      "name": "Zavion Thomas",
+      "team": "CHI",
+      "position": "WR",
+      "observations": [
+        {
+          "storyId": "49448378",
+          "published": "2026-08-10T01:59:19Z",
+          "score": 0,
+          "roleScore": 0,
+          "performanceScore": 0,
+          "availabilityRisk": 0.45,
+          "evidenceKeys": [
+            "availability.negative"
+          ],
+          "firstTeamSnaps": null,
+          "catches": null,
+          "targets": null
+        }
+      ],
+      "available": true,
+      "score": 0,
+      "roleScore": 0,
+      "performanceScore": 0,
+      "availabilityRisk": 0.45,
+      "conflict": 0,
+      "confidence": 0.22146214417273782,
+      "direction": "neutral",
+      "evidenceKeys": [
+        "availability.negative"
+      ],
+      "reportedFirstTeamSnaps": null,
+      "modelEffect": "advisory-only"
+    }
+  ],
+  "stories": [
+    {
+      "id": "49376202",
+      "headline": "2026 Minnesota Vikings training camp: Latest intel, updates",
+      "published": "2026-08-10T10:31:14Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49376202/minnesota-vikings-training-camp-2026-intel-updates",
+      "contentSha256": "7c7bc09c7ba50e15870514fcf84b080e942b40a8db55c081248125ce8e9b6a12"
+    },
+    {
+      "id": "49426382",
+      "headline": "2026 Arizona Cardinals training camp: Latest intel, updates",
+      "published": "2026-08-10T02:07:55Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49426382/arizona-cardinals-training-camp-2026-intel-updates",
+      "contentSha256": "36466ed459d2b56038349b3cfac75f00572f955355309c74af3e8081592a3aae"
+    },
+    {
+      "id": "49448378",
+      "headline": "2026 Chicago Bears training camp: Latest intel, updates",
+      "published": "2026-08-10T01:59:19Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49448378/chicago-bears-training-camp-2026-intel-updates",
+      "contentSha256": "503cf512de2fa6ec9180a1f44cea4e97fc9cd31d06026a17640587c35d5b2127"
+    },
+    {
+      "id": "49419824",
+      "headline": "2026 Tennessee Titans training camp: Latest intel, updates",
+      "published": "2026-08-10T00:30:12Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49419824/tennessee-titans-training-camp-2026-intel-updates",
+      "contentSha256": "4c6cd4262833ae93d28ec5b52c8b893048f842714c9858a08b0612cd5f748280"
+    },
+    {
+      "id": "49376535",
+      "headline": "2026 Dallas Cowboys training camp: Latest intel, updates",
+      "published": "2026-08-09T22:50:14Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49376535/dallas-cowboys-training-camp-2026-intel-updates",
+      "contentSha256": "c2cb235aab4a9483dad05d644bf71543f62591cdd6607966a64c3d249c523f24"
+    },
+    {
+      "id": "49424976",
+      "headline": "2026 Los Angeles Chargers training camp: Latest intel, updates",
+      "published": "2026-08-09T21:24:33Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49424976/los-angeles-chargers-training-camp-2026-intel-updates",
+      "contentSha256": "6b9b4b3f4195b079aca0b4072df3d6120488326521bd976d3e3d13dfc6aa4d8e"
+    },
+    {
+      "id": "49376941",
+      "headline": "2026 Green Bay Packers training camp: Latest intel, updates",
+      "published": "2026-08-09T20:54:33Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49376941/green-bay-packers-training-camp-2026-intel-updates",
+      "contentSha256": "fd6548d62ec22618051fd160e486423dde37e4aba9473561e93ff9fba501226f"
+    },
+    {
+      "id": "49419620",
+      "headline": "2026 Detroit Lions training camp: Latest intel, updates",
+      "published": "2026-08-09T20:05:54Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49419620/detroit-lions-training-camp-2026-intel-updates",
+      "contentSha256": "ad80909d3d2bb352589605118d3442e28c4098a914168fbebb41517c6da74a28"
+    },
+    {
+      "id": "49424731",
+      "headline": "2026 New Orleans Saints training camp: Latest intel, updates",
+      "published": "2026-08-09T19:40:59Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49424731/new-orleans-saints-training-camp-2026-intel-updates",
+      "contentSha256": "1cf1cc506e30ccb8cb68d8cc16e522506453efa4bad11eebf2518e0af737a70d"
+    },
+    {
+      "id": "49419613",
+      "headline": "2026 Tampa Bay Buccaneers training camp: Latest intel, updates",
+      "published": "2026-08-09T19:38:49Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49419613/tampa-bay-buccaneers-training-camp-2026-intel-updates",
+      "contentSha256": "6e08b478d5aa11a95c3a5a560884768fb034cd5d1e037f6d8892bcd901dab52e"
+    },
+    {
+      "id": "49427691",
+      "headline": "2026 Jacksonville Jaguars training camp: Latest intel, updates",
+      "published": "2026-08-09T18:40:48Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49427691/jacksonville-jaguars-training-camp-2026-intel-updates",
+      "contentSha256": "cc6a6f780416795bfddfdd39edc837970ff7be2da31a57fe58155b0ef138d9d3"
+    },
+    {
+      "id": "49434567",
+      "headline": "2026 Baltimore Ravens training camp: Latest intel, updates",
+      "published": "2026-08-09T18:39:05Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49434567/baltimore-ravens-training-camp-2026-intel-updates",
+      "contentSha256": "c8bfce743a684910b9e1efb30dab9718d893b938a8cce3628fcd39525d04e5e3"
+    },
+    {
+      "id": "49448214",
+      "headline": "2026 Indianapolis Colts training camp: Latest intel, updates",
+      "published": "2026-08-09T18:32:30Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49448214/indianapolis-colts-training-camp-2026-intel-updates",
+      "contentSha256": "315707469b52ba9ccbc522409e475ed9ac905b896474035baf0297f9454e0a17"
+    },
+    {
+      "id": "49448120",
+      "headline": "2026 Cincinnati Bengals training camp: Latest intel, updates",
+      "published": "2026-08-09T17:49:42Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49448120/cincinnati-bengals-training-camp-2026-intel-updates",
+      "contentSha256": "f9840a7105ea0c1c2b557ab8f3a6d0a00f66703222142a819c900d63c324cbd1"
+    },
+    {
+      "id": "49427699",
+      "headline": "2026 Seattle Seahawks training camp: Latest intel, updates",
+      "published": "2026-08-09T05:17:12Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49427699/seattle-seahawks-training-camp-2026-intel-updates",
+      "contentSha256": "73cd034b46cd14c1ef2d1253d9e8510aede1b6d5e16f60d086bef35268d425b5"
+    },
+    {
+      "id": "49419567",
+      "headline": "2026 Houston Texans training camp: Latest intel, updates",
+      "published": "2026-08-09T04:10:22Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49419567/houston-texans-training-camp-2026-intel-updates",
+      "contentSha256": "65297979647823bd24dece07e1fd75d1f676fcd179081c780918ac736de6d9a1"
+    },
+    {
+      "id": "49434544",
+      "headline": "2026 Buffalo Bills training camp: Latest intel, updates",
+      "published": "2026-08-09T04:04:23Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49434544/buffalo-bills-training-camp-2026-intel-updates",
+      "contentSha256": "8e67dc43b71be5df2087c4ec28ae9859f64d8cde9ef1e5a164d7e20e0baf7582"
+    },
+    {
+      "id": "49449169",
+      "headline": "2026 Pittsburgh Steelers training camp: Latest intel, updates",
+      "published": "2026-08-09T02:17:48Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49449169/pittsburgh-steelers-training-camp-2026-intel-updates",
+      "contentSha256": "6ca76f658dfd581bd2e539ab1f619a5fa69ce8d63c0c36445f2d99139d93fa7a"
+    },
+    {
+      "id": "49448429",
+      "headline": "2026 Atlanta Falcons training camp: Latest intel, updates",
+      "published": "2026-08-09T01:41:39Z",
+      "url": "https://www.espn.com/nfl/story/_/id/49448429/atlanta-falcons-training-camp-2026-intel-updates",
+      "contentSha256": "9ebd9c0b7c4c6f225a7a36e7f45d207c233ac72ef3072e3afd38aac592b744c8"
+    }
+  ]
+}

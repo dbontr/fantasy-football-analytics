@@ -33,6 +33,7 @@ function strictDraftGate(report) {
 }
 function main() {
   const forecast = read("forecast-audit-report.json");
+  const forecastProvenance = read("forecast-provenance-audit.json");
   const uncertaintyReport = read("uncertainty-audit-report.json");
   const decisions = read("decision-audit-report.json");
   const waivers = read("waiver-audit-report.json");
@@ -46,6 +47,8 @@ function main() {
   const draftGrade = strictDraftGate(robustDraftHoldout) && draftOverfit.gates?.robustnessPass === true ? "A+" : "A";
 
   requireGate(forecast.overall.frozen2024.corrected.mae < forecast.overall.frozen2024.raw.mae, "forecast MAE");
+  requireGate(forecastProvenance.findings?.servingModelMatchesStoredReport === true, "forecast serving/report coefficient parity");
+  requireGate(forecastProvenance.findings?.storedReportPredatesCommittedDataset === true && forecastProvenance.findings?.storedReportReproducesFromCommittedDataset === false, "forecast provenance defect must remain explicitly guarded");
   requireGate(forecast.overall.frozen2024.corrected.rmse < forecast.overall.frozen2024.raw.rmse, "forecast RMSE");
   requireGate(uncertaintyReport.admitted === true, "uncertainty calibration");
   requireGate(decisions.releaseGatePassed === true && decisions.selectedPolicy === "raw-live-ppr", "Start/Sit policy selection");
@@ -67,24 +70,25 @@ function main() {
   requireGate(draftOverfit.gates?.robustnessPass === true, "draft anti-overfit robustness");
 
   const datasetPath = path.join(validationDir, "historical-ppr-2020-2025.json.gz");
-  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json"];
+  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json", "forecast-provenance-audit.json"];
   const reportHashes = Object.fromEntries(reportNames.map((name) => [name, hashJsonFile(path.join(validationDir, name))]));
 
   const qualifiedAt = new Date().toISOString();
   const draftSegments = robustDraft.segments || {};
   const qualification = {
-    version: "snapcount-analytics-qualification-2026.4",
+    version: "snapcount-analytics-qualification-2026.5",
     qualifiedAt,
     architecture: "offline-qualification-live-serving",
     dataset: { file: "historical-ppr-2020-2025.json.gz", sha256: hashFile(datasetPath), seasons: [2020, 2021, 2022, 2023, 2024, 2025] },
     reports: reportHashes,
     grades: {
       forecastMean: "A+", uncertainty: "A+", contextAdmission: "A+", startSit: "A+",
-      waivers: "A+", trades: "A+", draft: draftGrade, season: "A+", provenance: "A+", runtimeParity: "A+",
+      waivers: "A+", trades: "A+", draft: draftGrade, season: "A+", provenance: "A", runtimeParity: "A+",
     },
     evidence: {
       forecast2024: forecast.overall.frozen2024,
       forecast2025: forecast.overall.consistency2025,
+      forecastProvenance: { version: forecastProvenance.version, findings: forecastProvenance.findings, releasePolicy: forecastProvenance.releasePolicy },
       uncertainty2024: uncertaintyReport.overall.frozen2024.legacy,
       uncertainty2025: uncertaintyReport.overall.consistency2025.legacy,
       startSitPolicy: decisions.selectedPolicy,
@@ -104,7 +108,7 @@ function main() {
   };
 
   const runtimeProfile = {
-    version: "snapcount-runtime-profile-2026.4",
+    version: "snapcount-runtime-profile-2026.5",
     qualifiedAt,
     qualificationSha256: crypto.createHash("sha256").update(JSON.stringify(qualification)).digest("hex"),
     mode: "serve-frozen-qualified-analytics",
@@ -120,6 +124,7 @@ function main() {
       validatedMeanScale: 1,
       meanCalibrationVersion: meanCalibration.VERSION,
       admittedPositions: Object.fromEntries(Object.entries(meanCalibration.MODELS).map(([position, model]) => [position, Boolean(model)])),
+      trainingProvenance: { auditVersion: forecastProvenance.version, exactOriginalFitReproducible: false, servingCoefficientsMatchStoredReport: true, nextAdmissionEvidence: "prospective-2026" },
     },
     startSit: { baseline: "espn-live-ppr", validatedMeanScale: 0, policy: "raw-live-ppr-exact-lineup" },
     waivers: { baseline: "espn-live-ppr", validatedMeanScale: 0, minimumScore: waivers.selectedThreshold },

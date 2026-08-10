@@ -103,12 +103,13 @@ async function main() {
     meanCalibration: window.SnapCountMeanCalibration?.VERSION || null,
     context: window.OracleContext?.VERSION || null,
     runtime: window.OracleBrowserEngine?.VERSION || null,
+    liveIntelligence: window.OracleLiveIntelligence?.VERSION || null,
   })`);
-  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.7" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1") throw new Error("Current empirical runtime/context/mean bundle did not install");
+  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.7" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1" || modelState.liveIntelligence !== "oracle-live-intelligence-2026.2") throw new Error("Current empirical runtime/context/mean/live-intelligence bundle did not install");
   if (modelState.calibration !== "snapcount-calibration-2026.1" || modelState.calibrationInstalled !== modelState.calibration) throw new Error("Empirical uncertainty calibration did not install");
   const profileState = await evaluate(`fetch('./data/analytics-runtime-profile.json').then((response) => response.json()).then((profile) => ({ mode: profile.mode, grades: profile.grades || {}, startSit: profile.startSit?.policy, draft: profile.draft?.policy }))`);
-  const servingGrades = Object.values(profileState.grades);
-  if (profileState.mode !== "serve-frozen-qualified-analytics" || servingGrades.some((grade) => grade !== "A+") || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified") throw new Error("Frozen all-A+ analytics profile did not load");
+  const gradeDrift = Object.entries(profileState.grades).some(([surface, grade]) => grade !== (surface === "provenance" ? "A" : "A+"));
+  if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified") throw new Error("Frozen qualified analytics profile did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 7 || home.quickActions !== 5) throw new Error("Task navigation did not render");
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
@@ -164,6 +165,8 @@ async function main() {
   await waitFor(`!document.querySelector('#live-intelligence-status')?.textContent.includes('Syncing')`, 75000);
   const liveNews = await evaluate(`document.querySelectorAll('#news-pulse .news-item').length`);
   if (liveNews < 1) throw new Error("News/preseason refresh did not render");
+  const campState = await evaluate(`Promise.all([fetch('./data/camp-2026.json').then(r=>r.json()), Promise.resolve(document.querySelector('#live-intelligence-status')?.textContent || '')]).then(([camp,status])=>({players:camp.players?.length||0, advisory:camp.players?.every(row=>row.modelEffect==='advisory-only'), status}))`);
+  if (campState.players < 10 || !campState.advisory || !campState.status.includes("camp reads")) throw new Error(`Camp intelligence did not load safely: ${JSON.stringify(campState)}`);
 
   await evaluate(`(() => {
     const search = document.querySelector('#player-search'); search.value=''; search.dispatchEvent(new Event('input',{bubbles:true}));
@@ -194,7 +197,8 @@ async function main() {
     rows: document.querySelectorAll('#draft-big-board .big-board-row').length,
     first: document.querySelector('#draft-big-board .big-board-row')?.textContent
   }))()`);
-  if (board.rows < 50 || !board.first.includes("SNAP SCORE")) throw new Error("SnapCount draft board failed");
+  const campBadges = await evaluate(`document.querySelectorAll('#draft-big-board .camp-pill').length`);
+  if (board.rows < 50 || !board.first.includes("SNAP SCORE") || campBadges < 1) throw new Error("SnapCount draft board/camp advisories failed");
   await evaluate(`(() => { const s=document.querySelector('#draft-pick-search'); s.value='Bijan'; s.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
   const draftSearch = await evaluate(`document.querySelector('#draft-manual-player option:checked')?.textContent || ''`);
   if (!draftSearch.includes('Bijan')) throw new Error('Draft pick search failed');

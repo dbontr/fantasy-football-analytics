@@ -1,0 +1,175 @@
+{
+  "version": "forecast-provenance-audit-2026.1",
+  "purpose": "protect serving behavior and expose historical training-lineage limits without refitting production on consumed evaluation seasons",
+  "dataset": {
+    "file": "historical-ppr-2020-2025.json.gz",
+    "sha256": "7598098a7742335382ddda16c8e32fae3cb36fb19e02a95bedd2d3f82e7c5435",
+    "generatedAt": "2026-08-08T18:38:58.414Z"
+  },
+  "storedForecastReport": {
+    "file": "forecast-audit-report.json",
+    "generatedAt": "2026-08-08T18:34:00.430Z",
+    "version": "forecast-history-audit-2026.1"
+  },
+  "findings": {
+    "storedReportPredatesCommittedDataset": true,
+    "exactOriginalTrainingArtifactPreserved": false,
+    "servingModelMatchesStoredReport": true,
+    "storedReportReproducesFromCommittedDataset": false,
+    "servingBehaviorFrozen": true
+  },
+  "positions": {
+    "QB": {
+      "admitted": false,
+      "storedReportModel": {
+        "intercept": -0.785613,
+        "coefficients": {
+          "implied": 0.034754,
+          "form_gap": 0.050085,
+          "pace": -0.017657
+        }
+      },
+      "servingModel": null,
+      "servingMatchesStoredReport": true,
+      "refitFromCommittedDataset": {
+        "intercept": -0.786379,
+        "coefficients": {
+          "implied": 0.034781,
+          "form_gap": 0.048881,
+          "pace": -0.017582
+        }
+      },
+      "refitMatchesStoredReport": false,
+      "refitDelta": {
+        "intercept": -0.000766,
+        "coefficients": {
+          "implied": 0.000027,
+          "form_gap": -0.001204,
+          "pace": 0.000075
+        }
+      }
+    },
+    "RB": {
+      "admitted": true,
+      "storedReportModel": {
+        "intercept": -0.418743,
+        "coefficients": {
+          "defense": 0.056113,
+          "fpoe": 0.145512,
+          "implied": 0.034549,
+          "target": -0.656749,
+          "xfp_gap": 0.087485
+        }
+      },
+      "servingModel": {
+        "intercept": -0.418743,
+        "coefficients": {
+          "defense": 0.056113,
+          "fpoe": 0.145512,
+          "implied": 0.034549,
+          "target": -0.656749,
+          "xfp": 0.087485
+        }
+      },
+      "servingMatchesStoredReport": true,
+      "refitFromCommittedDataset": {
+        "intercept": -0.417131,
+        "coefficients": {
+          "defense": 0.056282,
+          "fpoe": 0.141433,
+          "implied": 0.035168,
+          "target": -0.665494,
+          "xfp_gap": 0.091973
+        }
+      },
+      "refitMatchesStoredReport": false,
+      "refitDelta": {
+        "intercept": 0.001612,
+        "coefficients": {
+          "defense": 0.000169,
+          "fpoe": -0.004079,
+          "implied": 0.000619,
+          "target": -0.008745,
+          "xfp_gap": 0.004488
+        }
+      }
+    },
+    "WR": {
+      "admitted": true,
+      "storedReportModel": {
+        "intercept": -0.393169,
+        "coefficients": {
+          "implied": 0.05404,
+          "snap": 0.168455,
+          "practice_dnp": -0.121268,
+          "defense": 0.04127
+        }
+      },
+      "servingModel": {
+        "intercept": -0.393169,
+        "coefficients": {
+          "implied": 0.05404,
+          "snap": 0.168455,
+          "practiceDnp": -0.121268,
+          "defense": 0.04127
+        }
+      },
+      "servingMatchesStoredReport": true,
+      "refitFromCommittedDataset": {
+        "intercept": -0.393673,
+        "coefficients": {
+          "implied": 0.054058,
+          "snap": 0.166658,
+          "practice_dnp": -0.121143,
+          "defense": 0.041291
+        }
+      },
+      "refitMatchesStoredReport": false,
+      "refitDelta": {
+        "intercept": -0.000504,
+        "coefficients": {
+          "implied": 0.000018,
+          "snap": -0.001797,
+          "practice_dnp": 0.000125,
+          "defense": 0.000021
+        }
+      }
+    },
+    "TE": {
+      "admitted": true,
+      "storedReportModel": {
+        "intercept": -0.041518,
+        "coefficients": {
+          "snap": 0.239355
+        }
+      },
+      "servingModel": {
+        "intercept": -0.041518,
+        "coefficients": {
+          "snap": 0.239355
+        }
+      },
+      "servingMatchesStoredReport": true,
+      "refitFromCommittedDataset": {
+        "intercept": -0.041005,
+        "coefficients": {
+          "snap": 0.240228
+        }
+      },
+      "refitMatchesStoredReport": false,
+      "refitDelta": {
+        "intercept": 0.000513,
+        "coefficients": {
+          "snap": 0.000873
+        }
+      }
+    }
+  },
+  "interpretation": "The frozen serving coefficients still match the stored qualification report, but the exact pre-fit dataset state was not preserved: the stored report predates the committed historical artifact and its coefficients do not reproduce exactly from that final artifact. This is a training-lineage defect, not evidence that the frozen serving backtest is fabricated.",
+  "releasePolicy": {
+    "allowServingFrozenModel": true,
+    "allowRetuneOnConsumed2024Or2025": false,
+    "successorRequiresExactInputHashBeforeFit": true,
+    "successorRequiresProspective2026Evidence": true
+  }
+}

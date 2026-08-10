@@ -17,6 +17,7 @@ const robustDraft = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-r
 const robustHoldout = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-a-plus-holdout-2018.json"), "utf8"));
 const robustRefine = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-robust-refine.json"), "utf8"));
 const draftOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "draft-overfit-audit.json"), "utf8"));
+const forecastProvenance = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-provenance-audit.json"), "utf8"));
 const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const hashFile = (file) => hashBytes(fs.readFileSync(file));
 const hashJsonFile = (file) => hashBytes(Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))));
@@ -30,11 +31,14 @@ function assert(condition, message) {
 
 assert(profile.mode === "serve-frozen-qualified-analytics", "runtime mode drift");
 for (const [surface, grade] of Object.entries(profile.grades || {})) {
-  assert(grade === "A+", `grade drift: ${surface}`);
+  assert(grade === (surface === "provenance" ? "A" : "A+"), `grade drift: ${surface}`);
 }
 assert(profile.qualificationSha256 === hashBytes(JSON.stringify(qualification)), "qualification manifest hash drift");
 
 assert(profile.players.meanCalibrationVersion === meanCalibration.VERSION, "mean calibration version drift");
+assert(profile.players.trainingProvenance?.auditVersion === forecastProvenance.version, "forecast provenance version drift");
+assert(forecastProvenance.findings?.servingModelMatchesStoredReport === true, "frozen forecast coefficient/report mismatch");
+assert(forecastProvenance.findings?.storedReportReproducesFromCommittedDataset === false, "forecast provenance expectation drift");
 assert(profile.season.calibrationVersion === uncertainty.VERSION, "uncertainty version drift");
 assert(profile.season.correlationVersion === correlation.VERSION, "correlation version drift");
 assert(profile.context.version === context.VERSION, "context version drift");

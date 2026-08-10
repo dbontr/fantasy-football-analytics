@@ -1,7 +1,7 @@
 {
-  "version": "snapcount-runtime-profile-2026.4",
-  "qualifiedAt": "2026-08-09T02:42:17.951Z",
-  "qualificationSha256": "c47c8cf5681a44ab2080f3bb4286e261563d96ec1546ee0f7d62506b2c469aff",
+  "version": "snapcount-runtime-profile-2026.5",
+  "qualifiedAt": "2026-08-10T15:43:38.943Z",
+  "qualificationSha256": "488fce37f977eed7f767327549b557e4e8f8ffe925ecf5c740d785d81ac6a72c",
   "mode": "serve-frozen-qualified-analytics",
   "grades": {
     "forecastMean": "A+",
@@ -12,7 +12,7 @@
     "trades": "A+",
     "draft": "A+",
     "season": "A+",
-    "provenance": "A+",
+    "provenance": "A",
     "runtimeParity": "A+"
   },
   "scoring": {
@@ -33,6 +33,12 @@
       "RB": true,
       "WR": true,
       "TE": true
+    },
+    "trainingProvenance": {
+      "auditVersion": "forecast-provenance-audit-2026.1",
+      "exactOriginalFitReproducible": false,
+      "servingCoefficientsMatchStoredReport": true,
+      "nextAdmissionEvidence": "prospective-2026"
     }
   },
   "startSit": {

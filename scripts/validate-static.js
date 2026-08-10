@@ -26,6 +26,7 @@ const required = [
   "data/coaches-2026.json",
   "data/health-calibration-2026.json",
   "data/rookies-2026.json",
+  "data/camp-2026.json",
 ];
 
 for (const relative of required) {
@@ -46,10 +47,18 @@ const standardCount = dataset.players.filter((player) => Number.isFinite(Number(
 if (standardCount < 650) throw new Error(`Bootstrap Standard-scoring coverage is incomplete: ${standardCount}`);
 const runtimeProfile = JSON.parse(fs.readFileSync(path.join(root, "data", "analytics-runtime-profile.json"), "utf8"));
 if (runtimeProfile.mode !== "serve-frozen-qualified-analytics") throw new Error("Runtime analytics profile is not in frozen serving mode");
-if (Object.values(runtimeProfile.grades || {}).some((grade) => grade !== "A+")) throw new Error("Runtime analytics profile contains a surface below A+");
+for (const [surface, grade] of Object.entries(runtimeProfile.grades || {})) {
+  const expected = surface === "provenance" ? "A" : "A+";
+  if (grade !== expected) throw new Error(`Runtime analytics grade drift: ${surface} expected ${expected}`);
+}
 if (runtimeProfile.draft?.postFreezeHoldoutSeason !== 2018) throw new Error("Runtime Draft A+ holdout provenance drift");
 if (runtimeProfile.draft?.robustnessAuditVersion !== "draft-overfit-audit-2026.1") throw new Error("Runtime Draft anti-overfit audit drift");
 if (!Array.isArray(runtimeProfile.draft?.robustnessEvidenceYears) || runtimeProfile.draft.robustnessEvidenceYears.length !== 8) throw new Error("Runtime Draft robustness evidence missing");
+const campArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "camp-2026.json"), "utf8"));
+if (campArtifact.meta?.version !== "camp-intelligence-2026.1" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10) throw new Error("Camp intelligence artifact is incomplete");
+if (campArtifact.players.some((row) => row.modelEffect !== "advisory-only")) throw new Error("Camp intelligence must remain advisory-only");
+const campText = JSON.stringify(campArtifact);
+if (campText.includes("<p") || campText.includes("rawText")) throw new Error("Camp artifact must not persist raw article bodies");
 const rookieArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "rookies-2026.json"), "utf8"));
 if (!Array.isArray(rookieArtifact.players) || rookieArtifact.players.length < 50) throw new Error("Rookie artifact is incomplete");
 if (Number(rookieArtifact.meta?.historicalRookieCount || 0) < 1500) throw new Error("Rookie historical cohort support is incomplete");

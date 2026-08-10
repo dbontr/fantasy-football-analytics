@@ -35,6 +35,8 @@
     defenseProfiles: null,
     preseasonRows: [],
     preseasonByPlayer: new Map(),
+    campArtifact: null,
+    campIndex: new Map(),
     newsPulse: [],
     trendingAdds: new Map(),
     trendingDrops: new Map(),
@@ -330,6 +332,16 @@
     return summary ? liveIntelligence.preseasonEvidence(summary, player) : {};
   }
 
+  function campSignalFor(player) {
+    const committed = state.campIndex.get(String(player?.id || "")) || null;
+    if (committed) return committed;
+    return liveIntelligence.summarizeCampPulse(state.newsPulse, player);
+  }
+
+  function campEvidenceFor(player) {
+    return liveIntelligence.campEvidence(campSignalFor(player));
+  }
+
   function trendEvidenceFor(player) {
     const id = String(player?.sleeperId || "");
     const adds = id ? Number(state.trendingAdds.get(id) || 0) : 0;
@@ -361,7 +373,7 @@
     const base = { ...savedEvidence(player, week) };
     const priorMatchup = priorDefenseEvidence(player, week);
     if (Object.keys(priorMatchup).length) { delete base["matchup.pass_grade"]; delete base["matchup.rush_grade"]; }
-    return context.mergeEvidence(base, historyEvidenceFor(player), priorMatchup, marketEvidenceFor(player, week), rookieEvidenceFor(player, week), preseasonEvidenceFor(player), trendEvidenceFor(player));
+    return context.mergeEvidence(base, historyEvidenceFor(player), priorMatchup, marketEvidenceFor(player, week), rookieEvidenceFor(player, week), preseasonEvidenceFor(player), campEvidenceFor(player), trendEvidenceFor(player));
   }
 
   function staticDecisionEvidence(player) {
@@ -374,6 +386,7 @@
       context.quarterbackContextEvidence(player, state.players, 1),
       rookieEvidenceFor(player, 1),
       preseasonEvidenceFor(player),
+      campEvidenceFor(player),
       trendEvidenceFor(player),
       state.ledger.evidenceFor("player", String(player.id)),
     );
@@ -585,6 +598,26 @@
     return `<section class="rookie-profile"><p class="control-title">ROOKIE SNAPSHOT</p><div class="metric-grid compact-metrics"><div class="metric"><span>DRAFTED</span><strong>${esc(summary.draftLabel)}</strong></div><div class="metric"><span>AGE</span><strong>${summary.age ?? "—"}</strong></div><div class="metric"><span>TYPICAL ROOKIE OUTPUT</span><strong>${summary.cohortP50 == null ? "—" : num(summary.cohortP50)}</strong></div><div class="metric"><span>HIGH-END ROOKIE UPSIDE</span><strong>${summary.cohortP90 == null ? "—" : num(summary.cohortP90)}</strong></div><div class="metric"><span>PAST HIT RATE</span><strong>${hit}</strong></div><div class="metric"><span>ATHLETIC RANK</span><strong>${athletic}</strong></div><div class="metric"><span>DEPTH CHART</span><strong>${depth}</strong></div></div><p class="fineprint">${esc(summary.college || "College unavailable")} · Rookie history helps set expectations, but current role and projection still matter more.</p></section>`;
   }
 
+  function campLabel(signal) {
+    if (!signal?.available) return "No strong camp signal";
+    if (signal.direction === "up") return "Camp trending up";
+    if (signal.direction === "down") return "Camp warning";
+    if (signal.direction === "mixed") return "Mixed camp reports";
+    return "Camp neutral";
+  }
+  function campClass(signal) {
+    return signal?.direction === "up" ? "camp-up" : signal?.direction === "down" ? "camp-down" : signal?.direction === "mixed" ? "camp-mixed" : "camp-neutral";
+  }
+  function campMarkup(player, preseason = null) {
+    const signal = campSignalFor(player);
+    const share = Number.isFinite(Number(preseason?.positionOpportunityShare)) ? pct(preseason.positionOpportunityShare, 0) : null;
+    const liveAdp = Number.isFinite(Number(player?.market?.averageDraftPosition)) ? Number(player.market.averageDraftPosition) : null;
+    const adpChange = Number.isFinite(Number(player?.market?.averageDraftPositionPercentChange)) ? Number(player.market.averageDraftPositionPercentChange) : null;
+    if (!signal?.available && !preseason && liveAdp === null) return "";
+    const evidence = signal?.evidenceKeys?.map((key) => key.replace("role.", "").replace("performance.", "").replace("availability.", "").replaceAll("_", " ")).join(" · ") || "no classified report";
+    return `<section class="camp-read"><div><p class="control-title">CAMP + PRESEASON READ</p><h3 class="${campClass(signal)}">${esc(campLabel(signal))}</h3><p>${signal?.available ? `${pct(signal.confidence, 0)} evidence confidence · ${esc(evidence)}` : "No strong classified camp report yet."}</p></div><div class="camp-facts">${preseason ? `<span><b>${num(preseason.opportunitiesPerGame)}</b> preseason opportunities/game</span>` : ""}${share ? `<span><b>${share}</b> of tracked team-position preseason opportunity</span>` : ""}${signal?.reportedFirstTeamSnaps ? `<span><b>${signal.reportedFirstTeamSnaps}</b> reporter-counted first-team snaps</span>` : ""}${liveAdp !== null ? `<span><b>${num(liveAdp)}</b> live ESPN ADP</span>` : ""}${adpChange !== null ? `<span><b>${adpChange > 0 ? "+" : ""}${num(adpChange, 2)}</b> ESPN-reported ADP change</span>` : ""}</div><small>Camp information is advisory. It is visible to you, but it cannot silently move the frozen projection mean or Draft policy until prospective validation shows a real edge.</small></section>`;
+  }
+
   function renderPlayerIntelligence(player, result, forecast) {
     const summary = result.summary;
     const xfp = result.xfpSummary || { last3: {}, last5: {} };
@@ -615,6 +648,7 @@
         <section class="outlook-card"><p class="control-title">OUR READ</p><h3 class="${directionClass}">${esc(trendLabel)} · ${esc(riskLabel)} risk</h3><p>SnapCount projects <strong>${num(forecast.distribution.mean)} points</strong> with a ${pct(forecast.availability.probability)} chance to play.</p><p>${esc(readText)}</p></section>
         ${rookieProfile ? `<section><p class="control-title">WHAT MATTERS MOST</p><div class="metric-grid compact-metrics"><div class="metric"><span>PROJECTION</span><strong>${num(forecast.distribution.mean)}</strong></div><div class="metric"><span>UPSIDE</span><strong>${num(forecast.distribution.p90)}</strong></div><div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(forecast.availability.probability)}</strong></div><div class="metric"><span>ROLE CLARITY</span><strong>${pct(1 - forecast.uncertainty.role)}</strong></div>${preseason ? `<div class="metric"><span>PRESEASON WORK</span><strong>${num(preseason.opportunitiesPerGame)} / game</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}. Rookies naturally carry more uncertainty until their NFL role is proven.</p></section>` : `<section><p class="control-title">RECENT FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 FANTASY PTS</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>OPPORTUNITIES / GAME</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div><div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}.${preseason ? ` Preseason usage is also included in the model.` : ""}</p></section>`}
       </div>
+      ${campMarkup(player, preseason)}
       ${rookieProfileMarkup(player)}
       ${rookieProfile ? `<div class="rookie-history-note"><strong>No NFL game history yet.</strong><span>SnapCount uses draft position, comparable rookies, current depth chart, preseason work, and the market projection instead of pretending missing history is bad history.</span></div>` : `<details class="advanced-details game-log-details"><summary>Show game-by-game stats</summary><div class="table-wrap"><table><thead><tr><th>Week</th><th>Opp</th><th>Fantasy pts</th><th>Touches + targets</th><th>Targets</th><th>Carries</th><th>Receptions</th><th>Scrim yds</th><th>Pass yds</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div></details>`}`;
   }
@@ -624,7 +658,10 @@
     if (!node) return;
     const relevant = state.newsPulse.filter((article) => !player || article.playerIds.includes(String(player.id)) || article.teams.includes(String(player.team || ""))).slice(0, 6);
     const rows = relevant.length ? relevant : state.newsPulse.slice(0, 6);
-    node.innerHTML = rows.map((article) => `<article class="news-item"><span>${article.playerNames.length ? esc(article.playerNames.join(", ")) : esc(article.teams.join(", ") || "NFL")}</span><strong>${esc(article.headline)}</strong><small>${article.published ? new Date(article.published).toLocaleString() : "recent"}</small></article>`).join("");
+    node.innerHTML = rows.map((article) => {
+      const camp = article.camp?.matches?.length ? `<em class="camp-pill ${article.camp.score > 0.17 ? "camp-up" : article.camp.score < -0.17 ? "camp-down" : "camp-mixed"}">CAMP ${article.camp.score > 0.17 ? "↑" : article.camp.score < -0.17 ? "↓" : "•"}</em>` : "";
+      return `<article class="news-item"><span>${article.playerNames.length ? esc(article.playerNames.join(", ")) : esc(article.teams.join(", ") || "NFL")}${camp}</span><strong>${esc(article.headline)}</strong><small>${article.published ? new Date(article.published).toLocaleString() : "recent"}</small></article>`;
+    }).join("");
   }
 
   async function syncLiveIntelligence() {
@@ -646,14 +683,16 @@
       const rowIds = [...new Set(state.preseasonRows.map((row) => String(row.id)))];
       for (const id of rowIds) {
         const player = playerById(id);
-        if (player) state.preseasonByPlayer.set(id, liveIntelligence.summarizePreseason(state.preseasonRows, player));
+        if (player) state.preseasonByPlayer.set(id, liveIntelligence.summarizePreseason(state.preseasonRows, player, state.players));
       }
       state.newsPulse = news.articles || [];
       state.trendingAdds = new Map((news.trendingAdds || []).map((row) => [String(row.player_id), Number(row.count || 0)]));
       state.trendingDrops = new Map((news.trendingDrops || []).map((row) => [String(row.player_id), Number(row.count || 0)]));
       renderNewsPulse();
-      $("#live-intelligence-status").textContent = `${preseason.games || 0} preseason games · ${state.newsPulse.length} headlines`;
-      status("News, preseason, and player trends refreshed.", "good");
+      renderDraftBigBoard();
+      const liveCampCount = state.players.filter((player) => campSignalFor(player)?.available).length;
+      $("#live-intelligence-status").textContent = `${preseason.games || 0} preseason games · ${state.newsPulse.length} headlines · ${liveCampCount} camp reads`;
+      status("News, preseason usage, camp signals, and player trends refreshed.", "good");
     } catch (error) {
       $("#live-intelligence-status").textContent = "Live intelligence unavailable";
       status(error.message, "error");
@@ -746,7 +785,12 @@
     if (!node || !state.players.length) return;
     const position = $("#draft-board-position")?.value || "ALL";
     const rows = oracleDraftBoard(currentDraftSettings()).filter((row) => position === "ALL" || row.position === position).slice(0, 80);
-    node.innerHTML = rows.map((row) => `<div class="big-board-row pos-${esc(String(row.position || '').toLowerCase())}"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><small><span class="board-pos">${esc(row.position)}</span> · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}</small></div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`).join("");
+    node.innerHTML = rows.map((row) => {
+      const camp = campSignalFor(row);
+      const campPill = camp?.available && ["up", "down", "mixed"].includes(camp.direction)
+        ? `<em class="camp-pill ${campClass(camp)}" title="Advisory camp evidence; not included in the qualified Draft score">CAMP ${camp.direction === "up" ? "↑" : camp.direction === "down" ? "↓" : "•"}</em>` : "";
+      return `<div class="big-board-row pos-${esc(String(row.position || '').toLowerCase())}"><span class="board-rank">${row.oracleRank}</span><div class="board-player"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}</strong><small><span class="board-pos">${esc(row.position)}</span> · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}${Number.isFinite(Number(row.market?.averageDraftPosition)) ? ` · live ESPN ADP ${num(row.market.averageDraftPosition)}` : ""}</small></div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`;
+    }).join("");
   }
 
   function resetDraft() {
@@ -765,8 +809,11 @@
     const mode = $("#draft-mode").value;
     $("#draft-table").innerHTML = recommendations.map((row, index) => {
       const canRecord = mode === "live" || summary.isUserPick;
+      const camp = campSignalFor(row);
+      const campPill = camp?.available && ["up", "down", "mixed"].includes(camp.direction)
+        ? `<em class="camp-pill ${campClass(camp)}" title="Advisory only; does not change the qualified Draft ranking">CAMP ${camp.direction === "up" ? "↑" : camp.direction === "down" ? "↓" : "•"}</em>` : "";
       const take = row.returnChance <= 0.22 ? "Take him now — he probably won't make it back" : row.rookieTailScore >= 1.5 ? "High-upside rookie worth considering" : row.vona >= 8 ? "Strong value at this pick" : row.need > 0 ? `Fills a ${row.position} need` : (row.reasons?.[0] || "Good value for your roster");
-      return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''}</strong><span>${esc(row.position)} · ${esc(row.team)}</span></td><td class="draft-take">${esc(take)}</td><td><strong>${pct(row.returnChance)}</strong></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record pick" : "Draft him"}</button></td></tr>`;
+      return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}</strong><span>${esc(row.position)} · ${esc(row.team)}</span></td><td class="draft-take">${esc(take)}</td><td><strong>${pct(row.returnChance)}</strong></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record pick" : "Draft him"}</button></td></tr>`;
     }).join("");
     $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => {
       state.draftState = core.applyDraftPick(state.draftState, button.dataset.draftPlayer, settings);
@@ -1361,14 +1408,15 @@
     $("#engine-version").textContent = engine.VERSION.replace("oracle-browser-", "v");
     $("#worker-status").textContent = "Web Worker online";
     try {
-      const [response, coachResponse, healthResponse, rookieResponse, profileResponse] = await Promise.all([
+      const [response, coachResponse, healthResponse, rookieResponse, campResponse, profileResponse] = await Promise.all([
         fetch("./data/players-lite.json"),
         fetch("./data/coaches-2026.json"),
         fetch("./data/health-calibration-2026.json"),
         fetch("./data/rookies-2026.json"),
+        fetch("./data/camp-2026.json"),
         fetch("./data/analytics-runtime-profile.json"),
       ]);
-      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !profileResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
+      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !campResponse.ok || !profileResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
       state.dataset = await response.json();
       state.analyticsProfile = await profileResponse.json();
       if (state.analyticsProfile?.mode !== "serve-frozen-qualified-analytics") throw new Error("qualified analytics profile is invalid");
@@ -1376,6 +1424,8 @@
       state.healthCalibration = await healthResponse.json();
       state.rookieArtifact = await rookieResponse.json();
       state.rookieIndex = rookieModel.indexArtifact(state.rookieArtifact);
+      state.campArtifact = await campResponse.json();
+      state.campIndex = new Map((state.campArtifact?.players || []).map((row) => [String(row.id), row]));
       const season = Number(state.dataset.meta?.season || 2026);
       let baselinePlayers = state.dataset.players || [];
       let livePpr = false;

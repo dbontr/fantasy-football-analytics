@@ -35,7 +35,8 @@ test("news pulse keeps headline metadata and maps ESPN athlete ids", () => {
   const result = live.extractNewsPulse({ articles: [{ id: 7, headline: "Camp role changes", published: "2026-08-07T10:00:00Z", categories: [{ type: "athlete", athleteId: 123 }, { type: "team", team: { abbreviation: "DET" } }], links: { web: { href: "https://www.espn.com/nfl/story/_/id/7" } } }] }, [{ id: "123", name: "Rookie Runner" }]);
   assert.equal(result[0].headline, "Camp role changes");
   assert.deepEqual(result[0].playerIds, ["123"]);
-  assert.equal("description" in result[0], false);
+  assert.equal("description" in result[0], true);
+  assert.equal(Array.isArray(result[0].camp.matches), true);
 });
 
 test("ESPN game market becomes bounded team scoring evidence", () => {
