@@ -372,7 +372,7 @@
     status(blocked ? "Connect ESPN and choose your team to unlock this My League tool." : "");
     const hash = name === "draft" && state.draftContext === "league" ? "league-draft" : name;
     history.replaceState(null, "", `#${hash}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }
 
   function currentLeagueProfile() {
@@ -2963,12 +2963,10 @@
     ["#sidebar-sync-button", "#mobile-sync-button"].forEach((selector) => $(selector)?.addEventListener("click", openLeagueSwitcher));
     $$('[data-sync-league]').forEach((button) => button.addEventListener("click", openLeagueSwitcher));
     $("#sidebar-settings-button")?.addEventListener("click", () => hasEspnMyLeagueAccess() ? focusManualLeagueSetup() : focusEspnSetup());
-    $("#global-player-search")?.addEventListener("click", () => { activatePanel("player"); setTimeout(() => $("#player-search")?.focus(), 80); });
     $$('[data-set-trade-mode]').forEach((button) => button.addEventListener("click", () => { if (setTradeAnalysisMode(button.dataset.setTradeMode)) activatePanel("trades"); }));
     $("#mobile-nav-toggle")?.addEventListener("click", () => $(".app-shell")?.classList.toggle("nav-open"));
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") { setMyLeagueMenuOpen(false); $(".app-shell")?.classList.remove("nav-open"); }
-      if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === "k") { event.preventDefault(); activatePanel("player"); setTimeout(() => $("#player-search")?.focus(), 80); }
     });
     $("#enable-default-league")?.addEventListener("click", () => resetManualLeagueProfile().catch((error) => status(error.message, "error")));
     $("#use-any-league").addEventListener("click", focusManualLeagueSetup);

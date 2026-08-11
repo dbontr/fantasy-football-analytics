@@ -3824,3 +3824,98 @@ tbody tr:hover td { background: #edf4fb !important; }
   .primary, .secondary, .ghost { min-height: 44px; }
   td { font-size: 12px; }
 }
+
+/* SnapCount simplification pass 2026.12 */
+.app-workspace {
+  position: relative;
+  background: #eaf1f8 !important;
+}
+.workspace-mobile-menu { display: none !important; }
+.section-heading .eyebrow,
+#myleague .desk-headline > .eyebrow { display: none !important; }
+.eyebrow::before { display: none !important; }
+.section-heading,
+#myleague .desk-headline {
+  min-height: 112px;
+  margin: 0 0 22px;
+  padding: 24px 0 !important;
+  border-bottom: 1px solid #c8d5e3;
+  background: transparent !important;
+}
+.section-heading h1,
+#myleague .desk-headline h1 {
+  margin: 0 !important;
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif !important;
+  font-size: clamp(36px, 3.2vw, 48px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: 0 !important;
+}
+#myleague .home-feed {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+#overview .home-hero-v2 h1 {
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif !important;
+  font-weight: 700;
+  letter-spacing: 0 !important;
+}
+#overview .home-tools-v2 button,
+#overview .home-tools-v2 button:nth-child(1),
+#overview .home-tools-v2 button:nth-child(3) {
+  border-color: #cbd7e4 !important;
+  background: #f8fafc !important;
+}
+#global-status.status-line {
+  position: fixed !important;
+  top: 12px !important;
+  right: 16px;
+  z-index: 90;
+  width: min(420px, calc(100% - 32px)) !important;
+  min-height: 0;
+  margin: 0 !important;
+  pointer-events: none;
+}
+#global-status.status-line:empty { display: none !important; }
+#global-status.app-status:not(:empty) { min-height: 40px; }
+@media (max-width: 900px) {
+  .workspace-mobile-menu {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 95;
+    display: grid !important;
+    place-items: center;
+    width: 42px;
+    min-height: 42px;
+    border: 1px solid #c8d5e3;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(16,35,61,.08);
+  }
+  .panel { padding-top: 60px; }
+  #global-status.status-line {
+    top: 12px !important;
+    right: 12px;
+    width: calc(100% - 78px) !important;
+  }
+}
+@media (max-width: 680px) {
+  .section-heading,
+  #myleague .desk-headline { padding-top: 20px !important; }
+  .section-heading h1,
+  #myleague .desk-headline h1 { letter-spacing: 0 !important; }
+}
+
+/* Keep page titles anchored to one consistent top edge. */
+.section-heading { align-items: start !important; }
+.section-heading > p {
+  align-self: start !important;
+  padding-top: 4px;
+}
+.section-heading h1,
+#myleague .desk-headline h1 {
+  font-weight: 650;
+  letter-spacing: .005em !important;
+}
