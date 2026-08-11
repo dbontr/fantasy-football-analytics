@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.19.0-espn-required";
+const CACHE = "snapcount-browser-v1.20.0-public-mock-menu";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

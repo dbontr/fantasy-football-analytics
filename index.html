@@ -22,13 +22,26 @@
         <small id="masthead-week">2026 season</small>
       </div>
     </div>
-    <nav class="tabs" aria-label="Fantasy football tools">
-      <button class="tab active" data-panel-target="overview">Home</button>
-      <button class="tab" data-panel-target="rankings">Rankings</button>
-      <button class="tab" data-panel-target="player">Players</button>
-      <button class="tab" data-panel-target="trades">Trade Analyzer</button>
-      <button class="tab my-league-tab" data-panel-target="myleague">My League</button>
-    </nav>
+    <div class="tool-nav">
+      <nav class="tabs" aria-label="Fantasy football tools">
+        <button class="tab active" data-panel-target="overview">Home</button>
+        <button class="tab" data-panel-target="rankings">Rankings</button>
+        <button class="tab" data-panel-target="player">Players</button>
+        <button class="tab" data-panel-target="draft" data-draft-context="public">Mock Draft</button>
+        <button class="tab" data-panel-target="trades">Trade Analyzer</button>
+      </nav>
+      <div class="my-league-nav">
+        <button id="my-league-menu-button" class="tab my-league-tab" type="button" aria-haspopup="menu" aria-expanded="false">My League <span aria-hidden="true">▾</span></button>
+        <div id="my-league-menu" class="my-league-menu hidden" role="menu" aria-label="My League tools">
+          <button type="button" role="menuitem" data-league-nav="myleague"><strong>League home</strong><small>ESPN connection & team</small></button>
+          <button type="button" role="menuitem" data-league-nav="draft" data-requires-league><strong>Draft Center</strong><small>Use your ESPN league settings</small></button>
+          <button type="button" role="menuitem" data-league-nav="lineup" data-requires-league><strong>Start / Sit</strong><small>Set this week’s lineup</small></button>
+          <button type="button" role="menuitem" data-league-nav="trade-ideas" data-requires-league><strong>Trade ideas</strong><small>Search your roster for upgrades</small></button>
+          <button type="button" role="menuitem" data-league-nav="waivers" data-requires-league><strong>Waiver Wire</strong><small>Find the best add and drop</small></button>
+          <button type="button" role="menuitem" data-league-nav="league" data-requires-league><strong>Season Outlook</strong><small>Playoff and title odds</small></button>
+        </div>
+      </div>
+    </div>
   </header>
   <p id="global-status" class="status-line app-status" aria-live="polite"></p>
 
@@ -38,11 +51,11 @@
         <header class="desk-headline public-headline">
           <p class="eyebrow">FANTASY FOOTBALL INTELLIGENCE</p>
           <h1>Know who’s best. Make the better call.</h1>
-          <p class="lede">Rankings, projections, player context, and trade values are available to everyone. Connect <strong>My League</strong> to ESPN when you want personalized draft, lineup, waiver, and season help.</p>
+          <p class="lede">Rankings, player analysis, trade values, and a full mock draft are available to everyone. Connect <strong>My League</strong> to ESPN only when you want personalized lineup, waiver, season, and league-aware tools.</p>
           <div class="action-row">
             <button class="primary" data-jump="rankings">View rankings</button>
-            <button class="secondary" data-jump="trades">Analyze a trade</button>
-            <button class="ghost" data-jump="myleague">My League</button>
+            <button class="secondary" data-jump="draft" data-draft-context="public">Run a mock draft</button>
+            <button class="ghost" data-jump="trades">Analyze a trade</button>
           </div>
         </header>
         <aside class="public-top-card">
@@ -55,7 +68,7 @@
         <button class="public-tool-card" data-jump="rankings"><span>01</span><strong>Rankings</strong><small>See the best players overall or for a specific week.</small></button>
         <button class="public-tool-card" data-jump="player"><span>02</span><strong>Player Analysis</strong><small>Projection, range, status, recent form, matchup, and news.</small></button>
         <button class="public-tool-card" data-jump="trades"><span>03</span><strong>Trade Analyzer</strong><small>Compare any trade now. Connect ESPN in My League for roster and opponent context.</small></button>
-        <button class="public-tool-card league-card" data-jump="myleague"><span>+</span><strong>My League</strong><small>Connect ESPN to unlock draft, Start / Sit, waivers, season outlook, and league-aware trades.</small></button>
+        <button class="public-tool-card draft-card" data-jump="draft" data-draft-context="public"><span>04</span><strong>Mock Draft</strong><small>Practice a full draft against CPU teams without connecting a league.</small></button>
       </div>
     </section>
 
@@ -167,17 +180,22 @@
             </aside>
           </div>
           </details>
+          <details class="module optional-tool trade-ideas my-league-trade-ideas hidden" id="trade-ideas-panel">
+            <summary><span><small>MY LEAGUE</small><strong>Find trade ideas for me</strong></span><em>Search your ESPN roster for possible upgrades</em></summary>
+            <button id="run-trades" class="secondary">Find trade ideas</button>
+            <div id="trade-result" class="result-space empty-state"><p>SnapCount can search your league for possible 1-for-1 and 2-for-2 upgrades.</p></div>
+          </details>
         </div>
 
         <aside class="home-rail" aria-label="Fantasy tools">
           <section id="league-tools-panel" class="rail-panel hidden">
             <div class="rail-heading"><span>LEAGUE TOOLS</span><small>Personalized to your settings</small></div>
             <div class="quick-actions" aria-label="Choose what you need help with">
-              <button class="quick-action" data-jump="draft"><span>D</span><strong>Draft Center</strong><small>Board, mocks, live help</small></button>
-              <button class="quick-action" data-jump="lineup"><span>S</span><strong>Start / Sit</strong><small>Best lineup this week</small></button>
-              <button class="quick-action" data-jump="trades"><span>T</span><strong>Trade Analyzer</strong><small>Does the deal help?</small></button>
-              <button class="quick-action" data-jump="waivers"><span>W</span><strong>Waiver Wire</strong><small>Best add and drop</small></button>
-              <button class="quick-action" data-jump="league"><span>S</span><strong>Season Outlook</strong><small>Playoff and title odds</small></button>
+              <button class="quick-action" data-league-jump="draft"><span>D</span><strong>Draft Center</strong><small>Mock or live draft with your league settings</small></button>
+              <button class="quick-action" data-league-jump="lineup"><span>S</span><strong>Start / Sit</strong><small>Best lineup this week</small></button>
+              <button class="quick-action" data-league-nav="trade-ideas"><span>T</span><strong>Trade Ideas</strong><small>Search your league for upgrades</small></button>
+              <button class="quick-action" data-league-jump="waivers"><span>W</span><strong>Waiver Wire</strong><small>Best add and drop</small></button>
+              <button class="quick-action" data-league-jump="league"><span>S</span><strong>Season Outlook</strong><small>Playoff and title odds</small></button>
             </div>
           </section>
 
@@ -247,48 +265,69 @@
     </section>
 
     <section class="panel" data-panel="draft" id="draft">
-      <div class="section-heading"><div><p class="eyebrow">DRAFT CENTER</p><h1>Build your board. Own the room.</h1></div><p>Rankings, mock drafts, return odds, and live draft help — all built around your roster and draft position.</p></div>
-      <div class="toolbar module draft-toolbar">
-        <label>What are you doing?<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
-        <label>League size<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
-        <label>My draft spot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
-        <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
-        <label>Scoring<select id="draft-scoring"><option value="ppr" selected>PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option><option value="custom">Custom league scoring</option></select></label>
-        <label>QB format<select id="draft-qb-format"><option value="one-qb" selected>1 QB</option><option value="superflex">Superflex</option><option value="two-qb">2 QB</option></select></label>
-        <label>How others draft<select id="draft-opponent-strategy"></select></label>
-        <button id="draft-reset" class="secondary">Restart</button>
-        <button id="draft-advance" class="primary">Start mock</button>
-        <button id="draft-undo" class="ghost">Undo last pick</button>
-        <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
-      </div>
-      <article class="module big-board-module">
-        <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>SnapCount Big Board</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
-        <p class="helper-copy">This is our simple pre-draft ranking. Higher scores mean a better mix of projection, positional value, risk, and rookie upside.</p>
-        <div id="draft-big-board" class="big-board-list"></div>
-      </article>
-      <div class="draft-layout">
-        <article class="module draft-side">
-          <div class="table-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>Run the room</h2></div><span id="draft-meta"></span></div>
-          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
-          <label>Player picked<select id="draft-manual-player"></select></label>
-          <button id="draft-record-pick" class="secondary">Record this pick</button>
-          <p id="draft-flow-help" class="helper-copy">Mock Draft: CPU teams advance automatically after every pick you make. Live Draft Helper: record the real picks from ESPN, Yahoo, Sleeper, NFL, CBS, or any other draft room.</p>
-          <details class="advanced-details"><summary>Use Yahoo, NFL, or another ranking list</summary>
-            <label>Paste rankings<textarea id="draft-custom-board" rows="7" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
+      <div class="section-heading draft-heading"><div><p class="eyebrow" id="draft-eyebrow">MOCK DRAFT</p><h1 id="draft-title">Run a mock draft.</h1></div><p id="draft-description">Choose the league basics and your draft spot. CPU teams make every opponent pick automatically, so you only make your own decisions.</p></div>
+      <div id="draft-league-context" class="draft-league-context hidden"><span>MY LEAGUE</span><strong id="draft-league-context-name">ESPN league settings</strong><small>League size, scoring, and lineup structure are synced from My League.</small></div>
+      <div class="module draft-launch-card">
+        <div class="draft-primary-controls">
+          <label id="draft-mode-wrap" class="hidden">Draft mode<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
+          <label id="draft-teams-wrap">Teams<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
+          <label>My draft spot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
+          <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
+          <label id="draft-scoring-wrap">Scoring<select id="draft-scoring"><option value="ppr" selected>PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option><option value="custom">Custom league scoring</option></select></label>
+          <label id="draft-qb-format-wrap">QB format<select id="draft-qb-format"><option value="one-qb" selected>1 QB</option><option value="superflex">Superflex</option><option value="two-qb">2 QB</option></select></label>
+          <button id="draft-reset" class="primary">Start mock</button>
+          <button id="draft-undo" class="ghost">Undo last pick</button>
+          <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
+        </div>
+        <details class="advanced-details draft-settings-more"><summary>More mock draft settings</summary>
+          <label>How other teams draft<select id="draft-opponent-strategy"></select></label>
+          <details class="advanced-details nested-details"><summary>Use Yahoo, NFL, or another ranking list</summary>
+            <label>Paste rankings<textarea id="draft-custom-board" rows="6" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
             <div class="action-row compact"><button id="draft-import-board" class="secondary">Use these rankings</button><button id="draft-clear-board" class="ghost">Use built-in market</button></div>
             <p id="draft-board-status" class="fineprint">Built-in market rankings are active.</p>
           </details>
+        </details>
+      </div>
+
+      <div class="draft-focus-grid">
+        <article class="module table-module draft-recommendations">
+          <div class="table-header"><div><p class="eyebrow">ON THE CLOCK</p><h2>Who should I draft right now?</h2></div><span id="draft-meta">Set your draft spot, then start.</span></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Our take</th><th>Chance he’s there next turn</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div>
         </article>
-        <details class="module draft-side optional-tool">
-          <summary><span><small>OPTIONAL</small><strong>Compare our draft strategy</strong></span><em>See how SnapCount performs in simulated drafts</em></summary>
+        <aside id="draft-roster" class="module result-space empty-state draft-roster-card"><p>Your drafted roster will appear here.</p></aside>
+      </div>
+
+      <details id="draft-live-controls" class="module optional-tool hidden">
+        <summary><span><small>LIVE DRAFT HELPER</small><strong>Record the real draft room</strong></span><em>For ESPN or another live draft</em></summary>
+        <p id="draft-flow-help" class="helper-copy">Live Draft Helper records the actual picks you see. SnapCount never invents opponent picks in live mode.</p>
+        <div class="draft-live-entry">
+          <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
+          <label>Player picked<select id="draft-manual-player"></select></label>
+          <button id="draft-record-pick" class="secondary">Record this pick</button>
+        </div>
+      </details>
+
+      <details class="module optional-tool draft-history-details">
+        <summary><span><small>DRAFT ROOM</small><strong>Recent picks</strong></span><em>Open the room history</em></summary>
+        <div id="draft-history" class="result-space empty-state"><p>Pick history will appear here.</p></div>
+      </details>
+
+      <details class="module optional-tool draft-board-details">
+        <summary><span><small>PRE-DRAFT</small><strong>SnapCount Big Board</strong></span><em>Open the full player board</em></summary>
+        <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>SnapCount Big Board</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
+        <p class="helper-copy">Higher scores mean a better mix of projection, positional value, risk, and rookie upside.</p>
+        <div id="draft-big-board" class="big-board-list"></div>
+      </details>
+
+      <details class="module optional-tool draft-benchmark-details">
+        <summary><span><small>OPTIONAL</small><strong>Compare our draft strategy</strong></span><em>Run a simulation benchmark</em></summary>
+        <div class="draft-benchmark-controls">
           <label>Number of mock drafts<select id="draft-benchmark-count"><option>40</option><option selected>100</option><option>200</option></select></label>
           <label>Compare against<select id="draft-baseline-strategy"><option value="espn-market" selected>Normal ESPN rankings</option><option value="balanced">Balanced drafter</option><option value="need-heavy">Position-need drafter</option><option value="zero-rb">Zero-RB</option></select></label>
           <button id="draft-benchmark" class="secondary">Run comparison</button>
-          <div id="draft-benchmark-result" class="result-space empty-state"><p>Optional: see how our draft approach compares with a normal ranking-based strategy.</p></div>
-        </details>
-      </div>
-      <div class="module table-module"><div class="table-header"><h2>Who should I draft right now?</h2><span>updates after every pick</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Our take</th><th>Chance he's there next turn</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div></div>
-      <div class="draft-layout"><div id="draft-roster" class="module result-space empty-state"><p>Your drafted roster will appear here.</p></div><div id="draft-history" class="module result-space empty-state"><p>Pick history will appear here.</p></div></div>
+        </div>
+        <div id="draft-benchmark-result" class="result-space empty-state"><p>Optional: compare SnapCount with a normal ranking-based strategy.</p></div>
+      </details>
     </section>
 
     <section class="panel" data-panel="lineup" id="lineup">
@@ -313,7 +352,6 @@
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Connect ESPN in <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>
-      <details class="module optional-tool trade-ideas" id="trade-ideas-panel"><summary><span><small>MY LEAGUE</small><strong>Find trade ideas for me</strong></span><em>Search your roster for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>SnapCount can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
     </section>
 
     <section class="panel" data-panel="league" id="league">
