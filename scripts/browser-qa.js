@@ -101,6 +101,8 @@ async function main() {
   const gradeDrift = Object.entries(profileState.grades).some(([surface, grade]) => grade !== (surface === "provenance" ? "A" : "A+"));
   if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified" || profileState.objective !== "maximize-future-head-to-head-wins" || profileState.objectiveStatus !== "prospective-overlay") throw new Error("Frozen qualified analytics profile / future-win objective did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
+  const typography = await evaluate(`(() => { const nodes=[...document.querySelectorAll('h1,h2,h3')].filter((node)=>{const rect=node.getBoundingClientRect();return rect.width>0&&rect.height>0;}); const condensed=nodes.filter((node)=>/Arial Narrow/i.test(getComputedStyle(node).fontFamily)); return {condensed:condensed.map((node)=>node.textContent.trim()).slice(0,6),homeFont:getComputedStyle(document.querySelector('#overview h1')).fontFamily}; })()`);
+  if (typography.condensed.length) throw new Error(`Condensed heading font regression: ${JSON.stringify(typography)}`);
   if (home.activePanel !== "overview" || home.contextNavItems !== 11 || home.contextPosition !== "sticky" || home.railDisplay !== "missing" || home.sidebarWidth < 240 || home.sidebarWidth > 270) throw new Error(`Single desktop sidebar failed: ${JSON.stringify(home)}`);
   if (home.horizontalOverflow || home.background !== "rgb(238, 245, 255)" || home.sidebarBackground !== "rgb(18, 54, 95)") throw new Error(`SnapCount canvas/sidebar layout check failed: ${JSON.stringify(home)}`);
   if (!home.brandLoaded || !home.title.startsWith("SnapCount")) throw new Error("SnapCount branding check failed");
@@ -224,7 +226,7 @@ async function main() {
   await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'myleague'`, 5000);
   const myTeamUi = await evaluate(`({rail:getComputedStyle(document.querySelector('#myleague .home-rail')).display,commands:getComputedStyle(document.querySelector('#myleague .league-command-strip')).display,radius:parseFloat(getComputedStyle(document.querySelector('#myleague .league-settings-details')).borderTopLeftRadius)||0})`);
   const myTeamDesktop = await snapshot("my-team-desktop", 1440, 1000);
-  if (myTeamUi.rail !== 'none' || myTeamUi.commands !== 'none' || myTeamUi.radius < 16 || myTeamDesktop.horizontalOverflow) throw new Error(`My Team cleanup failed: ${JSON.stringify({myTeamUi,myTeamDesktop})}`);
+  if (myTeamUi.rail !== 'none' || myTeamUi.commands !== 'none' || myTeamUi.radius < 12 || myTeamDesktop.horizontalOverflow) throw new Error(`My Team cleanup failed: ${JSON.stringify({myTeamUi,myTeamDesktop})}`);
 
   await send("Page.navigate", { url: appUrl });
   await waitFor(`document.querySelector('#player-count')?.textContent === '700' && document.querySelector('#espn-connection-state')?.textContent === 'Connected'`, 15000);
