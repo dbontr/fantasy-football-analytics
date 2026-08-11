@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">SnapCount mark</title>
+  <desc id="desc">White S and C flanking a white American football on a transparent background.</desc>
+  <g fill="#fff">
+    <text x="8" y="79" font-family="Arial Black,Impact,Arial,sans-serif" font-size="44" font-weight="900">S</text>
+    <path d="M64 18C82 30 86 79 64 104C42 79 46 30 64 18Z"/>
+    <text x="91" y="79" font-family="Arial Black,Impact,Arial,sans-serif" font-size="44" font-weight="900">C</text>
+  </g>
+  <g fill="none" stroke="#12365f" stroke-linecap="round">
+    <path d="M53 36Q64 41 75 36M53 86Q64 81 75 86" stroke-width="4"/>
+    <path d="M64 45V78" stroke-width="3.5"/>
+    <path d="M58 49H70M57 56H71M57 63H71M58 70H70" stroke-width="3"/>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.27.0-network-first-shell";
+const CACHE = "snapcount-browser-v1.28.0-team-trade-polish";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const STATIC_ASSETS = [
   "./manifest.webmanifest",
   "./favicon.svg",
   "./snapcount-mark.svg",
+  "./snapcount-mark-sidebar.svg",
   "./snapcount-logo.svg",
   "./engine-worker.js",
   "./src/app.js",

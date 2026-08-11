@@ -769,19 +769,43 @@
     const teamId = connectedUserTeamId();
     if (!league || !teamId || !$("#waiver-mode")) return;
     const transaction = leagueApi.transactionStateForTeam(league, teamId);
-    if (transaction.faabRemaining !== null) {
+    if (transaction.usage.waiverPriority !== null) {
+      $("#waiver-mode").value = "priority";
+      $("#faab-budget-label").classList.add("hidden");
+    } else if (transaction.faabRemaining !== null) {
       $("#waiver-mode").value = "faab";
       $("#faab-budget").value = String(Math.max(0, Math.floor(transaction.faabRemaining)));
       $("#faab-budget-label").classList.remove("hidden");
-    } else if (transaction.usage.waiverPriority !== null) {
-      $("#waiver-mode").value = "priority";
-      $("#faab-budget-label").classList.add("hidden");
     }
+  }
+
+  function renderMyTeamDashboard(league = activeLeagueState(), team = connectedLeagueTeam()) {
+    const dashboard = $("#team-dashboard");
+    if (!dashboard) return;
+    const connected = Boolean(league && team);
+    dashboard.classList.toggle("hidden", !connected);
+    if (!connected) return;
+    const week = Math.max(1, Number(league.currentWeek || 1));
+    const opponent = leagueOpponentForWeek(week, team.teamId);
+    const transaction = leagueApi.transactionStateForTeam(league, team.teamId);
+    const waiverLabel = transaction.usage.waiverPriority !== null
+      ? `Priority #${Math.max(1, Math.round(transaction.usage.waiverPriority))}`
+      : transaction.faabRemaining !== null ? `$${Math.max(0, Math.floor(transaction.faabRemaining))} FAAB` : "League default";
+    const roster = ((team.roster || []).length ? team.roster : (team.rosterIds || []).map((id) => playerById(id)).filter(Boolean))
+      .slice().sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
+    $("#team-dashboard-matchup").textContent = opponent ? `vs ${opponent.name}` : `Week ${week}`;
+    $("#team-dashboard-matchup-meta").textContent = opponent ? `${team.recordLabel || "Your team"} · ${opponent.recordLabel || "Opponent"}` : "No opponent is available in the imported schedule.";
+    $("#team-dashboard-record").textContent = team.recordLabel || "—";
+    $("#team-dashboard-league").textContent = league.name || leagueProfileSummary();
+    $("#team-dashboard-waivers").textContent = waiverLabel;
+    $("#team-dashboard-roster-count").textContent = `${roster.length} recognized player${roster.length === 1 ? "" : "s"}`;
+    $("#team-dashboard-roster").innerHTML = roster.length ? roster.map((player) => `<div class="team-roster-row">${playerIdentityMarkup(player)}<span class="team-roster-projection"><b>${num(baselineWeekProjection(player, week))}</b><small>W${week} pts</small></span></div>`).join("") : `<p class="fineprint">No recognized roster players are available yet.</p>`;
   }
 
   function renderConnectedLeagueContext() {
     const league = activeLeagueState();
     const team = connectedLeagueTeam();
+    renderMyTeamDashboard(league, team);
     if (!league || !team) return;
     const rosterNote = (team.rosterIds || []).length + " players recognized" + ((team.unmatchedPlayers || []).length ? " · " + team.unmatchedPlayers.length + " unmatched" : "");
     $("#myleague").classList.add("league-connected");
@@ -2322,38 +2346,36 @@
   }
 
   function syncTradePartnerControl() {
-    const label = $("#trade-partner-label");
-    const select = $("#trade-partner");
-    const actorSelect = $("#trade-actor-team");
+    const partyBLabel = $("#trade-partner-label");
+    const partyBSelect = $("#trade-partner");
+    const partyASelect = $("#trade-actor-team");
     const leagueMode = state.tradeAnalysisMode === "league" && hasEspnMyLeagueAccess();
     $("#trade-league-controls")?.classList.toggle("hidden", !leagueMode);
-    if (leagueMode && actorSelect) {
-      const validActor = (state.leagueTeams || []).some((team) => String(team.teamId) === String(state.tradeActorTeamId));
-      if (!validActor) state.tradeActorTeamId = connectedUserTeamId();
-      actorSelect.innerHTML = (state.leagueTeams || []).map((team) => `<option value="${esc(team.teamId)}">${String(team.teamId) === connectedUserTeamId() ? "My team · " : ""}${esc(team.name)}</option>`).join("");
-      actorSelect.value = state.tradeActorTeamId || connectedUserTeamId() || "";
+    partyBLabel?.classList.toggle("hidden", !leagueMode);
+    if (leagueMode && partyASelect) {
+      const validPartyA = (state.leagueTeams || []).some((team) => String(team.teamId) === String(state.tradeActorTeamId));
+      if (!validPartyA) state.tradeActorTeamId = connectedUserTeamId();
+      partyASelect.innerHTML = (state.leagueTeams || []).map((team) => `<option value="${esc(team.teamId)}">${String(team.teamId) === connectedUserTeamId() ? "Your team · " : ""}${esc(team.name)}</option>`).join("");
+      partyASelect.value = state.tradeActorTeamId || connectedUserTeamId() || "";
     }
     const partners = tradePartnerTeams();
-    const show = leagueMode && partners.length > 0;
-    label?.classList.toggle("hidden", !show);
-    if (!show) {
+    if (!leagueMode) {
       state.tradePartnerTeamId = null;
-      if (select) select.innerHTML = `<option value="">Choose who you are trading with</option>`;
-    } else if (select) {
-      const valid = partners.some((team) => String(team.teamId) === String(state.tradePartnerTeamId));
-      if (!valid) state.tradePartnerTeamId = null;
-      select.innerHTML = `<option value="">Choose Team B</option>${partners.map((team) => `<option value="${esc(team.teamId)}">${esc(team.name)}</option>`).join("")}`;
-      select.value = state.tradePartnerTeamId || "";
+      if (partyBSelect) partyBSelect.innerHTML = `<option value="">Choose Party B</option>`;
+    } else if (partyBSelect) {
+      const validPartyB = partners.some((team) => String(team.teamId) === String(state.tradePartnerTeamId));
+      if (!validPartyB) state.tradePartnerTeamId = null;
+      partyBSelect.innerHTML = `<option value="">Choose Party B</option>${partners.map((team) => `<option value="${esc(team.teamId)}">${String(team.teamId) === connectedUserTeamId() ? "Your team · " : ""}${esc(team.name)}</option>`).join("")}`;
+      partyBSelect.value = state.tradePartnerTeamId || "";
     }
-    const actor = selectedTradeActorTeam();
-    const partner = selectedTradePartnerTeam();
-    $("#trade-give-scope").textContent = leagueMode ? (actor ? `${actor.name} roster` : "Choose Team A") : "Any player";
-    $("#trade-get-scope").textContent = leagueMode ? (partner ? `${partner.name} roster` : "Choose Team B") : "Any player";
+    const partyA = selectedTradeActorTeam();
+    const partyB = selectedTradePartnerTeam();
+    $("#trade-give-scope").textContent = leagueMode ? (partyA ? `${partyA.name} roster` : "Choose Party A") : "Any player";
+    $("#trade-get-scope").textContent = leagueMode ? (partyB ? `${partyB.name} roster` : "Choose Party B") : "Any player";
     const giveHeading = $('[data-trade-side="give"] .trade-side-head > strong');
     const getHeading = $('[data-trade-side="get"] .trade-side-head > strong');
-    const actorIsUser = actor && String(actor.teamId) === connectedUserTeamId();
-    if (giveHeading) giveHeading.textContent = !leagueMode || actorIsUser ? "I GIVE" : actor ? `${actor.name} SENDS` : "TEAM A SENDS";
-    if (getHeading) getHeading.textContent = !leagueMode || actorIsUser ? "I GET" : partner ? `${partner.name} SENDS` : "TEAM B SENDS";
+    if (giveHeading) giveHeading.textContent = leagueMode ? (partyA ? `${partyA.name} SENDS` : "PARTY A SENDS") : "SIDE A SENDS";
+    if (getHeading) getHeading.textContent = leagueMode ? (partyB ? `${partyB.name} SENDS` : "PARTY B SENDS") : "SIDE B SENDS";
   }
 
   function populateTradeSelectors() {
@@ -2592,12 +2614,11 @@
       const settings = currentLeagueSettings();
       const analysis = core.analyzeTrade({ roster: give, give, receive, players: state.players.map((player) => leagueApi.playerForScoring(player, settings)), settings, week });
       const edgePct = analysis.giveValue > 0 ? (analysis.assetGain / analysis.giveValue) * 100 : 0;
-      const verdict = edgePct >= 8 ? "ACCEPT" : edgePct <= -8 ? "PASS" : "CLOSE CALL";
-      const tone = verdict === "ACCEPT" ? "good" : verdict === "PASS" ? "bad" : "neutral";
+      const verdict = edgePct >= 8 ? "SIDE B HIGHER" : edgePct <= -8 ? "SIDE A HIGHER" : "EVEN VALUE";
       const giveProjection = give.reduce((sum, player) => sum + Number(player.decisionProjection || baselineWeekProjection(player, week)), 0);
       const getProjection = receive.reduce((sum, player) => sum + Number(player.decisionProjection || baselineWeekProjection(player, week)), 0);
       $("#trade-check-result").className = "result-space";
-      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>STANDALONE VALUE CHECK</span><strong>${verdict}</strong><p>${edgePct >= 0 ? "The players you get carry more standalone value." : "The players you give carry more standalone value."}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>VALUE YOU GIVE</span><strong>${num(analysis.giveValue, 1)}</strong></div><div class="metric"><span>VALUE YOU GET</span><strong>${num(analysis.receiveValue, 1)}</strong></div><div class="metric"><span>VALUE EDGE</span><strong class="${edgePct >= 0 ? "good" : "warn"}">${edgePct >= 0 ? "+" : ""}${num(edgePct, 1)}%</strong></div><div class="metric"><span>WEEK ${week} PROJECTION</span><strong>${num(getProjection - giveProjection, 1)} pts</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}<br><span>This is a league-independent package comparison. Connect ESPN in <strong>My League</strong> to add roster fit, actual ownership, opponent schedule, transaction rules, and future-win impact.</span></div><p class="fineprint">${esc(decisionContextLabel(contextState))}.</p>`;
+      $("#trade-check-result").innerHTML = `<div class="trade-verdict neutral"><span>STANDALONE VALUE CHECK</span><strong>${verdict}</strong><p>${edgePct >= 8 ? "Side B carries more standalone value." : edgePct <= -8 ? "Side A carries more standalone value." : "The two packages are close in standalone value."}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>SIDE A VALUE</span><strong>${num(analysis.giveValue, 1)}</strong></div><div class="metric"><span>SIDE B VALUE</span><strong>${num(analysis.receiveValue, 1)}</strong></div><div class="metric"><span>B − A EDGE</span><strong>${edgePct >= 0 ? "+" : ""}${num(edgePct, 1)}%</strong></div><div class="metric"><span>WEEK ${week} B − A PROJECTION</span><strong>${num(getProjection - giveProjection, 1)} pts</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>Side A sends:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>Side B sends:</strong> ${esc(receive.map((player) => player.name).join(" + "))}<br><span>This is a league-independent package comparison. Connect ESPN in <strong>My League</strong> to add roster fit, actual ownership, opponent schedule, transaction rules, and future-win impact.</span></div><p class="fineprint">${esc(decisionContextLabel(contextState))}.</p>`;
       status("Standalone trade comparison ready.", "good");
     } catch (error) {
       status(error.message, "error");
@@ -2639,35 +2660,42 @@
 
   async function analyzeSelectedTrade() {
     const actor = state.tradeAnalysisMode === "league" ? selectedTradeActorTeam() : null;
-    let roster = actor ? [...(actor.roster || [])] : rosterPlayers();
     const giveIds = tradeSelectedIds("give");
     const getIds = tradeSelectedIds("get");
     if (!giveIds.length || !getIds.length) return status("Choose at least one player on each side of the trade.", "error");
     if (giveIds.some((id) => getIds.includes(id))) return status("The same player cannot be on both sides of the trade.", "error");
     const partnerMode = tradePartnerMode();
     const partner = selectedTradePartnerTeam();
-    if (partnerMode && !partner) return status("Choose who you are trading with first.", "error");
+    if (partnerMode && !partner) return status("Choose Party B first.", "error");
     if (partnerMode) {
-      const givePoolIds = new Set(roster.map((player) => String(player.id)));
-      const receivePoolIds = new Set((partner.roster || []).map((player) => String(player.id)));
-      if (giveIds.some((id) => !givePoolIds.has(String(id)))) return status(`Every player Team A sends must be on ${actor?.name || "that team's"} roster.`, "error");
-      if (getIds.some((id) => !receivePoolIds.has(String(id)))) return status(`Every player Team B sends must be on ${partner.name}'s roster.`, "error");
+      const givePoolIds = new Set((actor?.roster || []).map((player) => String(player.id)));
+      const receivePoolIds = new Set((partner?.roster || []).map((player) => String(player.id)));
+      if (giveIds.some((id) => !givePoolIds.has(String(id)))) return status(`Every player Party A sends must be on ${actor?.name || "Party A"}'s roster.`, "error");
+      if (getIds.some((id) => !receivePoolIds.has(String(id)))) return status(`Every player Party B sends must be on ${partner?.name || "Party B"}'s roster.`, "error");
     }
     const week = Number($("#trade-week").value || 1);
     if (state.tradeAnalysisMode !== "league") return analyzeStandaloneTrade(giveIds, getIds, week);
-    if (!hasEspnMyLeagueAccess()) return status("Sync your league to use Advanced Trade Lab.", "error");
-    if (!actor) return status("Choose Team A for the trade.", "error");
-    if (String(actor.teamId) !== connectedUserTeamId()) return analyzeThirdPartyTrade(giveIds, getIds, week, actor, partner);
+    if (!hasEspnMyLeagueAccess()) return status("Sync your league to use League Impact.", "error");
+    if (!actor) return status("Choose Party A for the trade.", "error");
+    if (!partner) return status("Choose Party B for the trade.", "error");
+    const userTeamId = connectedUserTeamId();
+    const userIsPartyA = String(actor.teamId) === userTeamId;
+    const userIsPartyB = String(partner.teamId) === userTeamId;
+    if (!userIsPartyA && !userIsPartyB) return analyzeThirdPartyTrade(giveIds, getIds, week, actor, partner);
+    let roster = [...((userIsPartyA ? actor : partner).roster || [])];
+    const userGiveIds = userIsPartyA ? giveIds : getIds;
+    const userGetIds = userIsPartyA ? getIds : giveIds;
+    const counterpartyTeam = userIsPartyA ? partner : actor;
     if (!roster.length) return status("Your connected ESPN team has no recognized roster players yet.", "error");
     const tradeRosterUsage = transactionRosterUsage();
-    const irGiveCount = giveIds.filter((id) => leagueApi.normalizeLineupSlot(tradeRosterUsage.entryByPlayer.get(String(id))?.lineupSlot) === "IR").length;
+    const irGiveCount = userGiveIds.filter((id) => leagueApi.normalizeLineupSlot(tradeRosterUsage.entryByPlayer.get(String(id))?.lineupSlot) === "IR").length;
     const tradeFeasibility = leagueApi.transactionFeasibility({
       league: activeLeagueState(), teamId: connectedUserTeamId(), type: "trade", now: Date.now(),
-      rosterCountAfter: tradeRosterUsage.active === null ? null : tradeRosterUsage.active - (giveIds.length - irGiveCount) + getIds.length,
+      rosterCountAfter: tradeRosterUsage.active === null ? null : tradeRosterUsage.active - (userGiveIds.length - irGiveCount) + userGetIds.length,
       irCountAfter: tradeRosterUsage.ir === null ? null : Math.max(0, tradeRosterUsage.ir - irGiveCount),
     });
     if (!tradeFeasibility.allowed) return status("Trade is not legal: " + tradeFeasibility.reasons.join("; ") + ".", "error");
-    const selected = [...roster, ...getIds.map((id) => playerById(id)).filter(Boolean)];
+    const selected = [...roster, ...userGetIds.map((id) => playerById(id)).filter(Boolean)];
     const button = $("#analyze-trade");
     button.disabled = true;
     status("Checking the trade against your lineup, future opponents, and current player context…");
@@ -2675,23 +2703,19 @@
       const contextState = await prepareDecisionContext(selected, week);
       roster = refreshDecisionPlayers(roster);
       const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week, "trades"));
-      const give = giveIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
-      const receive = getIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
+      const give = userGiveIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
+      const receive = userGetIds.map((id) => playerById(id)).filter(Boolean).map((player) => decisionPlayerForWeek(player, week, "trades"));
       const settings = currentLeagueSettings();
       const analysis = core.analyzeTrade({ roster: decisionRoster, give, receive, players: state.players.map((player) => leagueApi.playerForScoring(player, settings)), settings, week });
       const tradePolicy = servingPolicy("trades");
       const acceptScore = Number(tradePolicy.acceptScore || 28), passScore = Number(tradePolicy.passScore || -28);
-      let opponentTeam = partnerMode ? partner : null;
-      if (!opponentTeam) {
-        const ownerIds = [...new Set(getIds.map((id) => leagueTeamForPlayer(id)?.teamId).filter(Boolean).map(String))].filter((id) => id !== connectedUserTeamId());
-        opponentTeam = ownerIds.length === 1 ? (state.leagueTeams || []).find((team) => String(team.teamId) === ownerIds[0]) || null : null;
-      }
+      const opponentTeam = counterpartyTeam;
       let future = null, futureAction = null, opponentBefore = null;
       if (opponentTeam && hasRealFantasySchedule()) {
         future = await runFutureWinActions([{
           id: "selected-trade", type: "trade", label: "Proposed trade",
-          opponentTeamId: String(opponentTeam.teamId), sendPlayerIds: giveIds, receivePlayerIds: getIds,
-        }], "trades", week, 2200, `trade-future-${[...giveIds].sort().join("-")}-${[...getIds].sort().join("-")}-${week}`, 900);
+          opponentTeamId: String(opponentTeam.teamId), sendPlayerIds: userGiveIds, receivePlayerIds: userGetIds,
+        }], "trades", week, 2200, `trade-future-${[...userGiveIds].sort().join("-")}-${[...userGetIds].sort().join("-")}-${week}`, 900);
         futureAction = future?.actions?.find((row) => row.id === "selected-trade") || null;
         opponentBefore = future?.actions?.find((row) => row.id === "hold")?.opponents?.[String(opponentTeam.teamId)] || null;
       }
@@ -3250,7 +3274,7 @@
       if (requested === "league-draft") activatePanel("draft", { draftContext: "league" });
       else if (requested && $(`[data-panel-target="${CSS.escape(requested)}"]`)) activatePanel(requested);
       else activatePanel("overview");
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.27.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.28.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
     } catch (error) {
       $("#bootstrap-status").textContent = "Load failed";
       syncRuntimeReadouts();
