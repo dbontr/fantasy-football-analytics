@@ -12,48 +12,42 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="global-rail" aria-label="Primary navigation">
-      <a class="global-brand" href="#overview" data-jump="overview" aria-label="SnapCount home"><img src="./snapcount-mark.svg" alt=""></a>
-      <nav class="global-nav">
-        <button class="global-nav-item active" data-global-route="overview" data-panel-target="overview"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5M5 9v12h14V9M9 21v-6h6v6"/></svg></span><small>Home</small></button>
-        <button class="global-nav-item" data-global-route="draft" data-panel-target="draft" data-draft-context="public"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></span><small>Draft</small></button>
-        <button class="global-nav-item" data-global-route="myleague" data-panel-target="myleague"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4 4m-4-4 4-4"/></svg></span><small>League</small></button>
-        <button class="global-nav-item" data-global-route="rankings" data-panel-target="rankings"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9m7 9V5m7 13v-6"/></svg></span><small>Ranks</small></button>
-        <button class="global-nav-item" data-global-route="player" data-panel-target="player"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.3 3.3-6.5 7.5-6.5s6.7 2.2 7.5 6.5"/></svg></span><small>Players</small></button>
+    <aside class="app-sidebar context-sidebar" aria-label="SnapCount navigation">
+      <a class="sidebar-brand" href="#overview" data-jump="overview" aria-label="SnapCount home">
+        <img src="./snapcount-mark.svg" alt="">
+        <span><strong>SnapCount</strong><small>Fantasy Football</small></span>
+      </a>
+      <div class="sidebar-season"><span>NFL</span><strong>2026</strong></div>
+      <nav class="sidebar-nav context-nav" aria-label="Fantasy football tools">
+        <div class="sidebar-group"><span>PLAYBOOK</span>
+          <button class="sidebar-nav-item context-nav-item active" data-nav-key="home" data-panel-target="overview"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5M5 9v12h14V9M9 21v-6h6v6"/></svg></span><span>Home</span></button>
+          <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="team" data-panel-target="myleague"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20v-8l8-7 8 7v8M8 20v-5h8v5"/></svg></span><span>My Team</span></button>
+        </div>
+        <div class="sidebar-group"><span>DRAFT & LINEUP</span>
+          <button class="sidebar-nav-item context-nav-item upgradeable-nav" data-nav-key="draft" data-panel-target="draft" data-draft-context="public"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></span><span class="nav-label-basic">Mock Draft</span><span class="nav-label-league">Draft Assistant</span></button>
+          <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="lineup" data-league-nav="lineup"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 4 4 12-12M4 20h16"/></svg></span><span>Start / Sit</span></button>
+        </div>
+        <div class="sidebar-group"><span>RESEARCH</span>
+          <button class="sidebar-nav-item context-nav-item" data-nav-key="rankings" data-panel-target="rankings"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9m7 9V5m7 13v-6"/></svg></span><span>Rankings</span></button>
+          <button class="sidebar-nav-item context-nav-item" data-nav-key="player" data-panel-target="player"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.3 3.3-6.5 7.5-6.5s6.7 2.2 7.5 6.5"/></svg></span><span>Player Analysis</span></button>
+          <button class="sidebar-nav-item context-nav-item" data-nav-key="outlooks" data-panel-target="outlooks"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7"/></svg></span><span>My Outlooks</span></button>
+        </div>
+        <div class="sidebar-group"><span>MARKET</span>
+          <button class="sidebar-nav-item context-nav-item upgradeable-nav" data-nav-key="trades" data-panel-target="trades" data-trade-mode="basic"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4 4m-4-4 4-4"/></svg></span><span>Trade Analyzer</span></button>
+          <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="trade-ideas" data-league-nav="trade-ideas"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h8m-8 5h14M5 17h10M16 4l3 3-3 3"/></svg></span><span>Trade Ideas</span></button>
+          <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="waivers" data-league-nav="waivers"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></span><span>Waiver Wire</span></button>
+          <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="league" data-league-nav="league"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9m5 9V5m5 13v-7m5 7V3"/></svg></span><span>Season Outlook</span></button>
+        </div>
       </nav>
-      <div class="global-rail-foot"><span>SC</span></div>
-    </aside>
-    <aside class="context-sidebar" aria-label="Fantasy football tools">
-      <button id="sidebar-sync-button" class="league-switcher" type="button"><span class="league-switcher-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3c0 3-2.2 5-5 5s-5-2-5-5V4Z"/><path d="M7 6H4v1c0 2.3 1.6 4 4 4M17 6h3v1c0 2.3-1.6 4-4 4M12 12v4m-4 4h8m-6-4h4v4h-4z"/></svg></span><span class="league-switcher-copy"><strong id="sidebar-sync-title">Sync a League</strong><small id="sidebar-sync-copy">Unlock personalized tools</small></span><span class="league-switcher-chevron"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></span></button>
-      <div class="context-title-row"><div><span>SNAPCOUNT</span><strong>Fantasy Football</strong></div><span class="season-pill">NFL · 2026</span></div>
-      <nav class="context-nav" aria-label="Tool navigation">
-        <section class="context-group"><h2>Dashboard</h2>
-          <button class="context-nav-item active" data-nav-key="home" data-panel-target="overview"><span>Home</span></button>
-          <button class="context-nav-item league-only hidden" data-nav-key="team" data-panel-target="myleague"><span>My Team</span></button>
-        </section>
-        <section class="context-group"><h2>Draft</h2>
-          <button class="context-nav-item upgradeable-nav" data-nav-key="draft" data-panel-target="draft" data-draft-context="public"><span class="nav-label-basic">Mock Draft</span><span class="nav-label-league">Draft Assistant</span><small class="upgrade-badge">SYNC</small></button>
-        </section>
-        <section class="context-group league-only hidden" data-league-section="lineup"><h2>Lineup</h2>
-          <button class="context-nav-item" data-nav-key="lineup" data-league-nav="lineup"><span>Start / Sit</span></button>
-        </section>
-        <section class="context-group"><h2>Analysis</h2>
-          <button class="context-nav-item" data-nav-key="rankings" data-panel-target="rankings"><span>Rankings</span></button>
-          <button class="context-nav-item" data-nav-key="player" data-panel-target="player"><span>Player Analysis</span></button>
-          <button class="context-nav-item" data-nav-key="outlooks" data-panel-target="outlooks"><span>My Outlooks</span></button>
-        </section>
-        <section class="context-group"><h2>Trade</h2>
-          <button class="context-nav-item upgradeable-nav" data-nav-key="trades" data-panel-target="trades" data-trade-mode="basic"><span class="nav-label-basic">Trade Analyzer</span><span class="nav-label-league">Trade Analyzer</span><small class="upgrade-badge">SYNC</small></button>
-          <button class="context-nav-item league-only hidden" data-nav-key="trade-ideas" data-league-nav="trade-ideas"><span>Trade Ideas</span></button>
-        </section>
-        <section class="context-group league-only hidden" data-league-section="waivers"><h2>Waiver</h2>
-          <button class="context-nav-item" data-nav-key="waivers" data-league-nav="waivers"><span>Waiver Wire</span></button>
-        </section>
-        <section class="context-group league-only hidden" data-league-section="season"><h2>Season</h2>
-          <button class="context-nav-item" data-nav-key="league" data-league-nav="league"><span>Season Outlook</span></button>
-        </section>
-      </nav>
-      <div class="context-sidebar-foot"><button id="sidebar-settings-button" type="button">League & app settings</button><span><b id="player-count">—</b> players · <span id="engine-version">model</span></span><span id="bootstrap-status">Loading model…</span><span id="worker-status" class="hidden">worker starting</span><span id="masthead-team" class="hidden"></span><span id="masthead-week" class="hidden"></span></div>
+      <div class="sidebar-bottom">
+        <button id="sidebar-settings-button" class="sidebar-settings" type="button" aria-label="Settings"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg></span><span>Settings</span></button>
+        <button id="sidebar-sync-button" class="sidebar-sync" type="button">
+          <span class="sidebar-sync-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3c0 3-2.2 5-5 5s-5-2-5-5V4Z"/><path d="M7 6H4v1c0 2.3 1.6 4 4 4M17 6h3v1c0 2.3-1.6 4-4 4M12 12v4m-4 4h8m-6-4h4v4h-4z"/></svg></span>
+          <span class="sidebar-sync-copy"><strong id="sidebar-sync-title">Sync a League</strong><small id="sidebar-sync-copy">Unlock personalized tools</small></span>
+          <span class="sidebar-sync-chevron"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 5 5 5-5 5"/></svg></span>
+        </button>
+        <div class="sidebar-runtime"><span><b id="player-count">—</b> players · <span id="engine-version">model</span></span><span id="bootstrap-status">Loading model…</span><span id="worker-status" class="hidden">worker starting</span><span id="masthead-team" class="hidden"></span><span id="masthead-week" class="hidden"></span></div>
+      </div>
     </aside>
     <div class="app-workspace">
       <header class="workspace-header">

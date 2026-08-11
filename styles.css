@@ -3074,3 +3074,66 @@ footer { border-top-color: var(--line); color: #8a93a0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* single-sidebar refinement */
+:root { --radius: 16px; --radius-sm: 12px; --radius-lg: 20px; }
+.app-shell { grid-template-columns: 252px minmax(0, 1fr); }
+.global-rail { display: none !important; }
+.app-sidebar.context-sidebar { position: sticky; top: 0; z-index: 60; height: 100vh; padding: 18px 14px 14px; border-right: 1px solid #e6ebf2; background: #fff; display: flex; flex-direction: column; overflow-y: auto; }
+.sidebar-brand { min-height: 60px; padding: 6px 8px 15px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid #edf1f5; color: #151922; }
+.sidebar-brand img { width: 42px; height: 42px; }
+.sidebar-brand > span { display: grid; gap: 1px; }
+.sidebar-brand strong { font-size: 17px; letter-spacing: -.025em; }
+.sidebar-brand small { color: #7f8998; font-size: 10px; font-weight: 700; }
+.sidebar-season { margin: 13px 8px 7px; display: flex; justify-content: space-between; color: #738096; font-size: 10px; font-weight: 800; }
+.sidebar-nav { display: grid; gap: 15px; padding: 8px 0 16px; }
+.sidebar-group { display: grid; gap: 4px; }
+.sidebar-group > span { padding: 0 10px 5px; color: #9aa4b2; font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.sidebar-nav-item { width: 100%; min-height: 42px; padding: 8px 10px; border: 0; border-radius: 12px; background: transparent; color: #2d3440; display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; gap: 9px; text-align: left; font-size: 12px; font-weight: 700; }
+.sidebar-nav-item:hover { background: #f4f7fb; }
+.sidebar-nav-item.active { background: #eaf3ff; color: #105cae; }
+.sidebar-icon { width: 22px; height: 22px; display: grid; place-items: center; color: #677487; }
+.sidebar-nav-item.active .sidebar-icon { color: #1268d7; }
+.sidebar-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-bottom { margin-top: auto; display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid #edf1f5; }
+.sidebar-settings { min-height: 38px; padding: 8px 10px; border: 0; border-radius: 11px; background: transparent; color: #687486; display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 9px; text-align: left; font-size: 11px; font-weight: 750; }
+.sidebar-settings:hover { background: #f5f7fa; color: #2f3947; }
+.sidebar-sync { width: 100%; min-height: 58px; padding: 10px 11px; border: 1px solid #d7e2ef; border-radius: 15px; background: #f7fbff; color: #173a65; display: grid; grid-template-columns: 34px minmax(0,1fr) 16px; align-items: center; gap: 9px; text-align: left; }
+.sidebar-sync:hover { border-color: #aec7e7; background: #eef6ff; }
+.sidebar-sync.connected { border-color: #b6d4c3; background: #f2faf5; color: #205e42; }
+.sidebar-sync-icon { width: 34px; height: 34px; border-radius: 11px; background: #1268d7; color: #fff; display: grid; place-items: center; }
+.sidebar-sync.connected .sidebar-sync-icon { background: #2d7654; }
+.sidebar-sync-icon svg, .sidebar-sync-chevron svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-sync-copy { min-width: 0; display: grid; gap: 1px; }
+.sidebar-sync-copy strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-sync-copy small { overflow: hidden; color: #738197; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-runtime { display: grid; gap: 2px; padding: 2px 9px 0; color: #9aa4b1; font-size: 8px; }
+#home-sync-cta { display: none; }
+.workspace-header { border-bottom: 1px solid #e6ebf2; }
+.module, .result-space, .public-top-card, .league-connect-card, .manual-league-card, .trade-side, .trade-verdict, .trade-summary, .decision-card { border-radius: 16px !important; box-shadow: 0 2px 8px rgba(25,45,75,.035) !important; }
+.home-tools-v2 button { border-radius: 16px; }
+.home-benchmark-v2 { border-radius: 18px; }
+.primary, .secondary, .ghost, .mini-button { border-radius: 12px; }
+input, select, textarea { border-radius: 12px !important; }
+.trade-mode-bar { border-radius: 14px; }
+.trade-mode-switch { border-radius: 11px; }
+.trade-mode-switch button { border-radius: 8px; }
+.outlook-chip, .season-pill { border-radius: 999px; }
+.draft-mode-card, .draft-strategy-card, .draft-room-section { border-radius: 16px !important; }
+.draft-recent-pick, .draft-team-column, .draft-room-pick { border-radius: 12px; overflow: hidden; }
+.metric, .why-box, .lineup-row, .outlook-card, .news-item { border-radius: 13px; }
+@media (max-width: 900px) {
+  .app-shell { display: block; }
+  .app-sidebar.context-sidebar { position: fixed; inset: 0 auto 0 0; width: min(82vw, 286px); transform: translateX(-104%); transition: transform .16s ease; box-shadow: 18px 0 44px rgba(18,30,48,.18); }
+  .app-shell.nav-open .app-sidebar.context-sidebar { transform: translateX(0); }
+  .workspace-header { grid-template-columns: auto minmax(0,1fr) auto; }
+}
+@media (min-width: 901px) { .mobile-menu-button { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .app-sidebar.context-sidebar { transition: none; } }
+
+
+/* single-sidebar final polish */
+#mobile-sync-button { display: none !important; }
+@media (max-width: 900px) { .workspace-header { grid-template-columns: auto minmax(0,1fr); } .workspace-actions { display: none; } }
+.table-module, .draft-launch-card, .season-controls, .league-settings-details, .trade-checker, .intelligence-module { border-radius: 16px !important; overflow: hidden; }
+.toolbar, .manual-profile-primary, .draft-primary-controls { border-radius: 14px; }
+.draft-team-column header, .table-header { border-radius: 0; }
