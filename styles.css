@@ -2611,3 +2611,7 @@ main { max-width: 1320px; padding: 0 18px 56px; }
   .brand { width: 106px; min-width: 106px; }
   .brand-logo { width: 98px; height: 40px; }
 }
+/* My League requires an ESPN team before personalized tools unlock. */
+#myleague:not(.league-connected) .league-setup-grid { grid-template-columns: minmax(0, 1fr); }
+#myleague:not(.league-connected) .league-connect-card { max-width: 760px; width: 100%; }
+#myleague:not(.league-connected) .league-settings-details { max-width: 900px; }

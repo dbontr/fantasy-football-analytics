@@ -52,7 +52,6 @@
     leagueTeams: null,
     leagueMeta: null,
     leagueProfile: null,
-    myLeagueEnabled: false,
     tradePartnerTeamId: null,
     leagueState: null,
     connectedTeamId: null,
@@ -175,35 +174,37 @@
     $$('[data-rank-player]').forEach((button) => button.addEventListener("click", () => openRankedPlayer(button.dataset.rankPlayer)));
   }
 
+  function hasEspnMyLeagueAccess() {
+    const team = espnTeamById(state.espnConnection?.teamId);
+    return Boolean(team && state.espnLeague && state.leagueState?.provider === "espn");
+  }
+
   function renderMyLeagueAccess() {
-    const team = connectedLeagueTeam();
-    const enabled = Boolean(state.myLeagueEnabled || team);
+    const enabled = hasEspnMyLeagueAccess();
+    const team = enabled ? espnTeamById(state.espnConnection?.teamId) : null;
     $("#league-tools-panel")?.classList.toggle("hidden", !enabled);
-    $("#enable-default-league")?.classList.toggle("hidden", enabled);
-    $("#show-espn-connect")?.classList.toggle("hidden", Boolean(team));
-    if ($("#use-any-league")) $("#use-any-league").textContent = enabled ? "League settings" : "Customize league";
+    $("#show-espn-connect")?.classList.toggle("hidden", enabled);
+    $("#use-any-league")?.classList.toggle("hidden", !enabled);
+    $("#manual-league-card")?.classList.toggle("hidden", !enabled);
+    if ($("#use-any-league")) $("#use-any-league").textContent = "League settings";
+    if ($("#my-league-settings")) $("#my-league-settings").open = !enabled;
+    if ($("#open-league-settings")) $("#open-league-settings").textContent = enabled ? "League settings" : "Connect ESPN";
     if (team) {
       $("#my-league-title").textContent = `${team.name} command center.`;
       return;
     }
-    if (enabled) {
-      $("#my-league-title").textContent = "Your league tools are ready.";
-      $("#rail-context-kicker").textContent = "MY LEAGUE READY";
-      $("#rail-context-team").textContent = leagueProfileSummary();
-      $("#rail-context-week").textContent = "Add your roster manually, or import league data for opponent-aware decisions.";
-      $("#hero-lede").textContent = "Your league rules are ready. Draft, Start / Sit, waivers, season outlook, and league-aware trade tools are unlocked.";
-    } else {
-      $("#my-league-title").textContent = "Unlock your league tools.";
-      $("#rail-context-kicker").textContent = "SETUP REQUIRED";
-      $("#rail-context-team").textContent = "Unlock My League";
-      $("#rail-context-week").textContent = "Use standard defaults, customize rules, or import a league.";
-      $("#hero-lede").textContent = "Use standard 12-team PPR in one click, customize your rules, or import a league. No ESPN connection is required.";
+    if (!enabled) {
+      $("#my-league-title").textContent = "Connect ESPN to unlock My League.";
+      $("#rail-context-kicker").textContent = "ESPN REQUIRED";
+      $("#rail-context-team").textContent = "Connect your ESPN league";
+      $("#rail-context-week").textContent = "Paste your ESPN league link or ID, then choose your team.";
+      $("#hero-lede").textContent = "Link your ESPN fantasy league and choose your team first. SnapCount will then unlock your draft, lineup, waivers, season, and league-aware trade tools.";
     }
   }
 
   function activatePanel(name) {
     const leaguePanels = new Set(["draft", "lineup", "waivers", "league"]);
-    const blocked = leaguePanels.has(name) && !state.myLeagueEnabled;
+    const blocked = leaguePanels.has(name) && !hasEspnMyLeagueAccess();
     if (blocked) name = "myleague";
     const navName = leaguePanels.has(name) ? "myleague" : name;
     const activeTab = $$(".tab").find((tab) => tab.dataset.panelTarget === navName) || null;
@@ -215,7 +216,7 @@
       const left = activeTab.offsetLeft - Math.max(0, (tabs.clientWidth - activeTab.offsetWidth) / 2);
       tabs.scrollTo({ left, behavior: "smooth" });
     }
-    status(blocked ? "Set up My League to unlock this tool." : "");
+    status(blocked ? "Connect ESPN and choose your team to unlock My League tools." : "");
     history.replaceState(null, "", `#${name}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -285,8 +286,7 @@
     const ids = { QB: "qb", RB: "rb", WR: "wr", TE: "te", FLEX: "flex", SUPERFLEX: "superflex", DST: "dst", K: "k", BN: "bn" };
     for (const [slot, id] of Object.entries(ids)) $("#manual-slot-" + id).value = String(settings.slots[slot] || 0);
     $("#manual-profile-summary").textContent = leagueProfileSummary(profile);
-    const imported = profile.source === "espn" || profile.source === "import" || profile.source === "csv";
-    $("#manual-profile-state").textContent = profile.source === "espn" ? "Autofilled from ESPN" : imported ? "Autofilled from import" : profile.source === "manual-override" ? "Manual override" : "No connection required";
+    $("#manual-profile-state").textContent = profile.source === "espn" ? "Autofilled from ESPN" : profile.source === "manual-override" ? "Manual override" : hasEspnMyLeagueAccess() ? "ESPN connected" : "Connect ESPN first";
   }
 
   function syncDraftControlsToLeagueProfile() {
@@ -300,10 +300,10 @@
   }
 
   async function saveManualLeagueProfile() {
-    state.leagueProfile = leagueProfileFromForm(activeLeagueState() ? "manual-override" : "manual");
-    state.myLeagueEnabled = true;
+    if (!hasEspnMyLeagueAccess()) return status("Connect ESPN and choose your team before changing My League settings.", "error");
+    state.leagueProfile = leagueProfileFromForm("manual-override");
     if (state.leagueMeta) state.leagueMeta.settings = currentLeagueSettings();
-    await Promise.all([store.set("league-profile", state.leagueProfile), store.set("my-league-enabled", true)]);
+    await store.set("league-profile", state.leagueProfile);
     populateLeagueProfileForm();
     syncDraftControlsToLeagueProfile();
     if (!state.draftState?.picks?.length) resetDraft();
@@ -312,17 +312,21 @@
   }
 
   async function resetManualLeagueProfile() {
-    state.leagueProfile = leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
-    state.myLeagueEnabled = true;
-    await Promise.all([store.set("league-profile", state.leagueProfile), store.set("my-league-enabled", true)]);
+    if (!hasEspnMyLeagueAccess()) return status("Connect ESPN and choose your team before changing My League settings.", "error");
+    const espnSettings = state.espnLeague?.settings || null;
+    state.leagueProfile = espnSettings?.supported
+      ? leagueApi.normalizeProfile({ ...espnSettings, source: "espn", provider: "espn" })
+      : leagueApi.normalizeProfile({ source: "manual-override", teams: state.espnLeague?.teams?.length || 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+    await store.set("league-profile", state.leagueProfile);
     populateLeagueProfileForm();
     syncDraftControlsToLeagueProfile();
     if (!state.draftState?.picks?.length) resetDraft();
     renderEspnConnection();
-    status("Standard manual league rules restored.", "good");
+    status("ESPN league rules restored.", "good");
   }
 
   function focusManualLeagueSetup() {
+    if (!hasEspnMyLeagueAccess()) return focusEspnSetup();
     activatePanel("myleague");
     if ($("#my-league-settings")) $("#my-league-settings").open = true;
     $("#manual-league-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -558,12 +562,12 @@
     populateLeagueProfileForm();
     $("#masthead-team").textContent = team ? team.name : league ? league.name : "Any fantasy league";
     $("#masthead-week").textContent = team && league ? `${team.recordLabel} · Week ${league.currentWeek}` : league ? `${league.teams.length} teams · ${league.scoringLabel}` : leagueProfileSummary();
-    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "LEAGUE LOADED" : "NO CONNECTION NEEDED";
-    $("#rail-context-team").textContent = team ? team.name : league ? league.name : "Any fantasy platform";
-    $("#rail-context-week").textContent = team && league ? `${team.recordLabel} · ${league.name}` : league ? `${league.teams.length} teams · choose your team` : leagueProfileSummary();
+    $("#rail-context-kicker").textContent = team && league ? `WEEK ${league.currentWeek}` : league ? "CHOOSE YOUR TEAM" : "ESPN REQUIRED";
+    $("#rail-context-team").textContent = team ? team.name : league ? league.name : "Connect your ESPN league";
+    $("#rail-context-week").textContent = team && league ? `${team.recordLabel} · ${league.name}` : league ? `${league.teams.length} teams · choose your team` : "Paste your ESPN league link or ID, then choose your team.";
     $("#hero-lede").textContent = team
       ? `${team.name} is synced. Start with your lineup, the waiver wire, a trade, or your season outlook.`
-      : "Use standard 12-team PPR in one click, customize your rules, or import a league. No ESPN connection is required.";
+      : league ? "Your ESPN league is loaded. Choose your team to unlock My League." : "Link your ESPN fantasy league and choose your team first. SnapCount will then unlock your personalized league tools.";
     $("#espn-connect-empty").classList.toggle("hidden", Boolean(league) || authNeeded);
     $("#espn-team-step").classList.toggle("hidden", !league || Boolean(team));
     $("#espn-auth-step").classList.toggle("hidden", !authNeeded);
@@ -603,13 +607,13 @@
   }
 
   async function applyLeagueState(league, teamId, persist = true) {
+    if (String(league?.provider || league?.source || "").toLowerCase() !== "espn") throw new Error("My League now requires an ESPN league connection.");
     const selectedId = String(teamId || league?.userTeamId || "");
     const team = league?.teams?.find((row) => String(row.teamId) === selectedId);
     if (!league || !team) throw new Error("Choose a valid imported team");
     clearImportedProjectionOverrides();
     state.leagueState = { ...league, userTeamId: selectedId };
     state.connectedTeamId = selectedId;
-    state.myLeagueEnabled = true;
     const projectionRows = state.leagueState.playerProjections || {};
     if (Object.keys(projectionRows).length) {
       state.players = state.players.map((player) => {
@@ -640,7 +644,7 @@
     setDecisionWeek(state.leagueState.currentWeek);
     if ($("#regular-season-end")) $("#regular-season-end").value = String(state.leagueMeta.regularSeasonEnd);
     if ($("#championship-week")) $("#championship-week").value = String(state.leagueMeta.championshipWeek);
-    if (persist) await Promise.all([store.set("roster-ids", state.rosterIds), store.set("league-state", state.leagueState), store.set("league-profile", state.leagueProfile), store.set("my-league-enabled", true)]);
+    if (persist) await Promise.all([store.set("roster-ids", state.rosterIds), store.set("league-state", state.leagueState), store.set("league-profile", state.leagueProfile)]);
     populateLeagueProfileForm();
     syncDraftControlsToLeagueProfile();
     renderRoster();
@@ -679,7 +683,6 @@
     };
     state.leagueState = { ...state.espnLeague, userTeamId: String(team.teamId) };
     state.connectedTeamId = String(team.teamId);
-    state.myLeagueEnabled = true;
     state.rosterIds = (team.rosterIds || []).map(String).filter((id) => playerById(id));
     state.leagueTeams = hydratedEspnTeams();
     const espnSettings = state.espnLeague.settings || null;
@@ -711,7 +714,6 @@
       store.set("espn-snapshot", state.espnLeague),
       store.set("league-state", state.leagueState),
       store.set("league-profile", state.leagueProfile),
-      store.set("my-league-enabled", true),
     ]);
     populateLeagueProfileForm();
     syncDraftControlsToLeagueProfile();
@@ -777,12 +779,14 @@
     state.connectedTeamId = null;
     state.leagueTeams = null;
     state.leagueMeta = null;
+    state.tradePartnerTeamId = null;
     state.leagueProfile = leagueApi.normalizeProfile({ ...currentLeagueProfile(), ...currentLeagueProfile().settings, source: "manual", provider: null });
-    await Promise.all([store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-state"), store.set("league-profile", state.leagueProfile)]);
+    await Promise.all([store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-state"), store.remove("my-league-enabled"), store.set("league-profile", state.leagueProfile)]);
     populateLeagueProfileForm();
+    renderRoster();
     renderEspnConnection();
     $("#league-source-status").textContent = "No league loaded.";
-    status("ESPN league disconnected. Your current roster is still saved locally.", "good");
+    status("ESPN league disconnected. My League is locked until you reconnect.", "good");
   }
 
   function savedEvidence(player, week = 1) {
@@ -1590,7 +1594,7 @@
       if (side === "give") return [...roster].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
       return [...(selectedTradePartnerTeam()?.roster || [])].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
     }
-    if (state.myLeagueEnabled && roster.length) {
+    if (hasEspnMyLeagueAccess() && roster.length) {
       if (side === "give") return [...roster].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
       const rosterSet = new Set(roster.map((player) => String(player.id)));
       return ranked.filter((player) => !rosterSet.has(String(player.id)));
@@ -1731,8 +1735,8 @@
     }
     const roster = rosterPlayers();
     const partner = selectedTradePartnerTeam();
-    $("#trade-give-scope").textContent = tradePartnerMode() || (state.myLeagueEnabled && roster.length) ? "Your roster" : "Any player";
-    $("#trade-get-scope").textContent = tradePartnerMode() ? (partner ? `${partner.name} roster` : "Choose a trade partner") : (state.myLeagueEnabled && roster.length ? "All other players" : "Any player");
+    $("#trade-give-scope").textContent = tradePartnerMode() || (hasEspnMyLeagueAccess() && roster.length) ? "Your roster" : "Any player";
+    $("#trade-get-scope").textContent = tradePartnerMode() ? (partner ? `${partner.name} roster` : "Choose a trade partner") : (hasEspnMyLeagueAccess() && roster.length ? "All other players" : "Any player");
   }
 
   function populateTradeSelectors() {
@@ -1976,7 +1980,7 @@
       const giveProjection = give.reduce((sum, player) => sum + Number(player.decisionProjection || baselineWeekProjection(player, week)), 0);
       const getProjection = receive.reduce((sum, player) => sum + Number(player.decisionProjection || baselineWeekProjection(player, week)), 0);
       $("#trade-check-result").className = "result-space";
-      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>STANDALONE VALUE CHECK</span><strong>${verdict}</strong><p>${edgePct >= 0 ? "The players you get carry more standalone value." : "The players you give carry more standalone value."}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>VALUE YOU GIVE</span><strong>${num(analysis.giveValue, 1)}</strong></div><div class="metric"><span>VALUE YOU GET</span><strong>${num(analysis.receiveValue, 1)}</strong></div><div class="metric"><span>VALUE EDGE</span><strong class="${edgePct >= 0 ? "good" : "warn"}">${edgePct >= 0 ? "+" : ""}${num(edgePct, 1)}%</strong></div><div class="metric"><span>WEEK ${week} PROJECTION</span><strong>${num(getProjection - giveProjection, 1)} pts</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}<br><span>This is a league-independent package comparison. Set up <strong>My League</strong> to add roster fit, actual ownership, opponent schedule, transaction rules, and future-win impact.</span></div><p class="fineprint">${esc(decisionContextLabel(contextState))}.</p>`;
+      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>STANDALONE VALUE CHECK</span><strong>${verdict}</strong><p>${edgePct >= 0 ? "The players you get carry more standalone value." : "The players you give carry more standalone value."}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>VALUE YOU GIVE</span><strong>${num(analysis.giveValue, 1)}</strong></div><div class="metric"><span>VALUE YOU GET</span><strong>${num(analysis.receiveValue, 1)}</strong></div><div class="metric"><span>VALUE EDGE</span><strong class="${edgePct >= 0 ? "good" : "warn"}">${edgePct >= 0 ? "+" : ""}${num(edgePct, 1)}%</strong></div><div class="metric"><span>WEEK ${week} PROJECTION</span><strong>${num(getProjection - giveProjection, 1)} pts</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}<br><span>This is a league-independent package comparison. Connect ESPN in <strong>My League</strong> to add roster fit, actual ownership, opponent schedule, transaction rules, and future-win impact.</span></div><p class="fineprint">${esc(decisionContextLabel(contextState))}.</p>`;
       status("Standalone trade comparison ready.", "good");
     } catch (error) {
       status(error.message, "error");
@@ -1999,7 +2003,8 @@
       if (getIds.some((id) => !receivePoolIds.has(String(id)))) return status(`Every player you receive must be on ${partner.name}'s roster.`, "error");
     }
     const week = Number($("#trade-week").value || 1);
-    if (!roster.length) return analyzeStandaloneTrade(giveIds, getIds, week);
+    if (!hasEspnMyLeagueAccess()) return analyzeStandaloneTrade(giveIds, getIds, week);
+    if (!roster.length) return status("Your connected ESPN team has no recognized roster players yet.", "error");
     const tradeRosterUsage = transactionRosterUsage();
     const irGiveCount = giveIds.filter((id) => leagueApi.normalizeLineupSlot(tradeRosterUsage.entryByPlayer.get(String(id))?.lineupSlot) === "IR").length;
     const tradeFeasibility = leagueApi.transactionFeasibility({
@@ -2051,7 +2056,7 @@
       const transactionNote = transactionContextLabel();
       const objectiveNote = (futureAction
         ? `<p class="fineprint">Primary objective: maximize your expected wins across the remaining scheduled head-to-head games. Trade simulations transfer players on both rosters and use common random numbers. The historically qualified trade score remains a guardrail: the new layer can veto or rerank, but cannot turn a qualified rejection into an accept.</p>`
-        : `<p class="fineprint">Connect a league with a recognized schedule and target players owned by one opponent to unlock opponent-aware future-win simulation.</p>`) + (transactionNote ? `<p class="fineprint">Transaction state: ${esc(transactionNote)}.</p>` : "");
+        : `<p class="fineprint">Connect ESPN with a recognized schedule and target players owned by one opponent to unlock opponent-aware future-win simulation.</p>`) + (transactionNote ? `<p class="fineprint">Transaction state: ${esc(transactionNote)}.</p>` : "");
       $("#trade-check-result").className = "result-space";
       $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>THE CALL</span><strong>${verdict}</strong><p>${esc(analysis.verdict)}. ${esc(analysis.summary)}</p></div><div class="metric-grid friendly-metrics">${futureMetrics}<div class="metric"><span>STARTING LINEUP CHANGE</span><strong class="${analysis.lineupGain >= 0 ? "good" : "warn"}">${analysis.lineupGain >= 0 ? "+" : ""}${num(analysis.lineupGain)} pts/week</strong></div><div class="metric"><span>LONG-TERM ROSTER VALUE</span><strong>${longTerm}</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}${opponentTeam ? `<br><strong>Trade partner:</strong> ${esc(opponentTeam.name)}` : ""}</div>${objectiveNote}`;
       status(`Trade checked${opponentTeam ? ` against ${opponentTeam.name} and your future schedule` : ""}. ${decisionContextLabel(contextState)}.`, "good");
@@ -2063,8 +2068,9 @@
   }
 
   async function runTrades() {
+    if (!hasEspnMyLeagueAccess()) return status("Connect ESPN and choose your team before asking for trade ideas.", "error");
     let userRoster = rosterPlayers();
-    if (!userRoster.length) return status("Set up My League and add your roster before asking for trade ideas.", "error");
+    if (!userRoster.length) return status("Your connected ESPN team has no recognized roster players yet.", "error");
     const week = Number($("#trade-week").value || 1);
     const tradeWindow = leagueApi.transactionFeasibility({ league: activeLeagueState(), teamId: connectedUserTeamId(), type: "trade", now: Date.now() });
     if (!tradeWindow.allowed) return status("Trades are not currently legal: " + tradeWindow.reasons.join("; ") + ".", "error");
@@ -2355,7 +2361,7 @@
 
   async function clearLocalState() {
     clearImportedProjectionOverrides();
-    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-state"), store.remove("league-profile")]);
+    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-state"), store.remove("league-profile"), store.remove("my-league-enabled")]);
     state.rosterIds = [];
     state.ledger = new evidenceApi.EvidenceLedger();
     state.ensembleWeights = { market: 0.55, opportunity: 0.45 };
@@ -2365,7 +2371,6 @@
     state.connectedTeamId = null;
     state.pendingLeagueImport = null;
     state.leagueProfile = leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
-    state.myLeagueEnabled = false;
     state.tradePartnerTeamId = null;
     state.espnLeague = null;
     state.espnConnection = null;
@@ -2386,10 +2391,10 @@
   function bindEvents() {
     $$(".tab").forEach((tab) => tab.addEventListener("click", () => activatePanel(tab.dataset.panelTarget)));
     $$('[data-jump]').forEach((button) => button.addEventListener("click", () => activatePanel(button.dataset.jump)));
-    $("#enable-default-league").addEventListener("click", () => resetManualLeagueProfile().catch((error) => status(error.message, "error")));
+    $("#enable-default-league")?.addEventListener("click", () => resetManualLeagueProfile().catch((error) => status(error.message, "error")));
     $("#use-any-league").addEventListener("click", focusManualLeagueSetup);
     $("#show-espn-connect").addEventListener("click", focusEspnSetup);
-    $("#open-league-settings").addEventListener("click", () => { activatePanel("myleague"); if ($("#my-league-settings")) $("#my-league-settings").open = true; $("#my-league-settings")?.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    $("#open-league-settings").addEventListener("click", () => { if (!hasEspnMyLeagueAccess()) return focusEspnSetup(); activatePanel("myleague"); if ($("#my-league-settings")) $("#my-league-settings").open = true; $("#my-league-settings")?.scrollIntoView({ behavior: "smooth", block: "start" }); });
     $("#save-manual-profile").addEventListener("click", () => saveManualLeagueProfile().catch((error) => status(error.message, "error")));
     $("#manual-profile-standard").addEventListener("click", () => resetManualLeagueProfile().catch((error) => status(error.message, "error")));
     $("#manual-league-scoring").addEventListener("change", () => $("#manual-custom-scoring-wrap").classList.toggle("hidden", $("#manual-league-scoring").value !== "custom"));
@@ -2502,7 +2507,7 @@
       fillPlayerSelects();
       renderPublicRankings();
 
-      const [savedLedger, savedRoster, savedWeights, savedBoard, savedLeagueProfile, savedEspnConnection, savedEspnSnapshot, savedLeagueState, savedMyLeagueEnabled] = await Promise.all([
+      const [savedLedger, savedRoster, savedWeights, savedBoard, savedLeagueProfile, savedEspnConnection, savedEspnSnapshot] = await Promise.all([
         store.get("evidence-ledger", []),
         store.get("roster-ids", []),
         store.get("ensemble-weights", null),
@@ -2510,13 +2515,11 @@
         store.get("league-profile", null),
         store.get("espn-connection", null),
         store.get("espn-snapshot", null),
-        store.get("league-state", null),
-        store.get("my-league-enabled", null),
       ]);
       state.ledger = new evidenceApi.EvidenceLedger(Array.isArray(savedLedger) ? savedLedger : []);
       state.rosterIds = Array.isArray(savedRoster) ? savedRoster.map(String).filter((id) => playerById(id)) : [];
-      state.myLeagueEnabled = savedMyLeagueEnabled === true || Boolean(savedLeagueState?.userTeamId || savedEspnConnection?.teamId || state.rosterIds.length);
-      state.leagueProfile = savedLeagueProfile ? leagueApi.normalizeProfile(savedLeagueProfile) : leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+        const canRestoreEspnProfile = Boolean(savedEspnConnection?.leagueId && savedEspnSnapshot?.provider === "espn");
+      state.leagueProfile = canRestoreEspnProfile && savedLeagueProfile ? leagueApi.normalizeProfile(savedLeagueProfile) : leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
       populateLeagueProfileForm();
       syncDraftControlsToLeagueProfile();
       if (savedWeights && typeof savedWeights === "object") state.ensembleWeights = savedWeights;
@@ -2534,9 +2537,10 @@
         state.espnLeague = savedEspnSnapshot;
         if (state.espnConnection?.teamId && espnTeamById(state.espnConnection.teamId)) await applyEspnTeam(state.espnConnection.teamId, false);
         else renderEspnConnection();
-      } else if (savedLeagueState && savedLeagueState.provider !== "espn" && Array.isArray(savedLeagueState.teams) && savedLeagueState.userTeamId) {
-        await applyLeagueState(savedLeagueState, savedLeagueState.userTeamId, false);
-      } else renderEspnConnection();
+      } else {
+        await Promise.all([store.remove("league-state"), store.remove("my-league-enabled")]);
+        renderEspnConnection();
+      }
       renderRoster();
       renderEvidenceStatus();
       renderWeights();

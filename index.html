@@ -38,7 +38,7 @@
         <header class="desk-headline public-headline">
           <p class="eyebrow">FANTASY FOOTBALL INTELLIGENCE</p>
           <h1>Know who’s best. Make the better call.</h1>
-          <p class="lede">Rankings, projections, player context, and trade values are available to everyone. Set up <strong>My League</strong> only when you want personalized draft, lineup, waiver, and season help.</p>
+          <p class="lede">Rankings, projections, player context, and trade values are available to everyone. Connect <strong>My League</strong> to ESPN when you want personalized draft, lineup, waiver, and season help.</p>
           <div class="action-row">
             <button class="primary" data-jump="rankings">View rankings</button>
             <button class="secondary" data-jump="trades">Analyze a trade</button>
@@ -54,8 +54,8 @@
       <div class="public-tool-grid">
         <button class="public-tool-card" data-jump="rankings"><span>01</span><strong>Rankings</strong><small>See the best players overall or for a specific week.</small></button>
         <button class="public-tool-card" data-jump="player"><span>02</span><strong>Player Analysis</strong><small>Projection, range, status, recent form, matchup, and news.</small></button>
-        <button class="public-tool-card" data-jump="trades"><span>03</span><strong>Trade Analyzer</strong><small>Compare any trade now. Add My League for roster and opponent context.</small></button>
-        <button class="public-tool-card league-card" data-jump="myleague"><span>+</span><strong>My League</strong><small>Unlock draft, Start / Sit, waivers, season outlook, and league-aware trades.</small></button>
+        <button class="public-tool-card" data-jump="trades"><span>03</span><strong>Trade Analyzer</strong><small>Compare any trade now. Connect ESPN in My League for roster and opponent context.</small></button>
+        <button class="public-tool-card league-card" data-jump="myleague"><span>+</span><strong>My League</strong><small>Connect ESPN to unlock draft, Start / Sit, waivers, season outlook, and league-aware trades.</small></button>
       </div>
     </section>
 
@@ -75,12 +75,11 @@
         <div class="home-feed">
           <header class="desk-headline">
             <p class="eyebrow">MY LEAGUE</p>
-            <h1 id="my-league-title">Unlock your league tools.</h1>
-            <p id="hero-lede" class="lede">Use standard 12-team PPR in one click, customize your rules, or import a league. No ESPN connection is required.</p>
+            <h1 id="my-league-title">Connect ESPN to unlock My League.</h1>
+            <p id="hero-lede" class="lede">Link your ESPN fantasy league and choose your team first. SnapCount will then unlock your draft, lineup, waivers, season, and league-aware trade tools.</p>
             <div class="action-row">
-              <button id="enable-default-league" class="primary">Use 12-team PPR</button>
-              <button id="use-any-league" class="secondary">Customize league</button>
-              <button id="show-espn-connect" class="ghost">Import ESPN (optional)</button>
+              <button id="show-espn-connect" class="primary">Connect ESPN league</button>
+              <button id="use-any-league" class="secondary hidden">League settings</button>
             </div>
           </header>
 
@@ -92,12 +91,12 @@
             <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
           </section>
 
-          <details id="my-league-settings" class="league-settings-details"><summary>League settings & imports</summary>
+          <details id="my-league-settings" class="league-settings-details" open><summary>ESPN connection & league settings</summary>
           <div class="league-setup-grid">
-            <aside id="manual-league-card" class="manual-league-card" aria-label="Use SnapCount with any fantasy league">
-              <div class="connect-card-head"><span class="provider-badge universal-badge">ANY LEAGUE</span><span id="manual-profile-state" class="connection-state connected">No connection required</span></div>
-              <h2>Use SnapCount anywhere</h2>
-              <p>The default 12-team PPR setup is ready immediately. Change the rules only if your league differs, or import league data for opponent-aware schedule and live-state decisions.</p>
+            <aside id="manual-league-card" class="manual-league-card hidden" aria-label="League settings after ESPN connection">
+              <div class="connect-card-head"><span class="provider-badge universal-badge">LEAGUE RULES</span><span id="manual-profile-state" class="connection-state connected">Connect ESPN first</span></div>
+              <h2>Review your ESPN league rules</h2>
+              <p>SnapCount autofills supported ESPN settings after you connect. Override them here only when your ESPN league uses a rule you want to model differently.</p>
               <div class="manual-profile-primary">
                 <label>Teams<input id="manual-league-teams" type="number" min="4" max="20" value="12"></label>
                 <label>Scoring<select id="manual-league-scoring"><option value="ppr">PPR</option><option value="half-ppr">Half PPR</option><option value="standard">Standard</option><option value="custom">Custom from projected stats</option></select></label>
@@ -120,9 +119,9 @@
                   <label>Bench<input id="manual-slot-bn" type="number" min="0" max="20" value="6"></label>
                 </div>
               </details>
-              <div class="connect-actions"><button id="save-manual-profile" class="primary">Use these league rules</button><button id="manual-profile-standard" class="ghost">Standard setup</button></div>
+              <div class="connect-actions"><button id="save-manual-profile" class="primary">Use these league rules</button><button id="manual-profile-standard" class="ghost">Reset to ESPN rules</button></div>
               <p id="manual-profile-summary" class="privacy-note">12-team PPR · 1 QB · 2 RB · 2 WR · 1 TE · FLEX · D/ST · K</p>
-              <details class="advanced-details league-import-details">
+              <details class="advanced-details league-import-details hidden">
                 <summary>Import rosters, schedule & live league state</summary>
                 <p>Use SnapCount JSON or CSV from any platform. Imports can include every roster, weekly H2H schedule, current lineup slots/locks, live points, FAAB/waiver state, limits, deadlines, and projected stat lines for exact custom scoring.</p>
                 <label>League JSON/CSV file<input id="league-import-file" type="file" accept=".json,.csv,application/json,text/csv"></label>
@@ -136,13 +135,13 @@
               </details>
             </aside>
 
-            <aside class="league-connect-card" aria-label="Optional ESPN fantasy league connection">
-            <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN · OPTIONAL</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
+            <aside class="league-connect-card" aria-label="Required ESPN fantasy league connection">
+            <div class="connect-card-head"><span class="provider-badge espn-badge">ESPN · REQUIRED</span><span id="espn-connection-state" class="connection-state">Not connected</span></div>
             <div id="espn-connect-empty">
-              <h2>Optional ESPN autofill</h2>
-              <p>Skip this unless you want ESPN to fill league data for you automatically. SnapCount works normally without it.</p>
+              <h2>Connect your ESPN league</h2>
+              <p>My League requires an ESPN league connection. Paste the league link or ID, then choose your team to unlock personalized tools.</p>
               <label>ESPN league link or ID<input id="espn-league-input" type="text" inputmode="url" placeholder="fantasy.espn.com/... or 123456"></label>
-              <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="secondary">Autofill from ESPN</button></div>
+              <div class="connect-row"><label>Season<select id="espn-season"><option selected>2026</option><option>2025</option></select></label><button id="connect-espn" class="primary">Connect ESPN</button></div>
             </div>
             <div id="espn-team-step" class="hidden">
               <h2>Which team is yours?</h2>
@@ -164,7 +163,7 @@
               <p id="espn-connected-meta">ESPN Fantasy</p>
               <div class="connect-actions"><button id="refresh-espn" class="secondary">Refresh ESPN</button><button id="disconnect-espn" class="ghost">Disconnect</button></div>
             </div>
-            <p class="privacy-note">ESPN is optional. SnapCount never asks for your ESPN password or cookie values; private-league sign-in uses your existing browser session directly with ESPN.</p>
+            <p class="privacy-note">SnapCount never asks for your ESPN password or cookie values. Private-league sign-in uses your existing browser session directly with ESPN.</p>
             </aside>
           </div>
           </details>
@@ -185,10 +184,10 @@
           <section class="rail-panel rail-context" aria-label="Current league context">
             <div class="rail-heading"><span>LEAGUE DESK</span><small>Your current context</small></div>
             <div class="rail-context-body">
-              <span id="rail-context-kicker">SETUP REQUIRED</span>
-              <strong id="rail-context-team">Unlock My League</strong>
-              <small id="rail-context-week">Use standard defaults, customize rules, or import a league.</small>
-              <button class="secondary" id="open-league-settings">League settings</button>
+              <span id="rail-context-kicker">ESPN REQUIRED</span>
+              <strong id="rail-context-team">Connect your ESPN league</strong>
+              <small id="rail-context-week">Paste your ESPN league link or ID, then choose your team.</small>
+              <button class="secondary" id="open-league-settings">Connect ESPN</button>
             </div>
           </section>
         </aside>
@@ -306,15 +305,15 @@
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Who wins this trade?</h1></div><p>Compare any players immediately. Add My League to see how the deal changes your specific roster, opponents, and season.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Who wins this trade?</h1></div><p>Compare any players immediately. Connect ESPN in My League to see how the deal changes your specific roster, opponents, and season.</p></div>
       <article class="module trade-checker">
         <div class="trade-side" data-trade-side="give"><div class="trade-side-head"><strong>I GIVE</strong><span id="trade-give-scope">Any player</span></div><div id="trade-give-list" class="trade-player-list" data-trade-list="give"></div></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
         <div class="trade-side" data-trade-side="get"><div class="trade-side-head"><strong>I GET</strong><span id="trade-get-scope">Any player</span></div><label id="trade-partner-label" class="trade-partner hidden">Trade partner<select id="trade-partner"><option value="">Choose who you are trading with</option></select></label><div id="trade-get-list" class="trade-player-list" data-trade-list="get"></div></div>
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
-      <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Add <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>
-      <details class="module optional-tool trade-ideas"><summary><span><small>MY LEAGUE</small><strong>Find trade ideas for me</strong></span><em>Search your roster for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>SnapCount can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
+      <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Connect ESPN in <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>
+      <details class="module optional-tool trade-ideas" id="trade-ideas-panel"><summary><span><small>MY LEAGUE</small><strong>Find trade ideas for me</strong></span><em>Search your roster for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>SnapCount can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
     </section>
 
     <section class="panel" data-panel="league" id="league">
