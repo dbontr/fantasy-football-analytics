@@ -101,6 +101,10 @@ async function main() {
   const gradeDrift = Object.entries(profileState.grades).some(([surface, grade]) => grade !== (surface === "provenance" ? "A" : "A+"));
   if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified" || profileState.objective !== "maximize-future-head-to-head-wins" || profileState.objectiveStatus !== "prospective-overlay") throw new Error("Frozen qualified analytics profile / future-win objective did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
+  const strippedChrome = await evaluate(`({header:Boolean(document.querySelector('.workspace-header')),search:Boolean(document.querySelector('#global-player-search')),workspaceBackground:getComputedStyle(document.querySelector('.app-workspace')).backgroundImage,visiblePageEyebrows:[...document.querySelectorAll('.section-heading .eyebrow, #myleague .desk-headline > .eyebrow')].filter((node)=>getComputedStyle(node).display!=='none').length,homeCardBackgrounds:[...document.querySelectorAll('#overview .home-tools-v2 button')].map((node)=>getComputedStyle(node).backgroundColor)})`);
+  if (strippedChrome.header || strippedChrome.search || strippedChrome.visiblePageEyebrows || strippedChrome.workspaceBackground !== 'none' || new Set(strippedChrome.homeCardBackgrounds).size !== 1) throw new Error(`Simplified chrome regression: ${JSON.stringify(strippedChrome)}`);
+  const typography = await evaluate(`(() => { const nodes=[...document.querySelectorAll('h1,h2,h3')].filter((node)=>{const rect=node.getBoundingClientRect();return rect.width>0&&rect.height>0;}); const condensed=nodes.filter((node)=>/Arial Narrow/i.test(getComputedStyle(node).fontFamily)); return {condensed:condensed.map((node)=>node.textContent.trim()).slice(0,6),homeFont:getComputedStyle(document.querySelector('#overview h1')).fontFamily}; })()`);
+  if (typography.condensed.length) throw new Error(`Condensed heading font regression: ${JSON.stringify(typography)}`);
   if (home.activePanel !== "overview" || home.contextNavItems !== 11 || home.contextPosition !== "sticky" || home.railDisplay !== "missing" || home.sidebarWidth < 240 || home.sidebarWidth > 270) throw new Error(`Single desktop sidebar failed: ${JSON.stringify(home)}`);
   if (home.horizontalOverflow || home.background !== "rgb(238, 245, 255)" || home.sidebarBackground !== "rgb(18, 54, 95)") throw new Error(`SnapCount canvas/sidebar layout check failed: ${JSON.stringify(home)}`);
   if (!home.brandLoaded || !home.title.startsWith("SnapCount")) throw new Error("SnapCount branding check failed");
@@ -224,7 +228,8 @@ async function main() {
   await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'myleague'`, 5000);
   const myTeamUi = await evaluate(`({rail:getComputedStyle(document.querySelector('#myleague .home-rail')).display,commands:getComputedStyle(document.querySelector('#myleague .league-command-strip')).display,radius:parseFloat(getComputedStyle(document.querySelector('#myleague .league-settings-details')).borderTopLeftRadius)||0})`);
   const myTeamDesktop = await snapshot("my-team-desktop", 1440, 1000);
-  if (myTeamUi.rail !== 'none' || myTeamUi.commands !== 'none' || myTeamUi.radius < 16 || myTeamDesktop.horizontalOverflow) throw new Error(`My Team cleanup failed: ${JSON.stringify({myTeamUi,myTeamDesktop})}`);
+  const myTeamTitleBox = await evaluate(`(() => { const r=document.querySelector('#my-league-title').getBoundingClientRect(); return {left:Math.round(r.left),top:Math.round(r.top)}; })()`);
+  if (myTeamUi.rail !== 'none' || myTeamUi.commands !== 'none' || myTeamUi.radius < 12 || myTeamDesktop.horizontalOverflow) throw new Error(`My Team cleanup failed: ${JSON.stringify({myTeamUi,myTeamDesktop})}`);
 
   await send("Page.navigate", { url: appUrl });
   await waitFor(`document.querySelector('#player-count')?.textContent === '700' && document.querySelector('#espn-connection-state')?.textContent === 'Connected'`, 15000);
@@ -337,7 +342,8 @@ async function main() {
   }))()`);
   if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP") || !lineup.text.includes("WIN CHANCE VS QA RIVALS")) throw new Error("Opponent-aware start/sit flow failed");
   const lineupDesktop = await snapshot("lineup-desktop", 1440, 1000);
-  if (lineupDesktop.horizontalOverflow) throw new Error('Lineup desktop overflow');
+  const lineupTitleBox = await evaluate(`(() => { const r=document.querySelector('#lineup .section-heading h1').getBoundingClientRect(); return {left:Math.round(r.left),top:Math.round(r.top)}; })()`);
+  if (lineupDesktop.horizontalOverflow || Math.abs(lineupTitleBox.left - myTeamTitleBox.left) > 1 || Math.abs(lineupTitleBox.top - myTeamTitleBox.top) > 1) throw new Error(`Lineup desktop alignment failed: ${JSON.stringify({myTeamTitleBox,lineupTitleBox})}`);
 
   await evaluate(`document.querySelector('[data-set-trade-mode="basic"]').click(); true`);
   await waitFor(`document.querySelector('#trade-mode-note')?.textContent.includes('Basic Value') && document.querySelector('#trade-partner-label')?.classList.contains('hidden')`, 5000);
@@ -404,13 +410,13 @@ async function main() {
 
   await evaluate(`document.querySelector('[data-league-jump="draft"]').click(); true`);
   const draftMobile = await snapshot("draft-mobile", 390, 844);
-  if (draftMobile.horizontalOverflow || draftMobile.workspaceHeaderDisplay !== 'grid' || draftMobile.railDisplay !== 'missing') throw new Error(`Draft mobile shell failed: ${JSON.stringify(draftMobile)}`);
+  if (draftMobile.horizontalOverflow || draftMobile.workspaceHeaderDisplay !== 'missing' || draftMobile.railDisplay !== 'missing') throw new Error(`Draft mobile shell failed: ${JSON.stringify(draftMobile)}`);
   await evaluate(`document.querySelector('[data-set-trade-mode="basic"]').click(); true`);
   const tradeMobile = await snapshot("trade-mobile", 390, 844);
-  if (tradeMobile.horizontalOverflow || tradeMobile.workspaceHeaderDisplay !== 'grid' || tradeMobile.railDisplay !== 'missing') throw new Error(`Trade mobile shell failed: ${JSON.stringify(tradeMobile)}`);
+  if (tradeMobile.horizontalOverflow || tradeMobile.workspaceHeaderDisplay !== 'missing' || tradeMobile.railDisplay !== 'missing') throw new Error(`Trade mobile shell failed: ${JSON.stringify(tradeMobile)}`);
   await evaluate(`document.querySelector('[data-nav-key="home"]').click(); true`);
   const homeMobile = await snapshot("home-mobile", 390, 844);
-  if (homeMobile.horizontalOverflow || homeMobile.workspaceHeaderDisplay !== 'grid' || homeMobile.benchmarkRows !== 6) throw new Error(`Home mobile layout failed: ${JSON.stringify(homeMobile)}`);
+  if (homeMobile.horizontalOverflow || homeMobile.workspaceHeaderDisplay !== 'missing' || homeMobile.benchmarkRows !== 6) throw new Error(`Home mobile layout failed: ${JSON.stringify(homeMobile)}`);
   const drawerBefore = await evaluate(`document.querySelector('.context-sidebar').getBoundingClientRect().right <= 1`);
   if (!drawerBefore) throw new Error('Mobile tool sidebar should begin off canvas');
   await evaluate(`document.querySelector('#mobile-nav-toggle').click(); true`);
