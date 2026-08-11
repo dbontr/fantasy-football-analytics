@@ -16,7 +16,7 @@
       <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
         <img class="brand-logo" src="./snapcount-logo.svg" alt="SnapCount Fantasy Football">
       </a>
-      <div class="network-meta" aria-label="Current fantasy league context">
+      <div class="network-meta masthead-context" aria-label="Current fantasy league context">
         <span>FANTASY FOOTBALL</span>
         <strong id="masthead-team">Any fantasy league</strong>
         <small id="masthead-week">2026 season</small>
@@ -24,28 +24,63 @@
     </div>
     <nav class="tabs" aria-label="Fantasy football tools">
       <button class="tab active" data-panel-target="overview">Home</button>
-      <button class="tab" data-panel-target="draft">Draft</button>
-      <button class="tab" data-panel-target="lineup">Start / Sit</button>
-      <button class="tab" data-panel-target="trades">Trades</button>
-      <button class="tab" data-panel-target="waivers">Waivers</button>
+      <button class="tab" data-panel-target="rankings">Rankings</button>
       <button class="tab" data-panel-target="player">Players</button>
-      <button class="tab" data-panel-target="league">Season</button>
+      <button class="tab" data-panel-target="trades">Trade Analyzer</button>
+      <button class="tab my-league-tab" data-panel-target="myleague">My League</button>
     </nav>
   </header>
   <p id="global-status" class="status-line app-status" aria-live="polite"></p>
 
   <main>
     <section class="panel active" data-panel="overview" id="overview">
+      <div class="public-home">
+        <header class="desk-headline public-headline">
+          <p class="eyebrow">FANTASY FOOTBALL INTELLIGENCE</p>
+          <h1>Know who’s best. Make the better call.</h1>
+          <p class="lede">Rankings, projections, player context, and trade values are available to everyone. Set up <strong>My League</strong> only when you want personalized draft, lineup, waiver, and season help.</p>
+          <div class="action-row">
+            <button class="primary" data-jump="rankings">View rankings</button>
+            <button class="secondary" data-jump="trades">Analyze a trade</button>
+            <button class="ghost" data-jump="myleague">My League</button>
+          </div>
+        </header>
+        <aside class="public-top-card">
+          <div class="rail-heading"><span>TOP PLAYERS</span><small>Overall PPR board</small></div>
+          <div id="home-top-players" class="home-top-players"></div>
+          <button class="text-link-button" data-jump="rankings">See full rankings →</button>
+        </aside>
+      </div>
+      <div class="public-tool-grid">
+        <button class="public-tool-card" data-jump="rankings"><span>01</span><strong>Rankings</strong><small>See the best players overall or for a specific week.</small></button>
+        <button class="public-tool-card" data-jump="player"><span>02</span><strong>Player Analysis</strong><small>Projection, range, status, recent form, matchup, and news.</small></button>
+        <button class="public-tool-card" data-jump="trades"><span>03</span><strong>Trade Analyzer</strong><small>Compare any trade now. Add My League for roster and opponent context.</small></button>
+        <button class="public-tool-card league-card" data-jump="myleague"><span>+</span><strong>My League</strong><small>Unlock draft, Start / Sit, waivers, season outlook, and league-aware trades.</small></button>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="rankings" id="rankings">
+      <div class="section-heading"><div><p class="eyebrow">PLAYER RANKINGS</p><h1>Who’s best right now?</h1></div><p>Start with the full player pool. Filter by position, search a name, or switch to a specific week — no league setup required.</p></div>
+      <div class="toolbar module rankings-toolbar">
+        <label>Search<input id="rankings-search" type="search" placeholder="Player, team, or position…" autocomplete="off"></label>
+        <label>Position<select id="rankings-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option><option>DST</option><option>K</option></select></label>
+        <label>Rank by<select id="rankings-view"><option value="overall" selected>Overall value</option><option value="week">This week</option></select></label>
+        <label>Week<select id="rankings-week"></select></label>
+      </div>
+      <div class="module table-module rankings-module"><div class="table-header"><div><p class="eyebrow">SNAPCOUNT BOARD</p><h2>Top players</h2></div><span id="rankings-count">—</span></div><div class="table-wrap"><table class="rankings-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Week projection</th><th>Overall rank</th><th>ADP</th><th></th></tr></thead><tbody id="rankings-table"></tbody></table></div></div>
+    </section>
+
+    <section class="panel" data-panel="myleague" id="myleague">
       <div class="home-dashboard">
         <div class="home-feed">
           <header class="desk-headline">
-            <p class="eyebrow">FANTASY FOOTBALL DESK</p>
-            <h1>Your week starts here.</h1>
-            <p id="hero-lede" class="lede">SnapCount works with any fantasy league. Mock drafts and every core tool run without ESPN or an account connection. Add league data only when you want automatic rosters, schedules, and live-state context.</p>
+            <p class="eyebrow">MY LEAGUE</p>
+            <h1 id="my-league-title">Unlock your league tools.</h1>
+            <p id="hero-lede" class="lede">Use standard 12-team PPR in one click, customize your rules, or import a league. No ESPN connection is required.</p>
             <div class="action-row">
-              <button id="use-any-league" class="secondary">Set league rules</button>
-              <button class="primary" data-jump="draft">Start a mock draft</button>
-              <button id="show-espn-connect" class="ghost">ESPN autofill (optional)</button>
+              <button id="enable-default-league" class="primary">Use 12-team PPR</button>
+              <button id="use-any-league" class="secondary">Customize league</button>
+              <button id="show-espn-connect" class="ghost">Import ESPN (optional)</button>
             </div>
           </header>
 
@@ -57,6 +92,7 @@
             <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
           </section>
 
+          <details id="my-league-settings" class="league-settings-details"><summary>League settings & imports</summary>
           <div class="league-setup-grid">
             <aside id="manual-league-card" class="manual-league-card" aria-label="Use SnapCount with any fantasy league">
               <div class="connect-card-head"><span class="provider-badge universal-badge">ANY LEAGUE</span><span id="manual-profile-state" class="connection-state connected">No connection required</span></div>
@@ -131,27 +167,28 @@
             <p class="privacy-note">ESPN is optional. SnapCount never asks for your ESPN password or cookie values; private-league sign-in uses your existing browser session directly with ESPN.</p>
             </aside>
           </div>
+          </details>
         </div>
 
         <aside class="home-rail" aria-label="Fantasy tools">
-          <section class="rail-panel">
-            <div class="rail-heading"><span>QUICK TOOLS</span><small>Jump straight to the decision</small></div>
+          <section id="league-tools-panel" class="rail-panel hidden">
+            <div class="rail-heading"><span>LEAGUE TOOLS</span><small>Personalized to your settings</small></div>
             <div class="quick-actions" aria-label="Choose what you need help with">
               <button class="quick-action" data-jump="draft"><span>D</span><strong>Draft Center</strong><small>Board, mocks, live help</small></button>
               <button class="quick-action" data-jump="lineup"><span>S</span><strong>Start / Sit</strong><small>Best lineup this week</small></button>
               <button class="quick-action" data-jump="trades"><span>T</span><strong>Trade Analyzer</strong><small>Does the deal help?</small></button>
               <button class="quick-action" data-jump="waivers"><span>W</span><strong>Waiver Wire</strong><small>Best add and drop</small></button>
-              <button class="quick-action" data-jump="player"><span>P</span><strong>Player Analysis</strong><small>Projection, news, risk</small></button>
+              <button class="quick-action" data-jump="league"><span>S</span><strong>Season Outlook</strong><small>Playoff and title odds</small></button>
             </div>
           </section>
 
           <section class="rail-panel rail-context" aria-label="Current league context">
             <div class="rail-heading"><span>LEAGUE DESK</span><small>Your current context</small></div>
             <div class="rail-context-body">
-              <span id="rail-context-kicker">NO CONNECTION NEEDED</span>
-              <strong id="rail-context-team">Any fantasy platform</strong>
-              <small id="rail-context-week">12-team PPR defaults are ready now.</small>
-              <button class="secondary" data-jump="overview">Manage league</button>
+              <span id="rail-context-kicker">SETUP REQUIRED</span>
+              <strong id="rail-context-team">Unlock My League</strong>
+              <small id="rail-context-week">Use standard defaults, customize rules, or import a league.</small>
+              <button class="secondary" id="open-league-settings">League settings</button>
             </div>
           </section>
         </aside>
@@ -269,15 +306,15 @@
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Does this trade make your team better?</h1></div><p>Compare what you give and get, then see the lineup impact, roster direction, and overall trade balance.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Who wins this trade?</h1></div><p>Compare any players immediately. Add My League to see how the deal changes your specific roster, opponents, and season.</p></div>
       <article class="module trade-checker">
-        <div class="trade-side"><strong>I GIVE</strong><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
+        <div class="trade-side"><strong>I GIVE</strong><label>Find a player<input id="trade-give-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
         <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
-      <div id="trade-check-result" class="result-space empty-state"><p>Add your roster in <strong>Start / Sit</strong>, then choose the trade above.</p></div>
-      <details class="module optional-tool trade-ideas"><summary><span><small>OPTIONAL</small><strong>Find trade ideas for me</strong></span><em>Search for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>SnapCount can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
+      <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Add <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>
+      <details class="module optional-tool trade-ideas"><summary><span><small>MY LEAGUE</small><strong>Find trade ideas for me</strong></span><em>Search your roster for possible upgrades</em></summary><button id="run-trades" class="secondary">Find trade ideas</button><div id="trade-result" class="result-space empty-state"><p>SnapCount can also search for possible 1-for-1 and 2-for-2 ideas.</p></div></details>
     </section>
 
     <section class="panel" data-panel="league" id="league">
@@ -286,7 +323,7 @@
         <article class="module controls season-controls">
           <p class="control-title">MY LEAGUE</p>
           <div id="season-connection-summary" class="season-connection-summary hidden"><span id="season-provider-badge" class="provider-badge espn-badge">LEAGUE</span><strong id="season-connected-team">—</strong><small id="season-connected-league">—</small></div>
-          <button id="season-connect-espn" class="secondary" data-jump="overview">Manage or import league data</button>
+          <button id="season-connect-espn" class="secondary" data-jump="myleague">Manage or import league data</button>
           <button id="build-demo-league" class="ghost">Try a demo league</button>
           <details class="advanced-details other-provider"><summary>Use Sleeper instead</summary>
             <label>Sleeper league ID<input id="sleeper-league-id" type="text" inputmode="numeric" placeholder="League ID"></label>
