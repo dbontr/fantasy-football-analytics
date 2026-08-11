@@ -1,46 +1,59 @@
 {
-  "version": "site-benchmark-2026.1",
+  "version": "site-benchmark-2026.2",
   "season": 2018,
-  "methodology": "48 paired 10/12-team PPR drafts across early/middle/late slots; common CPU room strategy/seeds; realized weekly optimal-starter points; site rows use archived public ADP ordering only.",
-  "disclaimer": "Retrospective descriptive benchmark. Not a qualification gate or future-performance guarantee.",
+  "methodology": "48 paired 10/12-team PPR drafts across early/middle/late slots; same CPU rooms and seeds; realized weekly optimal-starter points; only the user-side draft board changes.",
+  "disclaimer": "Retrospective descriptive benchmark. Platform snapshots use their available 2018 native draft-board formats and dates; this is not a qualification gate or future-performance guarantee.",
   "poolPlayers": 428,
   "rows": [
     {
       "name": "SnapCount",
       "drafts": 48,
       "meanRealizedStarterPoints": 2270.7,
-      "winRateVsSnapCount": null
+      "winRateVsSnapCount": null,
+      "sourceNote": "SnapCount qualified draft policy"
     },
     {
-      "name": "3-site consensus",
+      "name": "ESPN ADP",
       "drafts": 48,
-      "meanRealizedStarterPoints": 1956.74,
-      "winRateVsSnapCount": 0.10416666666666667
+      "meanRealizedStarterPoints": 2172.54,
+      "winRateVsSnapCount": 0.3125,
+      "sourceNote": "ESPN · 2018 PPR historical ADP"
     },
     {
-      "name": "MyFantasyLeague ADP",
+      "name": "Yahoo ADP",
       "drafts": 48,
-      "meanRealizedStarterPoints": 1953.84,
-      "winRateVsSnapCount": 0.0625
+      "meanRealizedStarterPoints": 1837.69,
+      "winRateVsSnapCount": 0,
+      "sourceNote": "Yahoo · archived Jun 26, 2018"
     },
     {
-      "name": "FantasyData ADP",
+      "name": "CBS Sports ADP",
       "drafts": 48,
-      "meanRealizedStarterPoints": 1934.6,
-      "winRateVsSnapCount": 0.10416666666666667
+      "meanRealizedStarterPoints": 1832.87,
+      "winRateVsSnapCount": 0.041666666666666664,
+      "sourceNote": "CBS · archived Aug 2, 2018"
     },
     {
-      "name": "Fantasy Football Calculator",
+      "name": "FantasyPros ECR",
       "drafts": 48,
-      "meanRealizedStarterPoints": 1878.31,
-      "winRateVsSnapCount": 0.08333333333333333
+      "meanRealizedStarterPoints": 1814.52,
+      "winRateVsSnapCount": 0.041666666666666664,
+      "sourceNote": "FantasyPros consensus · archived Sep 6, 2018"
+    },
+    {
+      "name": "NFL.com ADP",
+      "drafts": 48,
+      "meanRealizedStarterPoints": 1734.39,
+      "winRateVsSnapCount": 0,
+      "sourceNote": "NFL.com · archived Aug 2, 2018"
     }
   ],
   "sourceCoverage": {
-    "FantasyData ADP": 428,
-    "Fantasy Football Calculator": 165,
-    "MyFantasyLeague ADP": 264,
-    "3-site consensus": 428
+    "ESPN ADP": 428,
+    "Yahoo ADP": 175,
+    "CBS Sports ADP": 196,
+    "NFL.com ADP": 249,
+    "FantasyPros ECR": 312
   },
   "sources": {
     "historicalPool": {
@@ -88,20 +101,29 @@
         }
       ]
     },
-    "ffc": {
-      "url": "https://fantasyfootballcalculator.com/api/v1/adp/ppr?teams=12&year=2018",
-      "sha256": "88fc642143e406522f41bdba067df30bac9ded66e1da74715950f104c1346a07",
-      "bytes": 37285
+    "espn": {
+      "url": "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2018/segments/0/leaguedefaults/3?view=kona_player_info",
+      "sha256": "f71d455555bed1f32ef620d50cd7e14d159bdc9f75a6c4633c196f8e09c9b981",
+      "bytes": 9809577,
+      "dateLabel": "2018 season"
     },
-    "mflAdp": {
-      "url": "https://api.myfantasyleague.com/2018/export?TYPE=adp&JSON=1&COUNT=500&POS=*&PERIOD=ALL&IS_PPR=1",
-      "sha256": "3e874e6137f9ffb79d7c28b40b5d57f35900c4e7ead6b74e6373b7175cf03a60",
-      "bytes": 56212
+    "yahoo": {
+      "url": "https://web.archive.org/web/20180626065718id_/https://www.fantasypros.com/nfl/adp/overall.php",
+      "sha256": "fd817cd2ce8b6defcdfca9d1d845371f9cbf0566a2645776f916b376ec6d4ec7",
+      "bytes": 290205,
+      "dateLabel": "2018-06-26"
     },
-    "mflPlayers": {
-      "url": "https://api.myfantasyleague.com/2018/export?TYPE=players&JSON=1",
-      "sha256": "02aa0ac0546a46f0a6b53d6ce2ed4583d9924baf78fd0e9e2862eaa3db852f24",
-      "bytes": 186344
+    "cbsNfl": {
+      "url": "https://web.archive.org/web/20180802020109id_/https://www.fantasypros.com/nfl/adp/overall.php",
+      "sha256": "f2cee6198227925a657f7460c550ef0e18a157d4fed6b6317b0a428130d4669b",
+      "bytes": 292709,
+      "dateLabel": "2018-08-02"
+    },
+    "fantasyPros": {
+      "url": "https://web.archive.org/web/20180906045130id_/https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
+      "sha256": "db2efebc5d9e6875eb75c3523dcaad91c18bb805e0e3b0d6da63b8c043bb61f0",
+      "bytes": 676951,
+      "dateLabel": "2018-09-06"
     }
   }
 }

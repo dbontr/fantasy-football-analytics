@@ -12,47 +12,76 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="SnapCount navigation">
-      <a class="side-brand" href="#overview" data-jump="overview" aria-label="SnapCount home">
-        <img class="brand-logo" src="./snapcount-logo.svg" alt="SnapCount Fantasy Football">
-      </a>
-      <nav class="side-nav" aria-label="Fantasy football tools">
-        <div class="side-nav-group"><span>TOOLS</span>
-          <button class="side-nav-item active" data-panel-target="overview">Home</button>
-          <button class="side-nav-item" data-panel-target="rankings">Rankings</button>
-          <button class="side-nav-item" data-panel-target="player">Player Analysis</button>
-          <button class="side-nav-item" data-panel-target="outlooks">My Outlooks</button>
-          <button class="side-nav-item" data-panel-target="draft" data-draft-context="public">Mock Draft</button>
-          <button class="side-nav-item" data-panel-target="trades" data-trade-mode="basic">Trade Value</button>
-        </div>
-        <div class="side-sync-card" id="sidebar-sync-card">
-          <span id="sidebar-sync-kicker">LEAGUE SYNC</span>
-          <strong id="sidebar-sync-title">Unlock personalized tools</strong>
-          <small id="sidebar-sync-copy">Sync ESPN once to add your roster, opponents, schedule, and league rules.</small>
-          <button id="sidebar-sync-button" class="side-sync-button" type="button">Sync league</button>
-        </div>
-        <div class="side-nav-group league-nav-group"><span>LEAGUE TOOLS</span>
-          <button class="side-nav-item" data-league-nav="draft" data-requires-league>Draft Assistant <em>LOCKED</em></button>
-          <button class="side-nav-item" data-league-nav="lineup" data-requires-league>Start / Sit <em>LOCKED</em></button>
-          <button class="side-nav-item" data-panel-target="trades" data-trade-mode="league" data-requires-league>Advanced Trade Lab <em>LOCKED</em></button>
-          <button class="side-nav-item" data-league-nav="waivers" data-requires-league>Waiver Wire <em>LOCKED</em></button>
-          <button class="side-nav-item" data-league-nav="trade-ideas" data-requires-league>Trade Ideas <em>LOCKED</em></button>
-          <button class="side-nav-item" data-league-nav="league" data-requires-league>Season Outlook <em>LOCKED</em></button>
-        </div>
+    <aside class="global-rail" aria-label="Primary navigation">
+      <a class="global-brand" href="#overview" data-jump="overview" aria-label="SnapCount home"><img src="./snapcount-mark.svg" alt=""></a>
+      <nav class="global-nav">
+        <button class="global-nav-item active" data-global-route="overview" data-panel-target="overview"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5M5 9v12h14V9M9 21v-6h6v6"/></svg></span><small>Home</small></button>
+        <button class="global-nav-item" data-global-route="draft" data-panel-target="draft" data-draft-context="public"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></span><small>Draft</small></button>
+        <button class="global-nav-item" data-global-route="myleague" data-panel-target="myleague"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4 4m-4-4 4-4"/></svg></span><small>League</small></button>
+        <button class="global-nav-item" data-global-route="rankings" data-panel-target="rankings"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9m7 9V5m7 13v-6"/></svg></span><small>Ranks</small></button>
+        <button class="global-nav-item" data-global-route="player" data-panel-target="player"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.3 3.3-6.5 7.5-6.5s6.7 2.2 7.5 6.5"/></svg></span><small>Players</small></button>
       </nav>
-      <div class="side-runtime"><span>2026 · <b id="player-count">—</b> players</span><small id="bootstrap-status">Loading qualified model…</small><small><span id="engine-version">model</span> · <span id="worker-status">worker starting</span></small><div class="hidden" aria-hidden="true"><span id="masthead-team"></span><span id="masthead-week"></span></div></div>
+      <div class="global-rail-foot"><span>SC</span></div>
+    </aside>
+    <aside class="context-sidebar" aria-label="Fantasy football tools">
+      <button id="sidebar-sync-button" class="league-switcher" type="button"><span class="league-switcher-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3c0 3-2.2 5-5 5s-5-2-5-5V4Z"/><path d="M7 6H4v1c0 2.3 1.6 4 4 4M17 6h3v1c0 2.3-1.6 4-4 4M12 12v4m-4 4h8m-6-4h4v4h-4z"/></svg></span><span class="league-switcher-copy"><strong id="sidebar-sync-title">Sync a League</strong><small id="sidebar-sync-copy">Unlock personalized tools</small></span><span class="league-switcher-chevron"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></span></button>
+      <div class="context-title-row"><div><span>SNAPCOUNT</span><strong>Fantasy Football</strong></div><span class="season-pill">NFL · 2026</span></div>
+      <nav class="context-nav" aria-label="Tool navigation">
+        <section class="context-group"><h2>Dashboard</h2>
+          <button class="context-nav-item active" data-nav-key="home" data-panel-target="overview"><span>Home</span></button>
+          <button class="context-nav-item league-only hidden" data-nav-key="team" data-panel-target="myleague"><span>My Team</span></button>
+        </section>
+        <section class="context-group"><h2>Draft</h2>
+          <button class="context-nav-item upgradeable-nav" data-nav-key="draft" data-panel-target="draft" data-draft-context="public"><span class="nav-label-basic">Mock Draft</span><span class="nav-label-league">Draft Assistant</span><small class="upgrade-badge">SYNC</small></button>
+        </section>
+        <section class="context-group league-only hidden" data-league-section="lineup"><h2>Lineup</h2>
+          <button class="context-nav-item" data-nav-key="lineup" data-league-nav="lineup"><span>Start / Sit</span></button>
+        </section>
+        <section class="context-group"><h2>Analysis</h2>
+          <button class="context-nav-item" data-nav-key="rankings" data-panel-target="rankings"><span>Rankings</span></button>
+          <button class="context-nav-item" data-nav-key="player" data-panel-target="player"><span>Player Analysis</span></button>
+          <button class="context-nav-item" data-nav-key="outlooks" data-panel-target="outlooks"><span>My Outlooks</span></button>
+        </section>
+        <section class="context-group"><h2>Trade</h2>
+          <button class="context-nav-item upgradeable-nav" data-nav-key="trades" data-panel-target="trades" data-trade-mode="basic"><span class="nav-label-basic">Trade Analyzer</span><span class="nav-label-league">Trade Analyzer</span><small class="upgrade-badge">SYNC</small></button>
+          <button class="context-nav-item league-only hidden" data-nav-key="trade-ideas" data-league-nav="trade-ideas"><span>Trade Ideas</span></button>
+        </section>
+        <section class="context-group league-only hidden" data-league-section="waivers"><h2>Waiver</h2>
+          <button class="context-nav-item" data-nav-key="waivers" data-league-nav="waivers"><span>Waiver Wire</span></button>
+        </section>
+        <section class="context-group league-only hidden" data-league-section="season"><h2>Season</h2>
+          <button class="context-nav-item" data-nav-key="league" data-league-nav="league"><span>Season Outlook</span></button>
+        </section>
+      </nav>
+      <div class="context-sidebar-foot"><button id="sidebar-settings-button" type="button">League & app settings</button><span><b id="player-count">—</b> players · <span id="engine-version">model</span></span><span id="bootstrap-status">Loading model…</span><span id="worker-status" class="hidden">worker starting</span><span id="masthead-team" class="hidden"></span><span id="masthead-week" class="hidden"></span></div>
     </aside>
     <div class="app-workspace">
-      <header class="mobile-shell-header"><button id="mobile-nav-toggle" type="button" aria-label="Open navigation">☰ Tools</button><a class="mobile-brand" href="#overview" data-jump="overview"><img src="./snapcount-mark.svg" alt="SnapCount"></a><button id="mobile-sync-button" type="button">Sync</button></header>
+      <header class="workspace-header">
+        <button id="mobile-nav-toggle" class="mobile-menu-button" type="button" aria-label="Open navigation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <button id="global-player-search" class="workspace-search" type="button"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/></svg></span><span>Search players</span><kbd>⌘ K</kbd></button>
+        <div class="workspace-actions"><span class="workspace-season">2026 NFL</span><button id="mobile-sync-button" type="button">Sync League</button></div>
+      </header>
       <p id="global-status" class="status-line app-status" aria-live="polite"></p>
   <main>
     <section class="panel active" data-panel="overview" id="overview">
-      <section class="home-hero-clean">
-        <div><p class="eyebrow">SNAPCOUNT FANTASY FOOTBALL</p><h1>Better decisions without the dashboard overload.</h1><p class="lede">Use rankings, player analysis, personal outlooks, mock drafts, and the basic trade-value calculator without connecting anything. Sync your league only when you want advice that depends on your actual roster, opponents, schedule, and rules.</p><div class="action-row"><button class="primary" data-jump="rankings">Explore rankings</button><button class="secondary" data-jump="trades" data-trade-mode="basic">Check a trade</button></div></div>
-        <aside class="home-sync-promo"><span>LEAGUE SYNC</span><h2>Unlock the personalized layer</h2><p>Draft Assistant, Start / Sit, Advanced Trade Lab, Waivers, Trade Ideas, and Season Outlook activate after sync.</p><button class="primary" data-sync-league>Sync my league</button><small>Your league ID and selected team are saved on this device so you can come back without setting everything up again.</small></aside>
+      <section class="home-hero-v2">
+        <p class="eyebrow">FANTASY FOOTBALL DECISIONS, SIMPLIFIED</p>
+        <h1>Make the right call, faster.</h1>
+        <p class="home-hero-copy">Draft smarter, compare trades, understand players, and stop digging through five different tabs for one answer.</p>
+        <div class="home-benefits" aria-label="SnapCount capabilities"><span>Draft strategy</span><span>Player outlooks</span><span>Trade value</span><span class="league-benefit">League-aware advice after sync</span></div>
+        <div class="home-hero-actions"><button class="primary" data-jump="rankings">Explore rankings</button><button class="secondary" data-jump="trades" data-trade-mode="basic">Analyze a trade</button></div>
+        <button id="home-sync-cta" class="home-sync-link" data-sync-league type="button"><strong>Sync your league</strong><span>for roster, opponent, schedule, waiver, and season context →</span></button>
       </section>
-      <section class="home-tool-row" aria-label="Public tools"><button data-jump="draft" data-draft-context="public"><span>MOCK DRAFT</span><strong>Practice against a full room</strong></button><button data-jump="outlooks"><span>MY OUTLOOKS</span><strong>Add your player opinions</strong></button><button data-jump="player"><span>PLAYER ANALYSIS</span><strong>Projection, role, news, context</strong></button></section>
-      <section class="module home-benchmark-card"><div class="table-header"><div><p class="eyebrow">RETROSPECTIVE DRAFT BENCHMARK</p><h2>How the strategy compared</h2></div><span id="benchmark-season-label">Historical frozen test</span></div><p class="helper-copy">Same draft rooms and realized outcomes for every ranking source. This is a historical comparison, not a promise about future seasons.</p><div id="home-benchmark-chart" class="benchmark-bars" aria-label="Draft benchmark bar chart"></div><p id="home-benchmark-note" class="fineprint">Loading benchmark evidence…</p></section>
+      <section class="home-tools-v2" aria-label="Popular tools">
+        <button data-jump="draft" data-draft-context="public"><span>DRAFT</span><strong>Mock Draft</strong><small>Practice the room and get strategy calls.</small></button>
+        <button data-jump="player"><span>PLAYERS</span><strong>Player Analysis</strong><small>Projection, role, health, news, and context.</small></button>
+        <button data-jump="outlooks"><span>YOUR BOARD</span><strong>My Outlooks</strong><small>Add a bounded personal view to close calls.</small></button>
+      </section>
+      <section class="home-benchmark-v2">
+        <div class="benchmark-head"><div><p class="eyebrow">HISTORICAL DRAFT BACKTEST</p><h2>SnapCount vs. major fantasy draft boards</h2><p>Same paired draft rooms and realized outcomes. Only the user-side draft board changes. Higher is better.</p></div><span id="benchmark-season-label">2018 frozen holdout</span></div>
+        <div id="home-benchmark-chart" class="benchmark-bars" aria-label="Historical draft benchmark"></div>
+        <p id="home-benchmark-note" class="benchmark-source-note">Loading source details…</p>
+      </section>
     </section>
 
     <section class="panel" data-panel="rankings" id="rankings">
@@ -360,7 +389,7 @@
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow" id="trade-eyebrow">TRADE VALUE</p><h1 id="trade-title">Compare player value.</h1></div><p id="trade-description">A clean, league-independent value check. It stays available even after you sync a league.</p></div><div id="trade-mode-note" class="trade-mode-note"><strong>Basic Trade Value</strong><span>Compares worth to worth. No roster or league assumptions.</span></div>
+      <div class="section-heading"><div><p class="eyebrow" id="trade-eyebrow">TRADE VALUE</p><h1 id="trade-title">Compare player value.</h1></div><p id="trade-description">A clean, league-independent value check. It stays available even after you sync a league.</p></div><div class="trade-mode-bar"><div id="trade-mode-note" class="trade-mode-note"><strong>Basic Trade Value</strong><span>Compares worth to worth. No roster or league assumptions.</span></div><div id="trade-mode-switch" class="trade-mode-switch hidden" aria-label="Trade analysis mode"><button type="button" data-set-trade-mode="basic" class="active">Basic value</button><button type="button" data-set-trade-mode="league">League impact</button></div></div>
       <article class="module trade-checker">
         <div id="trade-league-controls" class="trade-league-controls hidden"><label>Trade from whose perspective?<select id="trade-actor-team"></select></label><p>Pick any manager as Team A. SnapCount can model a trade between two other teams and show how it changes your own future matchups and league equity.</p></div>
         <div class="trade-side" data-trade-side="give"><div class="trade-side-head"><strong>I GIVE</strong><span id="trade-give-scope">Any player</span></div><div id="trade-give-list" class="trade-player-list" data-trade-list="give"></div></div>

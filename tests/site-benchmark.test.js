@@ -3,13 +3,17 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const report = require("../data/validation/site-benchmark-2018.json");
 
-test("published site benchmark is a labeled frozen-holdout comparison", () => {
+test("published benchmark uses recognizable historical platform boards", () => {
   assert.equal(report.season, 2018);
   assert.match(report.methodology, /paired/i);
   assert.match(report.disclaimer, /not a qualification gate/i);
   const names = new Set(report.rows.map((row) => row.name));
-  for (const name of ["SnapCount", "FantasyData ADP", "Fantasy Football Calculator", "MyFantasyLeague ADP", "3-site consensus"]) assert.ok(names.has(name));
-  assert.ok(report.rows.every((row) => row.drafts === 48 && Number.isFinite(row.meanRealizedStarterPoints)));
-  assert.ok(report.sourceCoverage["Fantasy Football Calculator"] > 100);
-  assert.ok(report.sourceCoverage["MyFantasyLeague ADP"] > 200);
+  for (const name of ["SnapCount", "ESPN ADP", "Yahoo ADP", "CBS Sports ADP", "NFL.com ADP", "FantasyPros ECR"]) assert.ok(names.has(name));
+  for (const oldName of ["3-site consensus", "FantasyData ADP", "Fantasy Football Calculator", "MyFantasyLeague ADP"]) assert.equal(names.has(oldName), false);
+  assert.ok(report.rows.every((row) => row.drafts === 48 && Number.isFinite(row.meanRealizedStarterPoints) && row.sourceNote));
+  assert.ok(report.sourceCoverage["ESPN ADP"] > 300);
+  assert.ok(report.sourceCoverage["Yahoo ADP"] > 150);
+  assert.ok(report.sourceCoverage["CBS Sports ADP"] > 150);
+  assert.ok(report.sourceCoverage["NFL.com ADP"] > 200);
+  assert.ok(report.sourceCoverage["FantasyPros ECR"] > 250);
 });

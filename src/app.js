@@ -247,10 +247,12 @@
       const report = await fetch("./data/validation/site-benchmark-2018.json", { cache: "no-store" }).then((response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); });
       const rows = Array.isArray(report.rows) ? report.rows : [];
       const max = Math.max(1, ...rows.map((row) => Number(row.meanRealizedStarterPoints || 0)));
-      node.innerHTML = rows.map((row) => { const value = Number(row.meanRealizedStarterPoints || 0); const width = Math.max(2, value / max * 100); const baseline = row.name !== "SnapCount"; return `<div class="benchmark-row ${baseline ? "baseline" : "snapcount"}"><span class="benchmark-label">${esc(row.name)}</span><div class="benchmark-track"><div class="benchmark-fill" style="width:${width.toFixed(1)}%"></div></div><strong class="benchmark-value">${Math.round(value)} pts</strong></div>`; }).join("");
+      node.innerHTML = rows.map((row) => {
+        const value = Number(row.meanRealizedStarterPoints || 0); const width = Math.max(2, value / max * 100); const baseline = row.name !== "SnapCount";
+        return `<div class="benchmark-row ${baseline ? "baseline" : "snapcount"}"><span class="benchmark-label"><b>${esc(row.name)}</b><small>${esc(row.sourceNote || "Historical draft board")}</small></span><div class="benchmark-track"><div class="benchmark-fill" style="width:${width.toFixed(1)}%"></div></div><strong class="benchmark-value">${Math.round(value).toLocaleString()} pts</strong></div>`;
+      }).join("");
       if ($("#benchmark-season-label")) $("#benchmark-season-label").textContent = `${report.season} frozen holdout · ${rows[0]?.drafts || 0} paired drafts`;
-      const coverage = report.sourceCoverage || {};
-      if ($("#home-benchmark-note")) $("#home-benchmark-note").textContent = `${report.methodology} Source matches: FFC ${coverage["Fantasy Football Calculator"] || 0}, MFL ${coverage["MyFantasyLeague ADP"] || 0}, FantasyData ${coverage["FantasyData ADP"] || 0}. ${report.disclaimer}`;
+      if ($("#home-benchmark-note")) $("#home-benchmark-note").textContent = `ESPN uses its historical 2018 PPR ADP. Yahoo, CBS, NFL.com, and FantasyPros use archived 2018 draft boards on the dates shown above. ${report.disclaimer}`;
     } catch (error) {
       node.innerHTML = `<p class="fineprint">Benchmark evidence is unavailable in this build.</p>`;
       if ($("#home-benchmark-note")) $("#home-benchmark-note").textContent = error.message;
@@ -272,12 +274,13 @@
 
   function syncMyLeagueMenuAccess() {
     const enabled = hasEspnMyLeagueAccess();
-    $$('[data-requires-league]').forEach((button) => {
-      button.disabled = !enabled;
-      button.setAttribute("aria-disabled", String(!enabled));
-      const lock = button.querySelector("em");
-      if (lock) lock.textContent = enabled ? "" : "LOCKED";
-    });
+    $(".app-shell")?.classList.toggle("league-connected", enabled);
+    $$(".league-only").forEach((node) => node.classList.toggle("hidden", !enabled));
+    const draftButtons = $$('[data-nav-key="draft"], [data-global-route="draft"]');
+    draftButtons.forEach((button) => { button.dataset.draftContext = enabled ? "league" : "public"; });
+    const tradeButton = $('[data-nav-key="trades"]');
+    if (tradeButton) tradeButton.dataset.tradeMode = enabled ? "league" : "basic";
+    $("#trade-mode-switch")?.classList.toggle("hidden", !enabled);
   }
 
   function renderMyLeagueAccess() {
@@ -289,13 +292,14 @@
     $("#use-any-league")?.classList.toggle("hidden", !enabled);
     $("#manual-league-card")?.classList.toggle("hidden", !enabled);
     syncMyLeagueMenuAccess();
-    const syncCard = $("#sidebar-sync-card");
-    syncCard?.classList.toggle("connected", enabled);
-    if ($("#sidebar-sync-kicker")) $("#sidebar-sync-kicker").textContent = enabled ? "LEAGUE CONNECTED" : "LEAGUE SYNC";
-    if ($("#sidebar-sync-title")) $("#sidebar-sync-title").textContent = team ? team.name : "Unlock personalized tools";
-    if ($("#sidebar-sync-copy")) $("#sidebar-sync-copy").textContent = team ? `${state.espnLeague?.name || "ESPN league"} · saved on this device` : "Sync ESPN once to add your roster, opponents, schedule, and league rules.";
-    if ($("#sidebar-sync-button")) $("#sidebar-sync-button").textContent = enabled ? "Manage sync" : "Sync league";
-    if ($("#mobile-sync-button")) $("#mobile-sync-button").textContent = enabled ? "League" : "Sync";
+    const switcher = $("#sidebar-sync-button");
+    switcher?.classList.toggle("connected", enabled);
+    if ($("#sidebar-sync-title")) $("#sidebar-sync-title").textContent = team ? team.name : "Sync a League";
+    if ($("#sidebar-sync-copy")) $("#sidebar-sync-copy").textContent = team ? (state.espnLeague?.name || "ESPN Fantasy") : "Unlock lineup, waivers & more";
+    if ($("#mobile-sync-button")) $("#mobile-sync-button").textContent = enabled ? "League" : "Sync League";
+    const homeSync = $("#home-sync-cta");
+    homeSync?.classList.toggle("connected", enabled);
+    if (homeSync) homeSync.innerHTML = team ? `<strong>Open ${esc(team.name)}</strong><span>view your personalized league tools →</span>` : `<strong>Sync your league</strong><span>for roster, opponent, schedule, waiver, and season context →</span>`;
     if ($("#use-any-league")) $("#use-any-league").textContent = "League settings";
     if ($("#my-league-settings")) $("#my-league-settings").open = !enabled;
     if ($("#open-league-settings")) $("#open-league-settings").textContent = enabled ? "League settings" : "Connect ESPN";
@@ -338,13 +342,15 @@
     const blocked = (leaguePanels.has(name) || leagueDraft) && !hasEspnMyLeagueAccess();
     if (blocked) name = "myleague";
     if (name === "draft") setDraftContext(leagueDraft && !blocked ? "league" : "public");
-    const leagueActive = name === "myleague" || leaguePanels.has(name) || (name === "draft" && state.draftContext === "league") || (name === "trades" && state.tradeAnalysisMode === "league");
-    let activeTab = null;
-    if (name === "draft" && state.draftContext === "league") activeTab = $('[data-league-nav="draft"]');
-    else if (leaguePanels.has(name)) activeTab = $(`[data-league-nav="${name}"]`);
-    else if (name === "trades") activeTab = $(`[data-panel-target="trades"][data-trade-mode="${state.tradeAnalysisMode}"]`);
-    else activeTab = $(`.side-nav-item[data-panel-target="${name}"]`);
-    $$(".side-nav-item").forEach((tab) => tab.classList.toggle("active", tab === activeTab));
+    const navKey = name === "overview" ? "home" : name === "myleague" ? "team" : name;
+    $$(".context-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.navKey === navKey));
+    const globalKey = name === "draft" ? "draft"
+      : name === "rankings" ? "rankings"
+      : (name === "player" || name === "outlooks") ? "player"
+      : (name === "myleague" || leaguePanels.has(name) || (name === "trades" && state.tradeAnalysisMode === "league")) ? "myleague"
+      : "overview";
+    $$(".global-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.globalRoute === globalKey));
+    $("#sidebar-sync-button")?.classList.toggle("active", name === "myleague");
     $$(".panel").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
     setMyLeagueMenuOpen(false);
     if (name === "rankings") renderPublicRankings();
@@ -2006,7 +2012,9 @@
     if ($("#trade-description")) $("#trade-description").textContent = league ? "Use real ownership, both rosters, league rules, future matchups, and season impact." : "A clean, league-independent value check. It stays available even after you sync a league.";
     const note = $("#trade-mode-note");
     note?.classList.toggle("league", league);
-    if (note) note.innerHTML = league ? `<strong>Advanced Trade Lab</strong><span>Roster fit + opponent impact + future matchup and league equity.</span>` : `<strong>Basic Trade Value</strong><span>Compares worth to worth. No roster or league assumptions.</span>`;
+    if (note) note.innerHTML = league ? `<strong>League Impact</strong><span>Roster fit, opponent impact, future matchups, and league equity.</span>` : `<strong>Basic Value</strong><span>Compares worth to worth with no roster or league assumptions.</span>`;
+    $("#trade-mode-switch")?.classList.toggle("hidden", !hasEspnMyLeagueAccess());
+    $$('[data-set-trade-mode]').forEach((button) => button.classList.toggle("active", button.dataset.setTradeMode === requested));
     state.tradePartnerTeamId = league ? state.tradePartnerTeamId : null;
     if (state.players.length) populateTradeSelectors();
     return true;
@@ -2908,10 +2916,17 @@
     $$('[data-league-jump]').forEach((button) => button.addEventListener("click", () => openMyLeagueDestination(button.dataset.leagueJump)));
     $$('[data-league-nav]').forEach((button) => button.addEventListener("click", () => openMyLeagueDestination(button.dataset.leagueNav)));
     $("#my-league-menu-button")?.addEventListener("click", () => setMyLeagueMenuOpen($("#my-league-menu")?.classList.contains("hidden")));
-    ["#sidebar-sync-button", "#mobile-sync-button"].forEach((selector) => $(selector)?.addEventListener("click", focusEspnSetup));
-    $$('[data-sync-league]').forEach((button) => button.addEventListener("click", focusEspnSetup));
+    const openLeagueSwitcher = () => hasEspnMyLeagueAccess() ? activatePanel("myleague") : focusEspnSetup();
+    ["#sidebar-sync-button", "#mobile-sync-button"].forEach((selector) => $(selector)?.addEventListener("click", openLeagueSwitcher));
+    $$('[data-sync-league]').forEach((button) => button.addEventListener("click", openLeagueSwitcher));
+    $("#sidebar-settings-button")?.addEventListener("click", () => hasEspnMyLeagueAccess() ? focusManualLeagueSetup() : focusEspnSetup());
+    $("#global-player-search")?.addEventListener("click", () => { activatePanel("player"); setTimeout(() => $("#player-search")?.focus(), 80); });
+    $$('[data-set-trade-mode]').forEach((button) => button.addEventListener("click", () => { if (setTradeAnalysisMode(button.dataset.setTradeMode)) activatePanel("trades"); }));
     $("#mobile-nav-toggle")?.addEventListener("click", () => $(".app-shell")?.classList.toggle("nav-open"));
-    document.addEventListener("keydown", (event) => { if (event.key === "Escape") setMyLeagueMenuOpen(false); });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") { setMyLeagueMenuOpen(false); $(".app-shell")?.classList.remove("nav-open"); }
+      if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === "k") { event.preventDefault(); activatePanel("player"); setTimeout(() => $("#player-search")?.focus(), 80); }
+    });
     $("#enable-default-league")?.addEventListener("click", () => resetManualLeagueProfile().catch((error) => status(error.message, "error")));
     $("#use-any-league").addEventListener("click", focusManualLeagueSetup);
     $("#show-espn-connect").addEventListener("click", focusEspnSetup);
@@ -2955,7 +2970,7 @@
     document.addEventListener("mousedown", (event) => {
       if (!event.target.closest(".trade-typeahead")) closeAllTradeSuggestions();
       if (!event.target.closest(".my-league-nav")) setMyLeagueMenuOpen(false);
-      if ($(".app-shell")?.classList.contains("nav-open") && !event.target.closest(".app-sidebar") && !event.target.closest("#mobile-nav-toggle")) $(".app-shell").classList.remove("nav-open");
+      if ($(".app-shell")?.classList.contains("nav-open") && !event.target.closest(".context-sidebar") && !event.target.closest("#mobile-nav-toggle")) $(".app-shell").classList.remove("nav-open");
     });
     $("#draft-pick-search").addEventListener("input", () => renderDraftManualOptions());
     $("#draft-start-live").addEventListener("click", () => startLeagueLiveAssistant().catch((error) => status(error.message, "error")));

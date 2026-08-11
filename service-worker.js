@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.22.0-sidebar-sync-outlooks";
+const CACHE = "snapcount-browser-v1.23.0-navigation-benchmark-v2";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
