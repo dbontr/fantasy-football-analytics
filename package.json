@@ -25,6 +25,7 @@
     "refresh:ppr": "node scripts/refresh-ppr-baseline.js",
     "refresh:rookies": "node scripts/build-rookie-model.js",
     "refresh:camp": "node scripts/refresh-camp-intelligence.js",
+    "refresh:special-teams": "node scripts/build-special-teams-context.js",
     "capture:forward": "node scripts/capture-forward-snapshot.js",
     "build:validation": "node scripts/build-historical-validation.js",
     "audit:correlation": "node scripts/correlation-audit.js",

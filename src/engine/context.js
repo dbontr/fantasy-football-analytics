@@ -88,6 +88,40 @@
     };
   }
 
+  function targetEcosystemEvidence(player, players, week = 1) {
+    const team = String(player?.team || "").toUpperCase();
+    const position = String(player?.position || "").toUpperCase();
+    if (!team || !["QB", "RB", "WR", "TE"].includes(position)) return {};
+    const teammates = (players || []).filter((row) => String(row?.team || "").toUpperCase() === team);
+    const quarterbacks = teammates.filter((row) => String(row?.position || "").toUpperCase() === "QB")
+      .sort((left, right) => weeklyProjection(right, week) - weeklyProjection(left, week));
+    const primaryQuarterback = quarterbacks.find((row) => !unavailablePlayer(row)) || quarterbacks[0] || null;
+    const passCatchers = teammates.filter((row) => ["RB", "WR", "TE"].includes(String(row?.position || "").toUpperCase()))
+      .map((row) => ({
+        id: String(row.id), name: row.name, position: String(row.position || "").toUpperCase(),
+        targetShare: Math.max(0, finite(row?.opportunity?.targetShare)),
+        snapShare: Math.max(0, finite(row?.opportunity?.snapShare)),
+        available: !unavailablePlayer(row),
+      }))
+      .sort((left, right) => right.targetShare - left.targetShare || right.snapShare - left.snapShare);
+    const targetTotal = passCatchers.reduce((sum, row) => sum + row.targetShare, 0);
+    const topTwoShare = passCatchers.slice(0, 2).reduce((sum, row) => sum + row.targetShare, 0);
+    const playerShare = passCatchers.find((row) => row.id === String(player?.id))?.targetShare ?? null;
+    return {
+      "interaction.target_ecosystem": {
+        available: Boolean(primaryQuarterback || passCatchers.length), value: 0, confidence: 0.78, conflict: 0,
+        model: "tracked-context-only-target-ecosystem",
+        source: "team QB identity + nflverse/ESPN target and snap opportunity context; no direct pairwise mean effect admitted",
+        quarterback: primaryQuarterback ? { id: String(primaryQuarterback.id), name: primaryQuarterback.name } : null,
+        playerTargetShare: playerShare,
+        targetShareCoverage: Number(targetTotal.toFixed(4)),
+        topTwoTargetConcentration: targetTotal > 0 ? Number((topTwoShare / targetTotal).toFixed(4)) : null,
+        passCatchers: passCatchers.slice(0, 8),
+        scoringEffect: "context-only",
+      },
+    };
+  }
+
   function absenceRedistributionEvidence(player, players) {
     const team = String(player?.team || "").toUpperCase();
     const position = String(player?.position || "").toUpperCase();
@@ -243,5 +277,6 @@
     practiceKey,
     quarterbackContextEvidence,
     statusKey,
+    targetEcosystemEvidence,
   };
 });

@@ -42,7 +42,7 @@
       <div class="sidebar-bottom">
         <button id="sidebar-settings-button" class="sidebar-settings" type="button" aria-label="Settings"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg></span><span>Settings</span></button>
         <button id="sidebar-sync-button" class="sidebar-sync" type="button">
-          <span class="sidebar-sync-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3c0 3-2.2 5-5 5s-5-2-5-5V4Z"/><path d="M7 6H4v1c0 2.3 1.6 4 4 4M17 6h3v1c0 2.3-1.6 4-4 4M12 12v4m-4 4h8m-6-4h4v4h-4z"/></svg></span>
+          <span class="sidebar-sync-icon" data-icon="league-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5 7 17a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0"/><path d="m14.5 9.5 2.5-2.5a3.5 3.5 0 1 1 5 5l-3 3a3.5 3.5 0 0 1-5 0"/><path d="m8.5 15.5 7-7"/></svg></span>
           <span class="sidebar-sync-copy"><strong id="sidebar-sync-title">Sync a League</strong><small id="sidebar-sync-copy">Unlock personalized tools</small></span>
           <span class="sidebar-sync-chevron"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 5 5 5-5 5"/></svg></span>
         </button>
@@ -90,9 +90,9 @@
     </section>
 
     <section class="panel" data-panel="outlooks" id="outlooks">
-      <div class="section-heading"><div><p class="eyebrow">MY PLAYER OUTLOOKS</p><h1>Tell SnapCount where you disagree.</h1></div><p>Your outlook is a bounded preference layer for close draft decisions. It never replaces roster construction, positional value, availability, or the qualified base strategy.</p></div>
-      <div class="outlook-explainer module"><strong>Unknown is not Neutral.</strong><span><b>Unknown</b> means you have not expressed a view. <b>Neutral</b> means you reviewed the player and deliberately want no positive or negative nudge.</span><small>Outlooks are saved on this device.</small></div>
-      <div class="toolbar module outlook-toolbar"><label>Search<input id="outlook-search" type="search" placeholder="Player or team…" autocomplete="off"></label><label>Position<select id="outlook-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label><label>Show<select id="outlook-filter"><option value="all">All players</option><option value="rated">Only players I rated</option><option value="unknown">Only unknown</option></select></label></div>
+      <div class="section-heading"><div><p class="eyebrow">MY PLAYER OUTLOOKS</p><h1>Tell SnapCount where you disagree.</h1></div><p>Your view can break close calls and create a small, timing-aware draft preference. It never replaces roster construction, positional value, availability, or the qualified base strategy.</p></div>
+      <div class="outlook-explainer module"><strong>Your opinion waits for the right draft window.</strong><span><b>Somewhat positive</b> is mostly a tie-break. <b>Positive</b> adds a small push when a player reaches his market range. <b>Super high</b> can justify a modest reach, but never pulls someone multiple rounds forward. Negative views work the same way in reverse.</span><small><b>Unknown</b> = no opinion. <b>Neutral</b> = reviewed with no nudge. Outlooks are saved on this device.</small></div>
+      <div class="toolbar module outlook-toolbar"><label>Search<input id="outlook-search" type="search" placeholder="Player or team…" autocomplete="off"></label><label>Position<select id="outlook-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option><option>DST</option><option>K</option></select></label><label>Show<select id="outlook-filter"><option value="all">All players</option><option value="rated">Only players I rated</option><option value="unknown">Only unknown</option></select></label></div>
       <div class="module table-module outlook-module"><div class="table-header"><div><p class="eyebrow">PERSONAL BOARD</p><h2>Player outlooks</h2></div><span id="outlook-count">—</span></div><div class="table-wrap"><table class="outlook-table"><thead><tr><th>#</th><th>Player</th><th>SnapCount rank</th><th>My outlook</th></tr></thead><tbody id="outlook-table"></tbody></table></div></div>
     </section>
 
@@ -193,11 +193,6 @@
             </aside>
           </div>
           </details>
-          <details class="module optional-tool trade-ideas my-league-trade-ideas hidden" id="trade-ideas-panel">
-            <summary><span><small>MY LEAGUE</small><strong>Find trade ideas for me</strong></span><em>Search your ESPN roster for possible upgrades</em></summary>
-            <button id="run-trades" class="secondary">Find trade ideas</button>
-            <div id="trade-result" class="result-space empty-state"><p>SnapCount can search your league for possible 1-for-1 and 2-for-2 upgrades.</p></div>
-          </details>
         </div>
 
         <aside class="home-rail" aria-label="Fantasy tools">
@@ -206,7 +201,6 @@
             <div class="quick-actions" aria-label="Choose what you need help with">
               <button class="quick-action" data-league-jump="draft"><span>D</span><strong>Draft Center</strong><small>Mock or live draft with your league settings</small></button>
               <button class="quick-action" data-league-jump="lineup"><span>S</span><strong>Start / Sit</strong><small>Best lineup this week</small></button>
-              <button class="quick-action" data-league-nav="trade-ideas"><span>T</span><strong>Trade Ideas</strong><small>Search your league for upgrades</small></button>
               <button class="quick-action" data-league-jump="waivers"><span>W</span><strong>Waiver Wire</strong><small>Best add and drop</small></button>
               <button class="quick-action" data-league-jump="league"><span>S</span><strong>Season Outlook</strong><small>Playoff and title odds</small></button>
             </div>
@@ -392,6 +386,14 @@
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Connect ESPN in <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>
+    </section>
+
+    <section class="panel" data-panel="trade-ideas" id="trade-ideas">
+      <div class="section-heading"><div><p class="eyebrow">TRADE IDEAS</p><h1>Find a trade worth making.</h1></div><p>Search your actual league for realistic packages that improve your roster without treating every theoretical value edge as actionable.</p></div>
+      <article class="module trade-ideas-page" id="trade-ideas-panel">
+        <div class="trade-ideas-intro"><div><span class="feature-bubble">LEAGUE-AWARE</span><h2>Search your league</h2><p>SnapCount checks real rosters, ownership, transaction rules, future matchups, and whether the move improves your expected future wins.</p></div><button id="run-trades" class="primary">Find trade ideas</button></div>
+        <div id="trade-result" class="result-space empty-state"><p>Run the search to look for qualified 1-for-1 and 2-for-2 upgrades against teams in your league.</p></div>
+      </article>
     </section>
 
     <section class="panel" data-panel="league" id="league">

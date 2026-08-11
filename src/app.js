@@ -34,6 +34,7 @@
     intelligenceHistory: new Map(),
     decisionHistorySeason: 2025,
     defenseProfiles: null,
+    specialTeams: null,
     preseasonRows: [],
     preseasonByPlayer: new Map(),
     campArtifact: null,
@@ -124,13 +125,13 @@
   }
 
   const PLAYER_OUTLOOKS = {
-    unknown: { label: "Unknown", adjustment: 0, reviewed: false, tone: "unknown" },
-    "super-high": { label: "Super high", adjustment: 3.0, reviewed: true, tone: "positive" },
-    positive: { label: "Positive", adjustment: 2.0, reviewed: true, tone: "positive" },
-    "somewhat-positive": { label: "Somewhat positive", adjustment: 1.0, reviewed: true, tone: "positive" },
-    neutral: { label: "Neutral", adjustment: 0, reviewed: true, tone: "neutral" },
-    "somewhat-negative": { label: "Somewhat negative", adjustment: -1.0, reviewed: true, tone: "negative" },
-    negative: { label: "Negative", adjustment: -3.0, reviewed: true, tone: "negative" },
+    unknown: { label: "Unknown", adjustment: 0, reviewed: false, tone: "unknown", windowRounds: 0, maxRoundMove: 0 },
+    "super-high": { label: "Super high", adjustment: 1, reviewed: true, tone: "positive", windowRounds: 1.1, maxRoundMove: 0.55 },
+    positive: { label: "Positive", adjustment: 1, reviewed: true, tone: "positive", windowRounds: 0.8, maxRoundMove: 0.3 },
+    "somewhat-positive": { label: "Somewhat positive", adjustment: 1, reviewed: true, tone: "positive", windowRounds: 0.55, maxRoundMove: 0.14 },
+    neutral: { label: "Neutral", adjustment: 0, reviewed: true, tone: "neutral", windowRounds: 0, maxRoundMove: 0 },
+    "somewhat-negative": { label: "Somewhat negative", adjustment: -1, reviewed: true, tone: "negative", windowRounds: 0.55, maxRoundMove: 0.14 },
+    negative: { label: "Negative", adjustment: -1, reviewed: true, tone: "negative", windowRounds: 0.9, maxRoundMove: 0.42 },
   };
 
   function playerOutlook(playerId) {
@@ -148,11 +149,31 @@
     if ($("#draft")?.classList.contains("active")) renderDraft();
   }
 
-  function applyPlayerOutlookOverlay(rows = []) {
+  function applyPlayerOutlookOverlay(rows = [], settings = {}) {
+    const teams = Math.max(4, Math.min(20, Number(settings?.teams || 12)));
+    const currentPick = Math.max(1, Number(state.draftState?.picks?.length || 0) + 1);
     return rows.map((row, index) => {
       const outlook = playerOutlook(row.id);
-      return { ...row, qualifiedRank: index + 1, personalOutlook: outlook.key, outlookLabel: outlook.label, outlookReviewed: outlook.reviewed, outlookAdjustment: outlook.adjustment, personalizedScore: Number(row.score || 0) + outlook.adjustment };
-    }).sort((a, b) => b.personalizedScore - a.personalizedScore || a.qualifiedRank - b.qualifiedRank)
+      const qualifiedRank = index + 1;
+      const marketRank = Number(row.marketRank ?? row.adp ?? row.pprRank);
+      const windowPicks = Math.max(1, teams * Number(outlook.windowRounds || 0));
+      const distanceToMarket = Number.isFinite(marketRank) ? Math.max(0, marketRank - currentPick) : 0;
+      const readiness = outlook.reviewed && outlook.adjustment !== 0 && windowPicks > 0
+        ? Math.max(0, Math.min(1, 1 - distanceToMarket / windowPicks)) : 0;
+      const returnChance = Number.isFinite(Number(row.returnChance)) ? Number(row.returnChance) : 0.5;
+      const urgency = 0.82 + (1 - Math.max(0, Math.min(1, returnChance))) * 0.18;
+      const maxMovePicks = teams * Number(outlook.maxRoundMove || 0);
+      const outlookMovePicks = outlook.adjustment * maxMovePicks * readiness * urgency;
+      const personalizedOrder = qualifiedRank - outlookMovePicks;
+      const outlookTimingLabel = !outlook.reviewed || outlook.adjustment === 0
+        ? "No draft nudge"
+        : readiness < 0.08
+          ? "Saved — waiting for market range"
+          : readiness < 0.55
+            ? "Starting to matter"
+            : "In range now";
+      return { ...row, qualifiedRank, personalOutlook: outlook.key, outlookLabel: outlook.label, outlookReviewed: outlook.reviewed, outlookAdjustment: Number(outlookMovePicks.toFixed(2)), outlookReadiness: Number(readiness.toFixed(3)), outlookTimingLabel, personalizedOrder };
+    }).sort((a, b) => a.personalizedOrder - b.personalizedOrder || a.qualifiedRank - b.qualifiedRank)
       .map((row, index) => ({ ...row, personalRank: index + 1 }));
   }
 
@@ -287,7 +308,6 @@
     const enabled = hasEspnMyLeagueAccess();
     const team = enabled ? espnTeamById(state.espnConnection?.teamId) : null;
     $("#league-tools-panel")?.classList.toggle("hidden", !enabled);
-    if (!enabled) $("#trade-ideas-panel")?.classList.add("hidden");
     $("#show-espn-connect")?.classList.toggle("hidden", enabled);
     $("#use-any-league")?.classList.toggle("hidden", !enabled);
     $("#manual-league-card")?.classList.toggle("hidden", !enabled);
@@ -321,24 +341,13 @@
       activatePanel("myleague");
       return focusEspnSetup();
     }
-    if (target === "trade-ideas") {
-      activatePanel("myleague");
-      $("#myleague")?.classList.add("trade-ideas-active");
-      $$(".context-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.navKey === "trade-ideas"));
-      const panel = $("#trade-ideas-panel");
-      if (panel) {
-        panel.classList.remove("hidden");
-        panel.open = true;
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-      return;
-    }
+    if (target === "trade-ideas") return activatePanel("trade-ideas", { leagueContext: true });
     if (target === "draft") return activatePanel("draft", { draftContext: "league" });
     return activatePanel(target, { leagueContext: true });
   }
 
   function activatePanel(name, options = {}) {
-    const leaguePanels = new Set(["lineup", "waivers", "league"]);
+    const leaguePanels = new Set(["lineup", "trade-ideas", "waivers", "league"]);
     const requestedDraftContext = name === "draft" ? (options.draftContext || "public") : null;
     const leagueDraft = name === "draft" && requestedDraftContext === "league";
     const blocked = (leaguePanels.has(name) || leagueDraft) && !hasEspnMyLeagueAccess();
@@ -354,8 +363,6 @@
     $$(".global-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.globalRoute === globalKey));
     $("#sidebar-sync-button")?.classList.toggle("active", name === "myleague");
     $$(".panel").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
-    $("#myleague")?.classList.remove("trade-ideas-active");
-    if (name === "myleague") $("#trade-ideas-panel")?.classList.add("hidden");
     setMyLeagueMenuOpen(false);
     if (name === "rankings") renderPublicRankings();
     if (name === "overview") renderHomeBenchmark();
@@ -942,9 +949,11 @@
       context.coachingEvidence(player, state.coaches?.teams?.[player.team]),
       context.healthEvidence(player, state.healthCalibration),
       context.baselineRoleEvidence(player),
+      context.targetEcosystemEvidence?.(player, state.players, week),
       context.absenceRedistributionEvidence(player, state.players),
       context.quarterbackContextEvidence(player, state.players, week),
       context.matchupEvidence(player, state.contextByWeek.get(week)),
+      specialTeamsEvidence(player, week),
       state.ledger.evidenceFor("player", String(player.id)),
     );
   }
@@ -955,6 +964,29 @@
 
   function scheduledOpponent(player, week = 1) {
     return state.schedule?.[String(player?.team || "")]?.weeks?.[Math.max(0, Number(week || 1) - 1)]?.opponent || null;
+  }
+
+  function specialTeamsEvidence(player, week = 1) {
+    const position = String(player?.position || "").toUpperCase();
+    if (!state.specialTeams || !["K", "DST"].includes(position)) return {};
+    const team = String(player?.team || "").toUpperCase();
+    if (position === "K") {
+      const teamProfile = state.specialTeams.teams?.[team] || null;
+      const surname = String(player?.name || "").trim().split(/\s+/).pop()?.toLowerCase();
+      const kicker = Object.values(state.specialTeams.kickers || {}).find((entry) => Object.values(entry.seasons || {}).some((row) => row.team === team && String(row.name || "").toLowerCase().includes(surname))) || null;
+      return { "special.kicker_context": { available: Boolean(teamProfile || kicker), value: 0, confidence: 0.78, conflict: 0, model: "pbp-special-teams-context", scoringEffect: "context-only", team: teamProfile?.weighted || null, coach: teamProfile?.currentCoachHistory?.weighted || null, kicker: kicker?.seasons?.["2025"] || null } };
+    }
+    const opponent = scheduledOpponent(player, week);
+    return { "special.dst_context": { available: Boolean(state.specialTeams.defenses?.[team]), value: 0, confidence: 0.76, conflict: 0, model: "pbp-defense-offense-interaction-context", scoringEffect: "context-only", defense: state.specialTeams.defenses?.[team]?.weighted || null, opponent, opponentVulnerability: opponent ? state.specialTeams.offenses?.[opponent]?.weighted || null : null } };
+  }
+
+  function specialTeamsContextMarkup(player, week = 1) {
+    const special = specialTeamsEvidence(player, week);
+    const kickerContext = special["special.kicker_context"] || null;
+    const dstContext = special["special.dst_context"] || null;
+    if (kickerContext?.available) return `<section class="special-teams-strip"><div><span>KICKING ENVIRONMENT</span><strong>${num(kickerContext.team?.fgAttemptsPerGame || 0, 2)} FG attempts/game</strong></div><p>${kickerContext.team?.fourthDownGoRate !== null ? `Team goes on ${pct(kickerContext.team.fourthDownGoRate, 0)} of tracked kickable 4th-down decisions · ` : ""}${kickerContext.team?.fg50AttemptsPerGame !== null ? `${num(kickerContext.team.fg50AttemptsPerGame, 2)} attempts/game from 50+ · ` : ""}${kickerContext.kicker?.byDistance?.["50-59"] ? `${pct(kickerContext.kicker.byDistance["50-59"].accuracy, 0)} on 50–59 last season` : "distance profile unavailable"}</p><small>Measured from 2023–2025 nflverse play-by-play. This is tracked context; it does not move the frozen projection mean until the special-teams admission audit clears it.</small></section>`;
+    if (dstContext?.available) return `<section class="special-teams-strip"><div><span>D/ST INTERACTION</span><strong>${num(dstContext.defense?.sacksPerGame || 0, 2)} sacks · ${num(dstContext.defense?.takeawaysPerGame || 0, 2)} takeaways/game</strong></div><p>${dstContext.opponent ? `Opponent ${esc(dstContext.opponent)} historically allows ${num(dstContext.opponentVulnerability?.sacksPerGame || 0, 2)} sacks and ${num(dstContext.opponentVulnerability?.takeawaysPerGame || 0, 2)} giveaways/game.` : "Opponent interaction will populate when the schedule supplies a matchup."}</p><small>Defense pressure/takeaway ability and opponent vulnerability are measured separately so the matchup can be tracked without inventing an unvalidated scoring coefficient.</small></section>`;
+    return "";
   }
 
   function priorDefenseEvidence(player, week = 1) {
@@ -1270,6 +1302,7 @@
     $("#player-result").innerHTML = `
       <div class="friendly-verdict"><div><span class="pos-pill pos-${esc(String(forecast.player.position || '').toLowerCase())}">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week}</p></div><strong>${esc(verdict)}</strong></div>
       ${playCallerLine}
+      ${specialTeamsContextMarkup(forecast.player, forecast.week)}
       <div class="metric-grid friendly-metrics">
         <div class="metric"><span>PROJECTED POINTS</span><strong>${num(summary.mean)}</strong></div>
         <div class="metric"><span>LIKELY RANGE</span><strong>${num(summary.p25)}–${num(summary.p75)}</strong></div>
@@ -1352,7 +1385,11 @@
     const rookieProfile = rookieModel?.summary?.(player) || null;
     const outlook = intelligence.generateOutlook(player, forecast, summary);
     const health = outlook.health;
-    const matchupPrior = priorDefenseEvidence(player, Number($("#player-week").value || 1))["matchup.position_grade"] || null;
+    const selectedWeek = Number($("#player-week").value || 1);
+    const matchupPrior = priorDefenseEvidence(player, selectedWeek)["matchup.position_grade"] || null;
+    const targetEcosystem = context.targetEcosystemEvidence?.(player, state.players, selectedWeek)?.["interaction.target_ecosystem"] || null;
+    const targetEcosystemMarkup = targetEcosystem?.available ? `<section class="target-ecosystem-strip"><div><span>PASSING ECOSYSTEM</span><strong>${targetEcosystem.quarterback ? `QB · ${esc(targetEcosystem.quarterback.name)}` : "QB context unavailable"}</strong></div><p>${targetEcosystem.passCatchers?.length ? targetEcosystem.passCatchers.slice(0, 5).map((row) => `${esc(row.name)} ${row.targetShare > 0 ? pct(row.targetShare, 1) : "—"}`).join(" · ") : "Target-share relationships will populate as opportunity data becomes available."}</p><small>Tracked as interaction context. Direct QB→receiver pair effects remain disabled until they pass a separate validation gate.</small></section>` : "";
+    const specialTeamsMarkup = specialTeamsContextMarkup(player, selectedWeek);
     const healthParts = health.live ? [health.status, health.practice, health.bodyPart, health.notes].filter(Boolean) : [`Saved status: ${health.status}`];
     const games = [...result.gameLog].reverse().slice(0, 10);
     const directionClass = outlook.direction === "UP" ? "good" : outlook.direction === "DOWN" ? "warn" : "";
@@ -1375,6 +1412,8 @@
         <section class="outlook-card"><p class="control-title">OUR READ</p><h3 class="${directionClass}">${esc(trendLabel)} · ${esc(riskLabel)} risk</h3><p>SnapCount projects <strong>${num(forecast.distribution.mean)} points</strong> with a ${pct(forecast.availability.probability)} chance to play.</p><p>${esc(readText)}</p></section>
         ${rookieProfile ? `<section><p class="control-title">WHAT MATTERS MOST</p><div class="metric-grid compact-metrics"><div class="metric"><span>PROJECTION</span><strong>${num(forecast.distribution.mean)}</strong></div><div class="metric"><span>UPSIDE</span><strong>${num(forecast.distribution.p90)}</strong></div><div class="metric"><span>CHANCE TO PLAY</span><strong>${pct(forecast.availability.probability)}</strong></div><div class="metric"><span>ROLE CLARITY</span><strong>${pct(1 - forecast.uncertainty.role)}</strong></div>${preseason ? `<div class="metric"><span>PRESEASON WORK</span><strong>${num(preseason.opportunitiesPerGame)} / game</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}. Rookies naturally carry more uncertainty until their NFL role is proven.</p></section>` : `<section><p class="control-title">RECENT FORM</p><div class="metric-grid compact-metrics"><div class="metric"><span>LAST 3 FANTASY PTS</span><strong>${summary.last3.ppr === null ? "—" : num(summary.last3.ppr)}</strong></div><div class="metric"><span>OPPORTUNITIES / GAME</span><strong>${summary.last3.opportunities === null ? "—" : num(summary.last3.opportunities)}</strong></div><div class="metric"><span>TARGET SHARE</span><strong>${summary.last3.targetShare === null ? "—" : pct(summary.last3.targetShare, 1)}</strong></div>${["RB", "QB"].includes(player.position) ? `<div class="metric"><span>CARRY SHARE</span><strong>${summary.last3.carryShare === null ? "—" : pct(summary.last3.carryShare, 1)}</strong></div>` : ""}<div class="metric"><span>MATCHUP</span><strong>${esc(matchupLabel)}</strong></div><div class="metric"><span>CONSISTENCY</span><strong>${pct(summary.consistency, 0)}</strong></div></div><p class="fineprint">Current status: ${esc(healthParts.join(" · ") || "No structured limitation reported")}.${preseason ? ` Preseason usage is also included in the model.` : ""}</p></section>`}
       </div>
+      ${targetEcosystemMarkup}
+      ${specialTeamsMarkup}
       ${campMarkup(player, preseason)}
       ${rookieProfileMarkup(player)}
       ${rookieProfile ? `<div class="rookie-history-note"><strong>No NFL game history yet.</strong><span>SnapCount uses draft position, comparable rookies, current depth chart, preseason work, and the market projection instead of pretending missing history is bad history.</span></div>` : `<details class="advanced-details game-log-details"><summary>Show game-by-game stats</summary><div class="table-wrap"><table><thead><tr><th>Week</th><th>Opp</th><th>Fantasy pts</th><th>Touches + targets</th><th>Targets</th><th>Carries</th><th>Receptions</th><th>Scrim yds</th><th>Pass yds</th><th>TD</th></tr></thead><tbody>${games.map((game) => `<tr><td>${game.week}</td><td>${esc(game.opponent)}</td><td><b>${num(game.fantasyPpr)}</b></td><td>${num(game.opportunities, 0)}</td><td>${num(game.targets, 0)}</td><td>${num(game.carries, 0)}</td><td>${num(game.receptions, 0)}</td><td>${num(game.scrimmageYards, 0)}</td><td>${num(game.passingYards, 0)}</td><td>${num(game.totalTds, 0)}</td></tr>`).join("")}</tbody></table></div></details>`}`;
@@ -1717,8 +1756,8 @@
       const take = strategicDraftTake(row, settings);
       const action = mode === "live" ? (summary.isUserPick ? "I drafted him" : "Your target") : "Draft him";
       const outlook = playerOutlook(row.id);
-      const outlookPill = outlook.reviewed ? ` <span class="outlook-chip draft-user-outlook ${outlook.tone}">${esc(outlook.label)}</span>` : "";
-      return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}${outlookPill}</strong><span>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · market #${Math.round(row.marketRank)}` : ""}</span></td><td class="draft-take"><strong>${esc(row.decision || "Target")}</strong><span>${esc(take)}</span><div class="draft-signal-row">${signals}</div></td><td class="draft-return"><strong>${pct(row.returnChance)}</strong><small>${row.nextTeamPick ? `next turn P${row.nextTeamPick}` : ""}</small></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canPick ? "" : "disabled"}>${action}</button></td></tr>`;
+      const outlookPill = outlook.reviewed ? ` <span class="outlook-chip draft-user-outlook ${outlook.tone}" title="${esc(row.outlookTimingLabel || "Saved personal outlook")}">${esc(outlook.label)}</span>` : "";
+      return `<tr data-qualified-rank="${row.qualifiedRank || index + 1}" data-personal-rank="${row.personalRank || index + 1}" data-outlook-shift="${Number(row.outlookAdjustment || 0).toFixed(2)}"><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}${outlookPill}</strong><span>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · market #${Math.round(row.marketRank)}` : ""}</span></td><td class="draft-take"><strong>${esc(row.decision || "Target")}</strong><span>${esc(take)}</span><div class="draft-signal-row">${signals}</div></td><td class="draft-return"><strong>${pct(row.returnChance)}</strong><small>${row.nextTeamPick ? `next turn P${row.nextTeamPick}` : ""}</small></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canPick ? "" : "disabled"}>${action}</button></td></tr>`;
     }).join("");
     $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => draftPlayerChoice(button.dataset.draftPlayer).catch((error) => status(error.message, "error"))));
   }
@@ -1740,7 +1779,7 @@
     statusNode.textContent = phase;
     const alternatives = recommendations.slice(1, 4).map((row) => `<div class="draft-alt"><span>${esc(row.position)}</span><strong>${esc(row.name)}</strong><small>${esc(strategicDraftTake(row, settings))}</small></div>`).join("");
     const outlook = playerOutlook(top.id);
-    const outlookNote = outlook.reviewed ? `<p class="fineprint"><b>Your outlook:</b> ${esc(outlook.label)}. This adds only a bounded close-call nudge (${outlook.adjustment >= 0 ? "+" : ""}${outlook.adjustment.toFixed(1)}) on top of the qualified base score.</p>` : "";
+    const outlookNote = outlook.reviewed ? `<p class="fineprint outlook-draft-note"><b>Your outlook:</b> ${esc(outlook.label)} · ${esc(top.outlookTimingLabel || "saved")}. ${outlook.adjustment === 0 ? "You reviewed this player as Neutral, so the qualified order stays unchanged." : Math.abs(Number(top.outlookAdjustment || 0)) < 0.1 ? "The preference is saved, but it stays dormant until this player gets close enough to his market window." : `The current nudge is worth about ${Math.abs(Number(top.outlookAdjustment)).toFixed(1)} board spots ${Number(top.outlookAdjustment) > 0 ? "up" : "down"}; it remains capped below a full round.`}</p>` : "";
     body.innerHTML = `<div class="draft-strategy-call"><span class="strategy-kicker">TOP STRATEGY CALL</span><h3>${esc(top.name)} <small>${esc(top.position)} · ${esc(top.team)}</small></h3><p>${esc(strategicDraftTake(top, settings))}</p>${outlookNote}<div class="draft-strategy-metrics"><div><span>Roster needs</span><strong>${esc(needsText)}</strong></div><div><span>Market price</span><strong>${Number.isFinite(top.marketRank) ? `#${Math.round(top.marketRank)}` : "—"}</strong></div><div><span>Wait cost</span><strong>${top.vona > 0 ? `+${num(top.vona)}` : "Low"}</strong></div><div><span>Back next turn</span><strong>${pct(top.returnChance)}</strong></div><div><span>${top.position} room trend</span><strong>${run.total ? `${run.count} of last ${run.total}` : "No run yet"}</strong></div></div></div><div class="draft-strategy-context"><div><span>HOW SNAPCOUNT IS DRAFTING</span><p>This is not best-player-available alone. The qualified strategy balances market cost, value over replacement, your roster construction, positional scarcity, injury risk, and timing to your next pick.</p></div><div class="draft-alternatives"><span>OTHER GOOD PATHS</span>${alternatives || "<p class='fineprint'>No alternatives yet.</p>"}</div></div>`;
   }
 
@@ -1818,7 +1857,7 @@
     const initial = applyPlayerOutlookOverlay(draftSim.qualifyRecommendations(
       core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36),
       state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
-    ));
+    ), settings);
     renderDraftTable(initial, summary, settings);
     renderDraftPanels(settings, summary, initial);
     const token = ++state.draftRenderToken;
@@ -1829,7 +1868,7 @@
         const refined = applyPlayerOutlookOverlay(draftSim.qualifyRecommendations(
           core.advancedDraftRecommendations(state.players, state.draftState, settings, settings.draftPosition, 36, simulation),
           state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
-        ));
+        ), settings);
         renderDraftTable(refined, summary, settings);
         renderDraftStrategy(refined, summary, settings);
       } catch (_) { /* analytical fallback is already rendered */ }
@@ -3018,15 +3057,16 @@
     $("#engine-version").textContent = engine.VERSION.replace("oracle-browser-", "v");
     $("#worker-status").textContent = "Web Worker online";
     try {
-      const [response, coachResponse, healthResponse, rookieResponse, campResponse, profileResponse] = await Promise.all([
+      const [response, coachResponse, healthResponse, rookieResponse, campResponse, profileResponse, specialTeamsResponse] = await Promise.all([
         fetch("./data/players-lite.json"),
         fetch("./data/coaches-2026.json"),
         fetch("./data/health-calibration-2026.json"),
         fetch("./data/rookies-2026.json"),
         fetch("./data/camp-2026.json"),
         fetch("./data/analytics-runtime-profile.json"),
+        fetch("./data/special-teams-2026.json"),
       ]);
-      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !campResponse.ok || !profileResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
+      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !campResponse.ok || !profileResponse.ok || !specialTeamsResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
       state.dataset = await response.json();
       state.analyticsProfile = await profileResponse.json();
       if (state.analyticsProfile?.mode !== "serve-frozen-qualified-analytics") throw new Error("qualified analytics profile is invalid");
@@ -3036,6 +3076,7 @@
       state.rookieIndex = rookieModel.indexArtifact(state.rookieArtifact);
       state.campArtifact = await campResponse.json();
       state.campIndex = new Map((state.campArtifact?.players || []).map((row) => [String(row.id), row]));
+      state.specialTeams = await specialTeamsResponse.json();
       const season = Number(state.dataset.meta?.season || 2026);
       let baselinePlayers = state.dataset.players || [];
       let livePpr = false;

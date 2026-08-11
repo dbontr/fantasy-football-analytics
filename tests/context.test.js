@@ -82,3 +82,42 @@ test("live PPR anchor suppresses legacy QB replacement mean evidence", () => {
   ];
   assert.deepEqual(context.quarterbackContextEvidence(players[0], players, 1), {});
 });
+
+test("target ecosystem tracks the QB and pass-catcher pecking order without a scoring effect", () => {
+  const players = [
+    { id:"q", name:"QB One", team:"AAA", position:"QB", weeklyProjection:20, opportunity:{} },
+    { id:"w1", name:"Alpha WR", team:"AAA", position:"WR", weeklyProjection:16, opportunity:{ targetShare:.28, snapShare:.88 } },
+    { id:"w2", name:"Beta WR", team:"AAA", position:"WR", weeklyProjection:12, opportunity:{ targetShare:.20, snapShare:.79 } },
+    { id:"t", name:"Gamma TE", team:"AAA", position:"TE", weeklyProjection:9, opportunity:{ targetShare:.14, snapShare:.76 } },
+  ];
+  const evidence = context.targetEcosystemEvidence(players[1], players, 1)["interaction.target_ecosystem"];
+  assert.equal(evidence.quarterback.name, "QB One");
+  assert.equal(evidence.playerTargetShare, .28);
+  assert.equal(evidence.passCatchers[0].name, "Alpha WR");
+  assert.equal(evidence.scoringEffect, "context-only");
+  assert.ok(evidence.topTwoTargetConcentration > .7);
+});
+
+test("interaction coverage registry keeps measured, context-only, and remaining gaps explicit", () => {
+  const coverage = require("../data/model-interaction-coverage.json");
+  assert.equal(coverage.families.qb_target_ecosystem.status, "context-only");
+  assert.equal(coverage.families.kicker_projection_market_weather.status, "admitted");
+  assert.equal(coverage.families.dst_projection_market_environment.status, "admitted");
+  assert.equal(coverage.families.fourth_down_aggressiveness.status, "context-only");
+  assert.equal(coverage.families.kicker_distance_distribution.status, "context-only");
+  assert.equal(coverage.families.kickable_drive_and_red_zone_stall_rate.status, "context-only");
+  assert.equal(coverage.families.dst_pressure_sack_takeaway_interactions.status, "context-only");
+  assert.equal(coverage.families.special_teams_personnel_continuity.status, "not-yet-measured");
+});
+
+test("special-teams play-by-play artifact measures fourth-down, long-kick and D/ST interaction context", () => {
+  const special = require("../data/special-teams-2026.json");
+  assert.equal(special.meta.seasons.join(","), "2023,2024,2025");
+  assert.equal(Object.keys(special.teams).length, 32);
+  assert.ok(special.teams.DAL.weighted.fourthDownGoRate > 0);
+  assert.ok(special.teams.DAL.weighted.fg50AttemptsPerGame > 0);
+  assert.ok(special.defenses.DAL.weighted.sacksPerGame > 0);
+  assert.ok(special.defenses.DAL.weighted.takeawaysPerGame > 0);
+  const aubrey = Object.values(special.kickers).find((entry) => Object.values(entry.seasons || {}).some((row) => String(row.name).includes("Aubrey")));
+  assert.ok(aubrey?.seasons?.["2025"]?.byDistance?.["50-59"]?.attempts > 0);
+});

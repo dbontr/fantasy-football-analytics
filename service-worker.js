@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.25.0-unified-clean-ui";
+const CACHE = "snapcount-browser-v1.26.0-interaction-ui";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -28,6 +28,8 @@ const STATIC_ASSETS = [
   "./src/storage/browser-store.js",
   "./data/players-lite.json",
   "./data/analytics-runtime-profile.json",
+  "./data/model-interaction-coverage.json",
+  "./data/special-teams-2026.json",
   "./data/coaches-2026.json",
   "./data/health-calibration-2026.json",
   "./data/rookies-2026.json",
