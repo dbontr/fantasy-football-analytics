@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#15171a">
+  <meta name="theme-color" content="#173b70">
   <meta name="description" content="SnapCount turns your fantasy football league into clear draft, lineup, trade, waiver, player, and season decisions.">
   <title>SnapCount — Fantasy Football Decisions</title>
   <link rel="manifest" href="./manifest.webmanifest">
@@ -11,65 +11,48 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="network-row">
-      <a class="brand" href="#overview" data-jump="overview" aria-label="SnapCount fantasy football home">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="SnapCount navigation">
+      <a class="side-brand" href="#overview" data-jump="overview" aria-label="SnapCount home">
         <img class="brand-logo" src="./snapcount-logo.svg" alt="SnapCount Fantasy Football">
       </a>
-      <div class="network-meta masthead-context" aria-label="Current fantasy league context">
-        <span>FANTASY FOOTBALL</span>
-        <strong id="masthead-team">Any fantasy league</strong>
-        <small id="masthead-week">2026 season</small>
-      </div>
-    </div>
-    <div class="tool-nav">
-      <nav class="tabs" aria-label="Fantasy football tools">
-        <button class="tab active" data-panel-target="overview">Home</button>
-        <button class="tab" data-panel-target="rankings">Rankings</button>
-        <button class="tab" data-panel-target="player">Players</button>
-        <button class="tab" data-panel-target="draft" data-draft-context="public">Mock Draft</button>
-        <button class="tab" data-panel-target="trades">Trade Analyzer</button>
-      </nav>
-      <div class="my-league-nav">
-        <button id="my-league-menu-button" class="tab my-league-tab" type="button" aria-haspopup="menu" aria-expanded="false">My League <span aria-hidden="true">▾</span></button>
-        <div id="my-league-menu" class="my-league-menu hidden" role="menu" aria-label="My League tools">
-          <button type="button" role="menuitem" data-league-nav="myleague"><strong>League home</strong><small>ESPN connection & team</small></button>
-          <button type="button" role="menuitem" data-league-nav="draft" data-requires-league><strong>Draft Center</strong><small>Use your ESPN league settings</small></button>
-          <button type="button" role="menuitem" data-league-nav="lineup" data-requires-league><strong>Start / Sit</strong><small>Set this week’s lineup</small></button>
-          <button type="button" role="menuitem" data-league-nav="trade-ideas" data-requires-league><strong>Trade ideas</strong><small>Search your roster for upgrades</small></button>
-          <button type="button" role="menuitem" data-league-nav="waivers" data-requires-league><strong>Waiver Wire</strong><small>Find the best add and drop</small></button>
-          <button type="button" role="menuitem" data-league-nav="league" data-requires-league><strong>Season Outlook</strong><small>Playoff and title odds</small></button>
+      <nav class="side-nav" aria-label="Fantasy football tools">
+        <div class="side-nav-group"><span>TOOLS</span>
+          <button class="side-nav-item active" data-panel-target="overview">Home</button>
+          <button class="side-nav-item" data-panel-target="rankings">Rankings</button>
+          <button class="side-nav-item" data-panel-target="player">Player Analysis</button>
+          <button class="side-nav-item" data-panel-target="outlooks">My Outlooks</button>
+          <button class="side-nav-item" data-panel-target="draft" data-draft-context="public">Mock Draft</button>
+          <button class="side-nav-item" data-panel-target="trades" data-trade-mode="basic">Trade Value</button>
         </div>
-      </div>
-    </div>
-  </header>
-  <p id="global-status" class="status-line app-status" aria-live="polite"></p>
-
+        <div class="side-sync-card" id="sidebar-sync-card">
+          <span id="sidebar-sync-kicker">LEAGUE SYNC</span>
+          <strong id="sidebar-sync-title">Unlock personalized tools</strong>
+          <small id="sidebar-sync-copy">Sync ESPN once to add your roster, opponents, schedule, and league rules.</small>
+          <button id="sidebar-sync-button" class="side-sync-button" type="button">Sync league</button>
+        </div>
+        <div class="side-nav-group league-nav-group"><span>LEAGUE TOOLS</span>
+          <button class="side-nav-item" data-league-nav="draft" data-requires-league>Draft Assistant <em>LOCKED</em></button>
+          <button class="side-nav-item" data-league-nav="lineup" data-requires-league>Start / Sit <em>LOCKED</em></button>
+          <button class="side-nav-item" data-panel-target="trades" data-trade-mode="league" data-requires-league>Advanced Trade Lab <em>LOCKED</em></button>
+          <button class="side-nav-item" data-league-nav="waivers" data-requires-league>Waiver Wire <em>LOCKED</em></button>
+          <button class="side-nav-item" data-league-nav="trade-ideas" data-requires-league>Trade Ideas <em>LOCKED</em></button>
+          <button class="side-nav-item" data-league-nav="league" data-requires-league>Season Outlook <em>LOCKED</em></button>
+        </div>
+      </nav>
+      <div class="side-runtime"><span>2026 · <b id="player-count">—</b> players</span><small id="bootstrap-status">Loading qualified model…</small><small><span id="engine-version">model</span> · <span id="worker-status">worker starting</span></small><div class="hidden" aria-hidden="true"><span id="masthead-team"></span><span id="masthead-week"></span></div></div>
+    </aside>
+    <div class="app-workspace">
+      <header class="mobile-shell-header"><button id="mobile-nav-toggle" type="button" aria-label="Open navigation">☰ Tools</button><a class="mobile-brand" href="#overview" data-jump="overview"><img src="./snapcount-mark.svg" alt="SnapCount"></a><button id="mobile-sync-button" type="button">Sync</button></header>
+      <p id="global-status" class="status-line app-status" aria-live="polite"></p>
   <main>
     <section class="panel active" data-panel="overview" id="overview">
-      <div class="public-home">
-        <header class="desk-headline public-headline">
-          <p class="eyebrow">FANTASY FOOTBALL INTELLIGENCE</p>
-          <h1>Know who’s best. Make the better call.</h1>
-          <p class="lede">Rankings, player analysis, trade values, and a full mock draft are available to everyone. Connect <strong>My League</strong> to ESPN only when you want personalized lineup, waiver, season, and league-aware tools.</p>
-          <div class="action-row">
-            <button class="primary" data-jump="rankings">View rankings</button>
-            <button class="secondary" data-jump="draft" data-draft-context="public">Run a mock draft</button>
-            <button class="ghost" data-jump="trades">Analyze a trade</button>
-          </div>
-        </header>
-        <aside class="public-top-card">
-          <div class="rail-heading"><span>TOP PLAYERS</span><small>Overall PPR board</small></div>
-          <div id="home-top-players" class="home-top-players"></div>
-          <button class="text-link-button" data-jump="rankings">See full rankings →</button>
-        </aside>
-      </div>
-      <div class="public-tool-grid">
-        <button class="public-tool-card" data-jump="rankings"><span>01</span><strong>Rankings</strong><small>See the best players overall or for a specific week.</small></button>
-        <button class="public-tool-card" data-jump="player"><span>02</span><strong>Player Analysis</strong><small>Projection, range, status, recent form, matchup, and news.</small></button>
-        <button class="public-tool-card" data-jump="trades"><span>03</span><strong>Trade Analyzer</strong><small>Compare any trade now. Connect ESPN in My League for roster and opponent context.</small></button>
-        <button class="public-tool-card draft-card" data-jump="draft" data-draft-context="public"><span>04</span><strong>Mock Draft</strong><small>Practice a full draft against CPU teams without connecting a league.</small></button>
-      </div>
+      <section class="home-hero-clean">
+        <div><p class="eyebrow">SNAPCOUNT FANTASY FOOTBALL</p><h1>Better decisions without the dashboard overload.</h1><p class="lede">Use rankings, player analysis, personal outlooks, mock drafts, and the basic trade-value calculator without connecting anything. Sync your league only when you want advice that depends on your actual roster, opponents, schedule, and rules.</p><div class="action-row"><button class="primary" data-jump="rankings">Explore rankings</button><button class="secondary" data-jump="trades" data-trade-mode="basic">Check a trade</button></div></div>
+        <aside class="home-sync-promo"><span>LEAGUE SYNC</span><h2>Unlock the personalized layer</h2><p>Draft Assistant, Start / Sit, Advanced Trade Lab, Waivers, Trade Ideas, and Season Outlook activate after sync.</p><button class="primary" data-sync-league>Sync my league</button><small>Your league ID and selected team are saved on this device so you can come back without setting everything up again.</small></aside>
+      </section>
+      <section class="home-tool-row" aria-label="Public tools"><button data-jump="draft" data-draft-context="public"><span>MOCK DRAFT</span><strong>Practice against a full room</strong></button><button data-jump="outlooks"><span>MY OUTLOOKS</span><strong>Add your player opinions</strong></button><button data-jump="player"><span>PLAYER ANALYSIS</span><strong>Projection, role, news, context</strong></button></section>
+      <section class="module home-benchmark-card"><div class="table-header"><div><p class="eyebrow">RETROSPECTIVE DRAFT BENCHMARK</p><h2>How the strategy compared</h2></div><span id="benchmark-season-label">Historical frozen test</span></div><p class="helper-copy">Same draft rooms and realized outcomes for every ranking source. This is a historical comparison, not a promise about future seasons.</p><div id="home-benchmark-chart" class="benchmark-bars" aria-label="Draft benchmark bar chart"></div><p id="home-benchmark-note" class="fineprint">Loading benchmark evidence…</p></section>
     </section>
 
     <section class="panel" data-panel="rankings" id="rankings">
@@ -81,6 +64,13 @@
         <label>Week<select id="rankings-week"></select></label>
       </div>
       <div class="module table-module rankings-module"><div class="table-header"><div><p class="eyebrow">SNAPCOUNT BOARD</p><h2>Top players</h2></div><span id="rankings-count">—</span></div><div class="table-wrap"><table class="rankings-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Week projection</th><th>Overall rank</th><th>ADP</th><th></th></tr></thead><tbody id="rankings-table"></tbody></table></div></div>
+    </section>
+
+    <section class="panel" data-panel="outlooks" id="outlooks">
+      <div class="section-heading"><div><p class="eyebrow">MY PLAYER OUTLOOKS</p><h1>Tell SnapCount where you disagree.</h1></div><p>Your outlook is a bounded preference layer for close draft decisions. It never replaces roster construction, positional value, availability, or the qualified base strategy.</p></div>
+      <div class="outlook-explainer module"><strong>Unknown is not Neutral.</strong><span><b>Unknown</b> means you have not expressed a view. <b>Neutral</b> means you reviewed the player and deliberately want no positive or negative nudge.</span><small>Outlooks are saved on this device.</small></div>
+      <div class="toolbar module outlook-toolbar"><label>Search<input id="outlook-search" type="search" placeholder="Player or team…" autocomplete="off"></label><label>Position<select id="outlook-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label><label>Show<select id="outlook-filter"><option value="all">All players</option><option value="rated">Only players I rated</option><option value="unknown">Only unknown</option></select></label></div>
+      <div class="module table-module outlook-module"><div class="table-header"><div><p class="eyebrow">PERSONAL BOARD</p><h2>Player outlooks</h2></div><span id="outlook-count">—</span></div><div class="table-wrap"><table class="outlook-table"><thead><tr><th>#</th><th>Player</th><th>SnapCount rank</th><th>My outlook</th></tr></thead><tbody id="outlook-table"></tbody></table></div></div>
     </section>
 
     <section class="panel" data-panel="myleague" id="myleague">
@@ -100,7 +90,7 @@
             <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">—</strong><small id="home-team-record">—</small></div>
             <button data-jump="lineup"><span>START / SIT</span><strong>Set lineup</strong></button>
             <button data-jump="waivers"><span>WAIVERS</span><strong>Waiver targets</strong></button>
-            <button data-jump="trades"><span>TRADES</span><strong>Trade analyzer</strong></button>
+            <button data-jump="trades" data-trade-mode="league"><span>ADVANCED TRADE</span><strong>League impact</strong></button>
             <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
           </section>
 
@@ -213,8 +203,8 @@
       <details class="system-details">
         <summary>Data, privacy & app status</summary>
         <div class="scoreboard system-scoreboard" aria-label="App status">
-          <article><span>PLAYER POOL</span><strong id="player-count">—</strong><small>2026 universe</small></article>
-          <article><span>ENGINE</span><strong id="engine-version">—</strong><small>local runtime</small></article>
+          <article><span>PLAYER POOL</span><strong id="system-player-count">—</strong><small>2026 universe</small></article>
+          <article><span>ENGINE</span><strong id="system-engine-version">—</strong><small>local runtime</small></article>
           <article><span>BACKEND</span><strong>NONE</strong><small>browser only</small></article>
           <article><span>WORKFLOWS</span><strong>0</strong><small>static Pages</small></article>
         </div>
@@ -227,10 +217,10 @@
           <article class="module">
             <header><p class="eyebrow">LOCAL APP</p><h2>Browser state</h2></header>
             <dl class="fact-list">
-              <div><dt>Dataset</dt><dd id="bootstrap-status">Loading…</dd></div>
+              <div><dt>Dataset</dt><dd id="system-bootstrap-status">Loading…</dd></div>
               <div><dt>Evidence ledger</dt><dd id="evidence-status">—</dd></div>
               <div><dt>Persistent cache</dt><dd id="cache-status">IndexedDB</dd></div>
-              <div><dt>Worker</dt><dd id="worker-status">Starting…</dd></div>
+              <div><dt>Worker</dt><dd id="system-worker-status">Starting…</dd></div>
             </dl>
             <div class="action-row compact"><button id="sync-sleeper" class="secondary">Refresh player status</button><button id="clear-local" class="ghost">Reset saved data</button></div>
           </article>
@@ -370,8 +360,9 @@
     </section>
 
     <section class="panel" data-panel="trades" id="trades">
-      <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Who wins this trade?</h1></div><p>Compare any players immediately. Connect ESPN in My League to see how the deal changes your specific roster, opponents, and season.</p></div>
+      <div class="section-heading"><div><p class="eyebrow" id="trade-eyebrow">TRADE VALUE</p><h1 id="trade-title">Compare player value.</h1></div><p id="trade-description">A clean, league-independent value check. It stays available even after you sync a league.</p></div><div id="trade-mode-note" class="trade-mode-note"><strong>Basic Trade Value</strong><span>Compares worth to worth. No roster or league assumptions.</span></div>
       <article class="module trade-checker">
+        <div id="trade-league-controls" class="trade-league-controls hidden"><label>Trade from whose perspective?<select id="trade-actor-team"></select></label><p>Pick any manager as Team A. SnapCount can model a trade between two other teams and show how it changes your own future matchups and league equity.</p></div>
         <div class="trade-side" data-trade-side="give"><div class="trade-side-head"><strong>I GIVE</strong><span id="trade-give-scope">Any player</span></div><div id="trade-give-list" class="trade-player-list" data-trade-list="give"></div></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
         <div class="trade-side" data-trade-side="get"><div class="trade-side-head"><strong>I GET</strong><span id="trade-get-scope">Any player</span></div><label id="trade-partner-label" class="trade-partner hidden">Trade partner<select id="trade-partner"><option value="">Choose who you are trading with</option></select></label><div id="trade-get-list" class="trade-player-list" data-trade-list="get"></div></div>
@@ -416,6 +407,8 @@
   </main>
 
   <footer><span>SNAPCOUNT · FANTASY FOOTBALL</span><span>Fast calls on top. Serious modeling underneath.</span></footer>
+    </div>
+  </div>
 
   <script src="./src/engine/core.js"></script>
   <script src="./src/engine/league.js"></script>

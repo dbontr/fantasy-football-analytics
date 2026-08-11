@@ -65,51 +65,19 @@ async function main() {
   async function snapshot(name, width, height) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 600 });
     await delay(250);
-    const metrics = await evaluate(`(() => ({
-      playerCount: document.querySelector('#player-count')?.textContent,
-      activePanel: document.querySelector('.panel.active')?.dataset.panel,
-      viewportWidth: innerWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1,
-      tabs: document.querySelectorAll('.tab').length,
-      tabRows: new Set([...document.querySelectorAll('.tab')].map((tab) => Math.round(tab.getBoundingClientRect().top))).size,
-      tabsScrollable: document.querySelector('.tabs')?.scrollWidth > document.querySelector('.tabs')?.clientWidth + 1,
-      quickActions: document.querySelectorAll('.quick-action').length,
-      publicCards: document.querySelectorAll('#overview .public-tool-card').length,
-      mastheadContextDisplay: getComputedStyle(document.querySelector('.masthead-context')).display,
-      background: getComputedStyle(document.body).backgroundColor,
-      brand: document.querySelector('.brand-logo')?.getAttribute('alt'),
-      brandLoaded: Boolean(document.querySelector('.brand-logo')?.complete && document.querySelector('.brand-logo')?.naturalWidth > 0),
-      title: document.title,
-      primaryBackground: getComputedStyle(document.querySelector('.primary')).backgroundColor,
-      legacyBrandVisible: /Oracle/i.test(document.body.innerText),
-      greenishColors: (() => {
-        const found = new Set();
-        const parse = (value) => { const text=String(value); if (!text.startsWith('rgb')) return null; return text.slice(text.indexOf('(')+1, text.indexOf(')')).split(',').slice(0,3).map((part) => Number(part.trim())); };
-        for (const element of document.querySelectorAll('body *')) {
-          if (!element.getClientRects().length) continue;
-          const style = getComputedStyle(element);
-          for (const value of [style.color, style.backgroundColor, style.borderTopColor, style.borderLeftColor]) {
-            const rgb = parse(value); if (!rgb) continue;
-            const [r,g,b] = rgb;
-            if (g >= 70 && g > r * 1.22 && g > b * 1.12) found.add(value);
-          }
-        }
-        return [...found];
-      })()
-    }))()`);
+    const metrics = await evaluate(`(() => {
+      const sidebar=document.querySelector('.app-sidebar'); const mobileHeader=document.querySelector('.mobile-shell-header');
+      return { playerCount:document.querySelector('#player-count')?.textContent, activePanel:document.querySelector('.panel.active')?.dataset.panel, viewportWidth:innerWidth, documentWidth:document.documentElement.scrollWidth, horizontalOverflow:document.documentElement.scrollWidth > innerWidth + 1, sidebarDisplay:sidebar ? getComputedStyle(sidebar).display : 'missing', sidebarPosition:sidebar ? getComputedStyle(sidebar).position : 'missing', sidebarTransform:sidebar ? getComputedStyle(sidebar).transform : 'missing', navItems:document.querySelectorAll('.side-nav-item').length, disabledLeagueTools:[...document.querySelectorAll('[data-requires-league]')].filter((row)=>row.disabled).length, mobileHeaderDisplay:mobileHeader ? getComputedStyle(mobileHeader).display : 'missing', benchmarkRows:document.querySelectorAll('#home-benchmark-chart .benchmark-row').length, background:getComputedStyle(document.body).backgroundColor, brand:document.querySelector('.brand-logo')?.getAttribute('alt'), brandLoaded:Boolean(document.querySelector('.brand-logo')?.complete && document.querySelector('.brand-logo')?.naturalWidth > 0), title:document.title, primaryBackground:getComputedStyle(document.querySelector('.primary')).backgroundColor, topbar:Boolean(document.querySelector('.topbar')), legacyBrandVisible:/Oracle/i.test(document.body.innerText) };
+    })()`);
     if (metrics.legacyBrandVisible) throw new Error(`Legacy Oracle branding is visible in ${name}`);
-    if (metrics.greenishColors.length) throw new Error(`Green theme color leaked into ${name}: ${metrics.greenishColors.join(', ')}`);
-    if (captureScreenshots) {
-      const capture = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-      fs.writeFileSync(`.qa-${name}.png`, Buffer.from(capture.data, "base64"));
-    }
+    if (captureScreenshots) { const capture=await send("Page.captureScreenshot", { format:"png", captureBeyondViewport:false }); fs.writeFileSync(`.qa-${name}.png`, Buffer.from(capture.data,"base64")); }
     return metrics;
   }
 
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url: appUrl });
   await waitFor(`document.querySelector('#player-count')?.textContent === '700'`);
+  await waitFor(`document.querySelectorAll('#home-benchmark-chart .benchmark-row').length === 5`, 10000);
   await waitFor(`document.querySelector('#cache-status')?.textContent.includes('enabled') || document.querySelector('#cache-status')?.textContent.includes('fallback')`, 20000);
   const modelState = await evaluate(`({
     correlation: window.SnapCountCorrelation?.VERSION || null,
@@ -126,19 +94,25 @@ async function main() {
   const gradeDrift = Object.entries(profileState.grades).some(([surface, grade]) => grade !== (surface === "provenance" ? "A" : "A+"));
   if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified" || profileState.objective !== "maximize-future-head-to-head-wins" || profileState.objectiveStatus !== "prospective-overlay") throw new Error("Frozen qualified analytics profile / future-win objective did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
-  if (home.activePanel !== "overview" || home.tabs !== 6 || home.publicCards !== 4) throw new Error("Public-first navigation did not render from the app root");
-  if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
-  if (home.brand !== "SnapCount Fantasy Football" || !home.brandLoaded || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
-  if (home.primaryBackground !== "rgb(200, 16, 46)") throw new Error("Primary action is not using the sports-red SnapCount palette");
-  if (home.mastheadContextDisplay !== "none") throw new Error("League rules leaked into the visible masthead");
-  const publicNav = await evaluate(`(() => ({labels:[...document.querySelectorAll('.tab')].map((row)=>row.textContent.trim()),disabled:[...document.querySelectorAll('.tab')].filter((row)=>row.disabled).length}))()`);
-  if (publicNav.labels.slice(0, 5).join('|') !== 'Home|Rankings|Players|Mock Draft|Trade Analyzer' || !publicNav.labels[5]?.startsWith('My League') || publicNav.disabled) throw new Error(`Public navigation is wrong: ${JSON.stringify(publicNav)}`);
-  const homeStructure = await evaluate(`(() => ({publicHome:Boolean(document.querySelector('.public-home')),topPlayers:document.querySelectorAll('#home-top-players .home-player-row').length,toolCards:document.querySelectorAll('#overview .public-tool-card').length,myLeague:Boolean(document.querySelector('#myleague #show-espn-connect'))}))()`);
-  if (!homeStructure.publicHome || homeStructure.topPlayers < 5 || homeStructure.toolCards !== 4 || !homeStructure.myLeague) throw new Error(`Public home information architecture failed: ${JSON.stringify(homeStructure)}`);
-  const universalHome = await evaluate(`(() => ({manualHidden:document.querySelector('#manual-league-card')?.classList.contains('hidden'),espn:Boolean(document.querySelector('#myleague #connect-espn')),espnRequired:document.querySelector('.espn-badge')?.textContent||'',logo:document.querySelector('.brand-logo')?.getAttribute('src')||'',primary:document.querySelector('#overview .primary')?.textContent.trim()||''}))()`);
-  if (!universalHome.manualHidden || !universalHome.espn || !universalHome.espnRequired.includes('REQUIRED') || !universalHome.logo.includes("snapcount-logo.svg") || universalHome.primary !== "View rankings") throw new Error(`Public home / ESPN-required My League shell did not render: ${JSON.stringify(universalHome)}`);
-  const noConnectionAccess = await evaluate(`(() => ({espnState:document.querySelector('#espn-connection-state')?.textContent,espnConnectedVisible:!document.querySelector('#espn-connected')?.classList.contains('hidden'),leagueToolsHidden:document.querySelector('#league-tools-panel')?.classList.contains('hidden'),manualHidden:document.querySelector('#manual-league-card')?.classList.contains('hidden'),settingsOpen:document.querySelector('#my-league-settings')?.open,title:document.querySelector('#my-league-title')?.textContent||'',disabledTabs:[...document.querySelectorAll('.tab')].filter((button)=>button.disabled).map((button)=>button.textContent.trim())}))()`);
-  if (noConnectionAccess.espnState !== 'Not connected' || noConnectionAccess.espnConnectedVisible || !noConnectionAccess.leagueToolsHidden || !noConnectionAccess.manualHidden || !noConnectionAccess.settingsOpen || !noConnectionAccess.title.includes('Connect ESPN') || noConnectionAccess.disabledTabs.length) throw new Error(`ESPN-required disconnected state failed: ${JSON.stringify(noConnectionAccess)}`);
+  if (home.activePanel !== "overview" || home.navItems < 12 || home.topbar || home.sidebarPosition !== "sticky") throw new Error(`Sidebar product shell failed: ${JSON.stringify(home)}`);
+  if (home.horizontalOverflow || home.background !== "rgb(245, 247, 251)") throw new Error("Blue SnapCount canvas/layout check failed");
+  if (home.brand !== "SnapCount Fantasy Football" || !home.brandLoaded || !home.title.startsWith("SnapCount")) throw new Error("SnapCount branding check failed");
+  if (home.primaryBackground !== "rgb(36, 99, 182)") throw new Error(`Primary action is not using the blue palette: ${home.primaryBackground}`);
+  if (home.benchmarkRows !== 5) throw new Error(`Home historical comparison did not render five sources: ${home.benchmarkRows}`);
+  const homeStructure = await evaluate(`({hero:Boolean(document.querySelector('.home-hero-clean')),sync:Boolean(document.querySelector('.home-sync-promo [data-sync-league]')),publicTools:document.querySelectorAll('.home-tool-row button').length,benchmark:document.querySelector('#benchmark-season-label')?.textContent||'',syncTitle:document.querySelector('#sidebar-sync-title')?.textContent||''})`);
+  if (!homeStructure.hero || !homeStructure.sync || homeStructure.publicTools !== 3 || !homeStructure.benchmark.includes('2018 frozen holdout') || homeStructure.syncTitle !== 'Unlock personalized tools') throw new Error(`Home hierarchy failed: ${JSON.stringify(homeStructure)}`);
+  const noConnectionAccess = await evaluate(`({espnState:document.querySelector('#espn-connection-state')?.textContent,leagueToolsHidden:document.querySelector('#league-tools-panel')?.classList.contains('hidden'),settingsOpen:document.querySelector('#my-league-settings')?.open,requiredDisabled:[...document.querySelectorAll('[data-requires-league]')].every((row)=>row.disabled),syncConnected:document.querySelector('#sidebar-sync-card')?.classList.contains('connected')})`);
+  if (noConnectionAccess.espnState !== 'Not connected' || !noConnectionAccess.leagueToolsHidden || !noConnectionAccess.settingsOpen || !noConnectionAccess.requiredDisabled || noConnectionAccess.syncConnected) throw new Error(`League Sync disconnected gate failed: ${JSON.stringify(noConnectionAccess)}`);
+
+  await evaluate(`document.querySelector('[data-panel-target="outlooks"]').click(); true`);
+  await waitFor(`document.querySelectorAll('#outlook-table tr').length >= 100`, 10000);
+  const outlookSetup = await evaluate(`(() => { const rows=[...document.querySelectorAll('#outlook-table tr')]; const set=(name,value)=>{const row=rows.find(r=>r.textContent.includes(name)); const select=row?.querySelector('[data-player-outlook]'); if(!select) return false; select.value=value; select.dispatchEvent(new Event('change',{bubbles:true})); return true;}; return {a:set('Jahmyr Gibbs','positive'),b:set('Puka Nacua','neutral')}; })()`);
+  if (!outlookSetup.a || !outlookSetup.b) throw new Error(`Could not set player outlooks: ${JSON.stringify(outlookSetup)}`);
+  await waitFor(`document.querySelector('#outlook-count')?.textContent.includes('2 rated')`, 5000);
+  await evaluate(`document.querySelector('#outlook-filter').value='rated'; document.querySelector('#outlook-filter').dispatchEvent(new Event('change',{bubbles:true})); true`);
+  await waitFor(`document.querySelectorAll('#outlook-table tr').length === 2`, 5000);
+  const outlookState = await evaluate(`({text:document.querySelector('#outlook-table')?.textContent||'',values:[...document.querySelectorAll('#outlook-table [data-player-outlook]')].map(s=>s.value)})`);
+  if (!outlookState.text.includes('Jahmyr Gibbs') || !outlookState.text.includes('Puka Nacua') || !outlookState.values.includes('positive') || !outlookState.values.includes('neutral')) throw new Error(`Unknown/Neutral outlook state failed: ${JSON.stringify(outlookState)}`);
 
   await evaluate(`document.querySelector('[data-panel-target="rankings"]').click(); true`);
   await waitFor(`document.querySelectorAll('#rankings-table tr').length >= 50`, 10000);
@@ -181,20 +155,17 @@ async function main() {
   const publicTradeDesktop = await snapshot("trade-public-desktop", 1440, 1000);
   if (publicTradeDesktop.horizontalOverflow || publicTradeDesktop.activePanel !== 'trades') throw new Error("Public trade desktop layout failed");
 
-  await evaluate(`document.querySelector('#my-league-menu-button').click(); true`);
-  await waitFor(`!document.querySelector('#my-league-menu')?.classList.contains('hidden')`, 5000);
-  const leagueMenuBefore = await evaluate(`({expanded:document.querySelector('#my-league-menu-button')?.getAttribute('aria-expanded'),required:[...document.querySelectorAll('[data-requires-league]')].map((row)=>({label:row.textContent.trim(),disabled:row.disabled})),homeDisabled:document.querySelector('[data-league-nav="myleague"]')?.disabled})`);
-  if (leagueMenuBefore.expanded !== 'true' || leagueMenuBefore.homeDisabled || leagueMenuBefore.required.some((row)=>!row.disabled)) throw new Error(`My League dropdown did not gate league tools: ${JSON.stringify(leagueMenuBefore)}`);
-  await evaluate(`document.querySelector('[data-league-nav="myleague"]').click(); true`);
-  const myLeagueBefore = await evaluate(`({hidden:document.querySelector('#league-tools-panel')?.classList.contains('hidden'),kicker:document.querySelector('#rail-context-kicker')?.textContent,settingsOpen:document.querySelector('#my-league-settings')?.open,manualHidden:document.querySelector('#manual-league-card')?.classList.contains('hidden'),tradeIdeasHidden:document.querySelector('#trade-ideas-panel')?.classList.contains('hidden'),connectText:document.querySelector('#show-espn-connect')?.textContent||''})`);
-  if (!myLeagueBefore.hidden || myLeagueBefore.kicker !== 'ESPN REQUIRED' || !myLeagueBefore.settingsOpen || !myLeagueBefore.manualHidden || !myLeagueBefore.tradeIdeasHidden || !myLeagueBefore.connectText.includes('Connect ESPN')) throw new Error(`My League should require ESPN first: ${JSON.stringify(myLeagueBefore)}`);
-  await evaluate(`document.querySelector('#show-espn-connect').click(); true`);
-  await waitFor(`document.querySelector('#my-league-settings')?.open && !document.querySelector('#espn-connect-empty')?.classList.contains('hidden')`, 5000);
+  const syncGateBefore = await evaluate(`({required:[...document.querySelectorAll('[data-requires-league]')].map((row)=>({label:row.textContent.trim(),disabled:row.disabled})),syncText:document.querySelector('#sidebar-sync-button')?.textContent||''})`);
+  if (syncGateBefore.syncText !== 'Sync league' || syncGateBefore.required.some((row)=>!row.disabled)) throw new Error(`Sidebar league tools were not gated before sync: ${JSON.stringify(syncGateBefore)}`);
+  await evaluate(`document.querySelector('#sidebar-sync-button').click(); true`);
+  await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'myleague' && document.querySelector('#my-league-settings')?.open`, 5000);
+  const myLeagueBefore = await evaluate(`({hidden:document.querySelector('#league-tools-panel')?.classList.contains('hidden'),settingsOpen:document.querySelector('#my-league-settings')?.open,manualHidden:document.querySelector('#manual-league-card')?.classList.contains('hidden'),connectVisible:!document.querySelector('#espn-connect-empty')?.classList.contains('hidden'),title:document.querySelector('#my-league-title')?.textContent||''})`);
+  if (!myLeagueBefore.hidden || !myLeagueBefore.settingsOpen || !myLeagueBefore.manualHidden || !myLeagueBefore.connectVisible || !myLeagueBefore.title.includes('Connect ESPN')) throw new Error(`League Sync entry failed: ${JSON.stringify(myLeagueBefore)}`);
 
   await evaluate(`(() => {
     OracleEspnFantasy.loadLeague = async (_input, _season, options = {}) => {
       if (!options.browserSession) { const error = new Error("This league needs an ESPN sign-in."); error.code = "ESPN_AUTH_REQUIRED"; throw error; }
-      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2,matchupPeriodCount:14},rosterSettings:{lineupLocktimeType:'INDIVIDUAL_GAME',rosterLocktimeType:'INDIVIDUAL_GAME',lineupSlotCounts:{0:1,2:2,4:2,6:1,16:1,17:1,20:7,21:1,23:1}},scoringSettings:{playerRankType:'PPR',scoringItems:[{statId:3,points:.04},{statId:4,points:4},{statId:20,points:-2},{statId:24,points:.1},{statId:25,points:6},{statId:42,points:.1},{statId:43,points:6},{statId:53,points:1}]}}, status:{currentScoringPeriod:3,finalScoringPeriod:17}, schedule:Array.from({length:12},(_,i)=>({id:i+1,matchupPeriodId:i+3,home:{teamId:1},away:{teamId:2}})), members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:12483,fullName:'Matthew Stafford'}}},{playerPoolEntry:{player:{id:4429160,fullName:"De'Von Achane"}}},{playerPoolEntry:{player:{id:4696981,fullName:'Cam Skattebo'}}},{playerPoolEntry:{player:{id:4239993,fullName:'Tee Higgins'}}},{playerPoolEntry:{player:{id:4035687,fullName:'Michael Pittman Jr.'}}},{playerPoolEntry:{player:{id:4047650,fullName:'DK Metcalf'}}},{playerPoolEntry:{player:{id:3040151,fullName:'George Kittle'}}},{playerPoolEntry:{player:{id:3055899,fullName:'Harrison Butker'}}},{playerPoolEntry:{player:{id:-16021,fullName:'Eagles D/ST'}}}]}}] } };
+      return { leagueId:'424242', season:2026, browserSession:true, raw:{ id:424242, seasonId:2026, settings:{name:'QA Sunday League',scheduleSettings:{playoffTeamCount:2,matchupPeriodCount:14},rosterSettings:{lineupLocktimeType:'INDIVIDUAL_GAME',rosterLocktimeType:'INDIVIDUAL_GAME',lineupSlotCounts:{0:1,2:2,4:2,6:1,16:1,17:1,20:7,21:1,23:1}},scoringSettings:{playerRankType:'PPR',scoringItems:[{statId:3,points:.04},{statId:4,points:4},{statId:20,points:-2},{statId:24,points:.1},{statId:25,points:6},{statId:42,points:.1},{statId:43,points:6},{statId:53,points:1}]}}, status:{currentScoringPeriod:3,finalScoringPeriod:17}, schedule:Array.from({length:12},(_,i)=>({id:i+1,matchupPeriodId:i+3,home:{teamId:1},away:{teamId:i%2?3:2}})), members:[{id:'u1',displayName:'QA User'},{id:'u2',displayName:'Opponent'},{id:'u3',displayName:'Third Manager'}], teams:[{id:1,name:'QA Champions',primaryOwner:'u1',record:{overall:{wins:2,losses:0,ties:0,pointsFor:250}},roster:{entries:[{playerPoolEntry:{player:{id:4429795,fullName:'Jahmyr Gibbs'}}},{playerPoolEntry:{player:{id:4430807,fullName:'Bijan Robinson'}}},{playerPoolEntry:{player:{id:4426515,fullName:'Puka Nacua'}}}]}},{id:2,name:'QA Rivals',primaryOwner:'u2',record:{overall:{wins:0,losses:2,ties:0,pointsFor:180}},roster:{entries:[{playerPoolEntry:{player:{id:12483,fullName:'Matthew Stafford'}}},{playerPoolEntry:{player:{id:4429160,fullName:"De'Von Achane"}}},{playerPoolEntry:{player:{id:4696981,fullName:'Cam Skattebo'}}},{playerPoolEntry:{player:{id:4239993,fullName:'Tee Higgins'}}},{playerPoolEntry:{player:{id:4035687,fullName:'Michael Pittman Jr.'}}},{playerPoolEntry:{player:{id:4047650,fullName:'DK Metcalf'}}},{playerPoolEntry:{player:{id:3040151,fullName:'George Kittle'}}},{playerPoolEntry:{player:{id:3055899,fullName:'Harrison Butker'}}},{playerPoolEntry:{player:{id:-16021,fullName:'Eagles D/ST'}}}]}},{id:3,name:'QA Outsiders',primaryOwner:'u3',record:{overall:{wins:1,losses:1,ties:0,pointsFor:210}},roster:{entries:[{playerPoolEntry:{player:{id:3918298,fullName:'Josh Allen'}}},{playerPoolEntry:{player:{id:4241389,fullName:'CeeDee Lamb'}}},{playerPoolEntry:{player:{id:4242335,fullName:'Jonathan Taylor'}}},{playerPoolEntry:{player:{id:4361307,fullName:'Trey McBride'}}},{playerPoolEntry:{player:{id:5083526,fullName:'Brandon Aubrey'}}},{playerPoolEntry:{player:{id:3929630,fullName:'Saquon Barkley'}}},{playerPoolEntry:{player:{id:4362506,fullName:'Amon-Ra St. Brown'}}},{playerPoolEntry:{player:{id:4431455,fullName:'Chase Brown'}}},{playerPoolEntry:{player:{id:-16007,fullName:'Broncos D/ST'}}}]}}] } };
     };
     document.querySelector('#espn-league-input').value='424242';
     document.querySelector('#connect-espn').click();
@@ -209,12 +180,20 @@ async function main() {
   if (espnSync.team !== 'QA Champions' || espnSync.league !== 'QA Sunday League' || espnSync.roster !== 3 || espnSync.week !== '3' || espnSync.title !== 'QA Champions command center.') throw new Error("ESPN league sync flow failed");
   const importedRules = await evaluate(`({state:document.querySelector('#manual-profile-state')?.textContent,summary:document.querySelector('#manual-profile-summary')?.textContent})`);
   if (!importedRules.state.includes('Autofilled from ESPN') || !importedRules.summary.includes('PPR')) throw new Error(`ESPN league rules did not autofill universal profile: ${JSON.stringify(importedRules)}`);
-  const connectedLeagueUi = await evaluate(`({requiredEnabled:[...document.querySelectorAll('[data-requires-league]')].every((row)=>!row.disabled),tradeIdeasVisible:!document.querySelector('#trade-ideas-panel')?.classList.contains('hidden'),tradeIdeasInLeague:Boolean(document.querySelector('#myleague #trade-ideas-panel'))})`);
-  if (!connectedLeagueUi.requiredEnabled || !connectedLeagueUi.tradeIdeasVisible || !connectedLeagueUi.tradeIdeasInLeague) throw new Error(`Connected My League menu/tools failed: ${JSON.stringify(connectedLeagueUi)}`);
-  const masthead = await evaluate(`({team:document.querySelector('#masthead-team')?.textContent,week:document.querySelector('#masthead-week')?.textContent})`);
-  if (masthead.team !== 'QA Champions' || !masthead.week.includes('Week 3')) throw new Error("Persistent league masthead did not hydrate");
+  const connectedLeagueUi = await evaluate(`({requiredEnabled:[...document.querySelectorAll('[data-requires-league]')].every((row)=>!row.disabled),tradeIdeasVisible:!document.querySelector('#trade-ideas-panel')?.classList.contains('hidden'),tradeIdeasInLeague:Boolean(document.querySelector('#myleague #trade-ideas-panel')),syncConnected:document.querySelector('#sidebar-sync-card')?.classList.contains('connected'),syncTitle:document.querySelector('#sidebar-sync-title')?.textContent||'',syncButton:document.querySelector('#sidebar-sync-button')?.textContent||''})`);
+  if (!connectedLeagueUi.requiredEnabled || !connectedLeagueUi.tradeIdeasVisible || !connectedLeagueUi.tradeIdeasInLeague || !connectedLeagueUi.syncConnected || connectedLeagueUi.syncTitle !== 'QA Champions' || connectedLeagueUi.syncButton !== 'Manage sync') throw new Error(`Connected League Sync/sidebar failed: ${JSON.stringify(connectedLeagueUi)}`);
+  await evaluate(`document.querySelector('[data-panel-target="overview"]').click(); true`);
   const connectedHome = await snapshot("home-connected-desktop", 1440, 1000);
-  if (connectedHome.horizontalOverflow) throw new Error("Connected ESPN home layout overflow");
+  if (connectedHome.horizontalOverflow || connectedHome.activePanel !== 'overview' || connectedHome.disabledLeagueTools) throw new Error(`Connected home/sidebar layout failed: ${JSON.stringify(connectedHome)}`);
+
+  await send("Page.navigate", { url: appUrl });
+  await waitFor(`document.querySelector('#player-count')?.textContent === '700' && document.querySelector('#espn-connection-state')?.textContent === 'Connected'`, 15000);
+  const persistedLeague = await evaluate(`({leagueId:document.querySelector('#espn-league-input')?.value||'',syncConnected:document.querySelector('#sidebar-sync-card')?.classList.contains('connected'),team:document.querySelector('#sidebar-sync-title')?.textContent||''})`);
+  if (persistedLeague.leagueId !== '424242' || !persistedLeague.syncConnected || persistedLeague.team !== 'QA Champions') throw new Error(`League ID/team did not persist across reload: ${JSON.stringify(persistedLeague)}`);
+  await evaluate(`document.querySelector('[data-panel-target="outlooks"]').click(); document.querySelector('#outlook-filter').value='rated'; document.querySelector('#outlook-filter').dispatchEvent(new Event('change',{bubbles:true})); true`);
+  await waitFor(`document.querySelectorAll('#outlook-table tr').length === 2`, 5000);
+  const persistedOutlooks = await evaluate(`({text:document.querySelector('#outlook-table')?.textContent||'',values:[...document.querySelectorAll('#outlook-table [data-player-outlook]')].map((row)=>row.value)})`);
+  if (!persistedOutlooks.text.includes('Jahmyr Gibbs') || !persistedOutlooks.text.includes('Puka Nacua') || !persistedOutlooks.values.includes('positive') || !persistedOutlooks.values.includes('neutral')) throw new Error(`Player outlooks did not persist across reload: ${JSON.stringify(persistedOutlooks)}`);
 
   await evaluate(`(() => { document.querySelector('[data-panel-target="player"]').click(); const s=document.querySelector('#player-search'); s.value='Jahmyr'; s.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
   const playerSearch = await evaluate(`document.querySelector('#player-select option:checked')?.textContent || ''`);
@@ -226,7 +205,7 @@ async function main() {
     why: document.querySelectorAll('#player-result .why-row').length,
     metrics: document.querySelectorAll('#player-result .metric').length
   }))()`);
-  if (!player.text.includes("PROJECTED POINTS") || !player.text.includes("LIKELY RANGE") || player.why < 1 || player.metrics < 5) throw new Error(`Friendly player result failed: ${JSON.stringify(player)}`);
+  if (!player.text.includes("PROJECTED POINTS") || !player.text.includes("LIKELY RANGE") || !player.text.includes("PLAY CALLER") || player.why < 1 || player.metrics < 5) throw new Error(`Friendly player result failed: ${JSON.stringify(player)}`);
 
   await evaluate(`document.querySelector('#history-season').value='2025'; document.querySelector('#load-intelligence').click(); true`);
   await waitFor(`Boolean(document.querySelector('#player-intelligence .outlook-card'))`, 45000);
@@ -265,7 +244,7 @@ async function main() {
   const rookieTablet = await snapshot("player-tablet", 768, 1024);
   if (rookieTablet.horizontalOverflow) throw new Error("Tablet player layout overflow");
 
-  await evaluate(`document.querySelector('#my-league-menu-button').click(); document.querySelector('[data-league-nav="draft"]').click(); true`);
+  await evaluate(`document.querySelector('[data-league-nav="draft"]').click(); true`);
   await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'draft' && !document.querySelector('#draft-league-hub')?.classList.contains('hidden')`, 15000);
   const leagueDraftShell = await evaluate(`({title:document.querySelector('#draft-title')?.textContent||'',context:document.querySelector('#draft-league-context-name')?.textContent||'',hubVisible:!document.querySelector('#draft-league-hub')?.classList.contains('hidden'),workspaceHidden:document.querySelector('#draft-launch-card')?.classList.contains('hidden'),strategyHidden:document.querySelector('#draft-strategy')?.classList.contains('hidden'),liveLabel:document.querySelector('#draft-start-live')?.textContent||'',mockLabel:document.querySelector('#draft-launch-league-mock')?.textContent||'',modeHidden:document.querySelector('#draft-mode-wrap')?.classList.contains('hidden')})`);
   if (!leagueDraftShell.title.includes('QA Champions') || !leagueDraftShell.context.includes('PPR') || !leagueDraftShell.hubVisible || !leagueDraftShell.workspaceHidden || !leagueDraftShell.strategyHidden || !leagueDraftShell.modeHidden || !leagueDraftShell.liveLabel.includes('Live Draft') || leagueDraftShell.mockLabel !== 'Mock draft') throw new Error(`My League Draft Center did not present explicit live/mock choices: ${JSON.stringify(leagueDraftShell)}`);
@@ -288,7 +267,7 @@ async function main() {
   const benchmark = await evaluate(`document.querySelector('#draft-benchmark-result').textContent`);
   if (!benchmark.includes('better projected roster')) throw new Error('Friendly draft comparison failed');
 
-  await evaluate(`document.querySelector('#my-league-menu-button').click(); document.querySelector('[data-league-nav="draft"]').click(); true`);
+  await evaluate(`document.querySelector('[data-league-nav="draft"]').click(); true`);
   await waitFor(`!document.querySelector('#draft-league-hub')?.classList.contains('hidden')`, 10000);
   await evaluate(`document.querySelector('#league-draft-position').value='2'; document.querySelector('#draft-start-live').click(); true`);
   await waitFor(`document.querySelector('#draft-mode')?.value === 'live' && !document.querySelector('#draft-live-controls')?.classList.contains('hidden') && document.querySelector('#draft-live-controls')?.open`, 10000);
@@ -317,28 +296,44 @@ async function main() {
   }))()`);
   if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP") || !lineup.text.includes("WIN CHANCE VS QA RIVALS")) throw new Error("Opponent-aware start/sit flow failed");
 
-  await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
-  await waitFor(`!document.querySelector('#trade-partner-label').classList.contains('hidden') && document.querySelectorAll('#trade-partner option').length >= 2`);
-  const tradePartnerControl = await evaluate(`({value:document.querySelector('#trade-partner')?.value,options:[...document.querySelectorAll('#trade-partner option')].map((row)=>row.textContent),giveScope:document.querySelector('#trade-give-scope')?.textContent})`);
-  if (tradePartnerControl.value || !tradePartnerControl.options.some((row)=>row.includes('QA Rivals')) || tradePartnerControl.giveScope !== 'Your roster') throw new Error(`Connected trade partner control failed: ${JSON.stringify(tradePartnerControl)}`);
-  await evaluate(`(() => { const select=document.querySelector('#trade-partner'); select.value='2'; select.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`);
-  await waitFor(`document.querySelector('#trade-get-scope')?.textContent.includes('QA Rivals') && document.querySelectorAll('#trade-get-list [data-trade-player-input]').length === 2`);
-  await evaluate(`(() => { const input=document.querySelector('#trade-get-list [data-trade-player-input]'); input.focus(); input.value='Bijan'; input.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
-  await waitFor(`document.querySelector('#trade-get-list .trade-no-suggestions')?.textContent.includes('No matching players')`);
-  await evaluate(`(() => { const input=document.querySelector('#trade-give-list [data-trade-player-input]'); input.focus(); input.value='Stafford'; input.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
-  await waitFor(`document.querySelector('#trade-give-list .trade-no-suggestions')?.textContent.includes('No matching players')`);
+  await evaluate(`document.querySelector('[data-panel-target="trades"][data-trade-mode="basic"]').click(); true`);
+  await waitFor(`document.querySelector('#trade-mode-note')?.textContent.includes('Basic Trade Value') && document.querySelector('#trade-partner-label')?.classList.contains('hidden')`, 5000);
+  const syncedBasicTrade = await evaluate(`({mode:document.querySelector('#trade-mode-note')?.textContent||'',giveScope:document.querySelector('#trade-give-scope')?.textContent,getScope:document.querySelector('#trade-get-scope')?.textContent,actorHidden:document.querySelector('#trade-league-controls')?.classList.contains('hidden')})`);
+  if (!syncedBasicTrade.mode.includes('Basic Trade Value') || syncedBasicTrade.giveScope !== 'Any player' || syncedBasicTrade.getScope !== 'Any player' || !syncedBasicTrade.actorHidden) throw new Error(`Basic Trade Value morphed after sync: ${JSON.stringify(syncedBasicTrade)}`);
   await chooseTradePlayer('give', 0, 'Jahmyr', 'Jahmyr Gibbs');
   await chooseTradePlayer('get', 0, 'Stafford', 'Matthew Stafford');
-  const restrictedTrade = await evaluate(`({partner:document.querySelector('#trade-partner option:checked')?.textContent,give:document.querySelector('#trade-give-list [data-trade-player-input]')?.value,get:document.querySelector('#trade-get-list [data-trade-player-input]')?.value})`);
-  if (!restrictedTrade.partner.includes('QA Rivals') || !restrictedTrade.give.includes('Jahmyr Gibbs') || !restrictedTrade.get.includes('Matthew Stafford')) throw new Error(`Connected typeahead selection failed: ${JSON.stringify(restrictedTrade)}`);
   await evaluate(`document.querySelector('#analyze-trade').click(); true`);
-  await waitFor(`document.querySelector('#trade-check-result')?.textContent.includes('THE CALL') && document.querySelector('#trade-check-result')?.textContent.includes('QA Rivals')`, 25000);
+  await waitFor(`document.querySelector('#trade-check-result')?.textContent.includes('STANDALONE VALUE CHECK')`, 25000);
+  const syncedBasicResult = await evaluate(`document.querySelector('#trade-check-result')?.textContent||''`);
+  if (syncedBasicResult.includes('FUTURE GAME WIN CHANCE')) throw new Error('Basic Trade Value leaked league simulation after sync');
+
+  await evaluate(`document.querySelector('[data-panel-target="trades"][data-trade-mode="league"]').click(); true`);
+  await waitFor(`!document.querySelector('#trade-league-controls')?.classList.contains('hidden') && !document.querySelector('#trade-partner-label')?.classList.contains('hidden')`, 5000);
+  const tradePartnerControl = await evaluate(`({actor:document.querySelector('#trade-actor-team option:checked')?.textContent||'',actors:[...document.querySelectorAll('#trade-actor-team option')].map((row)=>row.textContent),partners:[...document.querySelectorAll('#trade-partner option')].map((row)=>row.textContent),giveScope:document.querySelector('#trade-give-scope')?.textContent||'',mode:document.querySelector('#trade-mode-note')?.textContent||''})`);
+  if (!tradePartnerControl.actor.includes('QA Champions') || !tradePartnerControl.actors.some((row)=>row.includes('QA Outsiders')) || !tradePartnerControl.partners.some((row)=>row.includes('QA Rivals')) || tradePartnerControl.giveScope !== 'QA Champions roster' || !tradePartnerControl.mode.includes('Advanced Trade Lab')) throw new Error(`Advanced Trade Lab actor/partner control failed: ${JSON.stringify(tradePartnerControl)}`);
+  await evaluate(`(() => { const select=document.querySelector('#trade-partner'); select.value='2'; select.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`);
+  await waitFor(`document.querySelector('#trade-get-scope')?.textContent.includes('QA Rivals')`);
+  await chooseTradePlayer('give', 0, 'Jahmyr', 'Jahmyr Gibbs');
+  await chooseTradePlayer('get', 0, 'Stafford', 'Matthew Stafford');
+  await evaluate(`document.querySelector('#analyze-trade').click(); true`);
+  await waitFor(`document.querySelector('#trade-check-result')?.textContent.includes('THE CALL') && document.querySelector('#trade-check-result')?.textContent.includes('QA Rivals')`, 30000);
   const trade = await evaluate(`document.querySelector('#trade-check-result').textContent`);
-  if (!["ACCEPT", "PASS", "CLOSE CALL"].some((word) => trade.includes(word)) || !trade.includes("FUTURE GAME WIN CHANCE") || !trade.includes("QA Rivals") || !trade.includes('Jahmyr Gibbs') || !trade.includes('Matthew Stafford')) throw new Error("Opponent-aware direct trade analyzer failed");
+  if (!["ACCEPT", "PASS", "CLOSE CALL"].some((word) => trade.includes(word)) || !trade.includes("FUTURE GAME WIN CHANCE") || !trade.includes("QA Rivals")) throw new Error("User-centric Advanced Trade Lab failed");
+
+  await evaluate(`(() => { const actor=document.querySelector('#trade-actor-team'); actor.value='3'; actor.dispatchEvent(new Event('change',{bubbles:true})); const partner=document.querySelector('#trade-partner'); partner.value='2'; partner.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`);
+  await waitFor(`document.querySelector('#trade-give-scope')?.textContent.includes('QA Outsiders') && document.querySelector('#trade-get-scope')?.textContent.includes('QA Rivals')`, 5000);
+  const thirdPartyShell = await evaluate(`({giveHead:document.querySelector('[data-trade-side="give"] .trade-side-head > strong')?.textContent||'',getHead:document.querySelector('[data-trade-side="get"] .trade-side-head > strong')?.textContent||''})`);
+  if (!thirdPartyShell.giveHead.includes('QA Outsiders') || !thirdPartyShell.getHead.includes('QA Rivals')) throw new Error(`Third-party trade perspective labels failed: ${JSON.stringify(thirdPartyShell)}`);
+  await chooseTradePlayer('give', 0, 'Josh Allen', 'Josh Allen');
+  await chooseTradePlayer('get', 0, 'Stafford', 'Matthew Stafford');
+  await evaluate(`document.querySelector('#analyze-trade').click(); true`);
+  await waitFor(`document.querySelector('#trade-check-result')?.textContent.includes('LEAGUE IMPACT')`, 30000);
+  const thirdPartyTrade = await evaluate(`document.querySelector('#trade-check-result')?.textContent||''`);
+  if (!thirdPartyTrade.includes('YOUR FUTURE GAME WIN CHANCE') || !thirdPartyTrade.includes('QA OUTSIDERS') || !thirdPartyTrade.includes('QA RIVALS')) throw new Error(`Third-party league impact failed: ${thirdPartyTrade}`);
   const tradeDesktop = await snapshot("trade-desktop", 1440, 1000);
   if (tradeDesktop.horizontalOverflow) throw new Error("Trade desktop overflow");
 
-  await evaluate(`document.querySelector('#my-league-menu-button').click(); document.querySelector('[data-league-nav="trade-ideas"]').click(); true`);
+  await evaluate(`document.querySelector('[data-league-nav="trade-ideas"]').click(); true`);
   await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'myleague' && document.querySelector('#trade-ideas-panel')?.open`, 5000);
   await evaluate(`document.querySelector('#run-trades').click(); true`);
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('Trade ideas are ready')`, 35000);
@@ -359,28 +354,37 @@ async function main() {
 
   await evaluate(`document.querySelector('[data-league-jump="draft"]').click(); true`);
   const draftMobile = await snapshot("draft-mobile", 390, 844);
-  if (draftMobile.horizontalOverflow || draftMobile.tabRows !== 1 || !draftMobile.tabsScrollable) throw new Error("Draft mobile navigation/layout failed");
-  await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
+  if (draftMobile.horizontalOverflow || draftMobile.mobileHeaderDisplay !== 'grid') throw new Error(`Draft mobile shell failed: ${JSON.stringify(draftMobile)}`);
+  await evaluate(`document.querySelector('[data-panel-target="trades"][data-trade-mode="basic"]').click(); true`);
   const tradeMobile = await snapshot("trade-mobile", 390, 844);
-  if (tradeMobile.horizontalOverflow || tradeMobile.tabRows !== 1) throw new Error("Trade mobile navigation/layout failed");
+  if (tradeMobile.horizontalOverflow || tradeMobile.mobileHeaderDisplay !== 'grid') throw new Error(`Trade mobile shell failed: ${JSON.stringify(tradeMobile)}`);
   await evaluate(`document.querySelector('[data-panel-target="overview"]').click(); true`);
   const homeMobile = await snapshot("home-mobile", 390, 844);
-  if (homeMobile.horizontalOverflow || homeMobile.publicCards !== 4 || homeMobile.tabRows !== 1) throw new Error("Home mobile layout failed");
+  if (homeMobile.horizontalOverflow || homeMobile.mobileHeaderDisplay !== 'grid' || homeMobile.benchmarkRows !== 5) throw new Error(`Home mobile layout failed: ${JSON.stringify(homeMobile)}`);
+  const drawerBefore = await evaluate(`document.querySelector('.app-sidebar').getBoundingClientRect().right <= 1`);
+  if (!drawerBefore) throw new Error('Mobile sidebar should begin off canvas');
+  await evaluate(`document.querySelector('#mobile-nav-toggle').click(); true`);
+  await waitFor(`document.querySelector('.app-shell')?.classList.contains('nav-open') && document.querySelector('.app-sidebar').getBoundingClientRect().left >= -1`, 3000);
+  const drawerOpen = await evaluate(`({open:document.querySelector('.app-shell')?.classList.contains('nav-open'),left:Math.round(document.querySelector('.app-sidebar').getBoundingClientRect().left)})`);
+  if (!drawerOpen.open || drawerOpen.left < -1) throw new Error(`Mobile sidebar drawer failed: ${JSON.stringify(drawerOpen)}`);
 
-  await evaluate(`document.querySelector('#my-league-menu-button').click(); document.querySelector('[data-league-nav="myleague"]').click(); document.querySelector('#disconnect-espn').click(); true`);
+  await evaluate(`document.querySelector('#sidebar-sync-button').click(); document.querySelector('#disconnect-espn').click(); true`);
   await waitFor(`document.querySelector('#espn-connection-state')?.textContent === 'Not connected' && document.querySelector('#league-tools-panel')?.classList.contains('hidden')`, 10000);
-  const relockedLeague = await evaluate(`({title:document.querySelector('#my-league-title')?.textContent||'',toolsHidden:document.querySelector('#league-tools-panel')?.classList.contains('hidden'),manualHidden:document.querySelector('#manual-league-card')?.classList.contains('hidden'),tradeIdeasHidden:document.querySelector('#trade-ideas-panel')?.classList.contains('hidden'),settingsOpen:document.querySelector('#my-league-settings')?.open,requiredDisabled:[...document.querySelectorAll('[data-requires-league]')].every((row)=>row.disabled)})`);
-  if (!relockedLeague.toolsHidden || !relockedLeague.manualHidden || !relockedLeague.tradeIdeasHidden || !relockedLeague.settingsOpen || !relockedLeague.requiredDisabled || !relockedLeague.title.includes('Connect ESPN')) throw new Error(`My League did not relock after ESPN disconnect: ${JSON.stringify(relockedLeague)}`);
-  await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); document.querySelector('#analyze-trade').click(); true`);
+  const relockedLeague = await evaluate(`({title:document.querySelector('#my-league-title')?.textContent||'',toolsHidden:document.querySelector('#league-tools-panel')?.classList.contains('hidden'),manualHidden:document.querySelector('#manual-league-card')?.classList.contains('hidden'),tradeIdeasHidden:document.querySelector('#trade-ideas-panel')?.classList.contains('hidden'),settingsOpen:document.querySelector('#my-league-settings')?.open,requiredDisabled:[...document.querySelectorAll('[data-requires-league]')].every((row)=>row.disabled),syncConnected:document.querySelector('#sidebar-sync-card')?.classList.contains('connected')})`);
+  if (!relockedLeague.toolsHidden || !relockedLeague.manualHidden || !relockedLeague.tradeIdeasHidden || !relockedLeague.settingsOpen || !relockedLeague.requiredDisabled || relockedLeague.syncConnected || !relockedLeague.title.includes('Connect ESPN')) throw new Error(`League Sync did not relock after disconnect: ${JSON.stringify(relockedLeague)}`);
+  await evaluate(`document.querySelector('[data-panel-target="trades"][data-trade-mode="basic"]').click(); true`);
+  await chooseTradePlayer('give', 0, 'Jahmyr', 'Jahmyr Gibbs');
+  await chooseTradePlayer('get', 0, 'Stafford', 'Matthew Stafford');
+  await evaluate(`document.querySelector('#analyze-trade').click(); true`);
   await waitFor(`document.querySelector('#trade-check-result')?.textContent.includes('STANDALONE VALUE CHECK')`, 30000);
-  const postDisconnectTrade = await evaluate(`({partnerHidden:document.querySelector('#trade-partner-label')?.classList.contains('hidden'),giveScope:document.querySelector('#trade-give-scope')?.textContent,getScope:document.querySelector('#trade-get-scope')?.textContent,text:document.querySelector('#trade-check-result')?.textContent||'',leagueIdeas:Boolean(document.querySelector('#trades #trade-ideas-panel'))})`);
-  if (!postDisconnectTrade.partnerHidden || postDisconnectTrade.giveScope !== 'Any player' || postDisconnectTrade.getScope !== 'Any player' || postDisconnectTrade.text.includes('FUTURE GAME WIN CHANCE') || postDisconnectTrade.leagueIdeas) throw new Error(`Public trade did not return to standalone mode after ESPN disconnect: ${JSON.stringify(postDisconnectTrade)}`);
-  await evaluate(`document.querySelector('[data-panel-target="draft"]').click(); true`);
+  const postDisconnectTrade = await evaluate(`({partnerHidden:document.querySelector('#trade-partner-label')?.classList.contains('hidden'),giveScope:document.querySelector('#trade-give-scope')?.textContent,getScope:document.querySelector('#trade-get-scope')?.textContent,text:document.querySelector('#trade-check-result')?.textContent||''})`);
+  if (!postDisconnectTrade.partnerHidden || postDisconnectTrade.giveScope !== 'Any player' || postDisconnectTrade.getScope !== 'Any player' || postDisconnectTrade.text.includes('FUTURE GAME WIN CHANCE')) throw new Error(`Basic trade did not remain standalone after disconnect: ${JSON.stringify(postDisconnectTrade)}`);
+  await evaluate(`document.querySelector('[data-panel-target="draft"][data-draft-context="public"]').click(); true`);
   await waitFor(`document.querySelector('#draft-title')?.textContent.includes('mock draft') && document.querySelector('#draft-league-context')?.classList.contains('hidden')`, 5000);
   const postDisconnectMock = await evaluate(`({panel:document.querySelector('.panel.active')?.dataset.panel,title:document.querySelector('#draft-title')?.textContent||'',modeHidden:document.querySelector('#draft-mode-wrap')?.classList.contains('hidden')})`);
-  if (postDisconnectMock.panel !== 'draft' || !postDisconnectMock.title.includes('mock draft') || !postDisconnectMock.modeHidden) throw new Error(`Public Mock Draft was lost after ESPN disconnect: ${JSON.stringify(postDisconnectMock)}`);
+  if (postDisconnectMock.panel !== 'draft' || !postDisconnectMock.title.includes('mock draft') || !postDisconnectMock.modeHidden) throw new Error(`Public Mock Draft was lost after disconnect: ${JSON.stringify(postDisconnectMock)}`);
 
-  const result = { home, publicRankings, rankingsDesktop, publicDraftBefore, publicMock, publicDraftDesktop, publicTrade, publicTradeDesktop, noConnectionAccess, leagueMenuBefore, myLeagueBefore, relockedLeague, postDisconnectTrade, postDisconnectMock, espnSync, connectedLeagueUi, connectedHome, player, veteran, liveNews, rookie, rookieTablet, leagueDraftShell, leagueMockPreset, mockFlow, board, benchmark, liveDraftStart, liveOnClock, draftRoom, draftDesktop, lineup, trade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, errors,
+  const result = { home, homeStructure, outlookState, publicRankings, rankingsDesktop, publicDraftBefore, publicMock, publicDraftDesktop, publicTrade, publicTradeDesktop, noConnectionAccess, syncGateBefore, myLeagueBefore, relockedLeague, postDisconnectTrade, postDisconnectMock, espnSync, connectedLeagueUi, connectedHome, persistedLeague, persistedOutlooks, player, veteran, liveNews, rookie, rookieTablet, leagueDraftShell, leagueMockPreset, mockFlow, board, benchmark, liveDraftStart, liveOnClock, draftRoom, draftDesktop, lineup, syncedBasicTrade, syncedBasicResult, tradePartnerControl, trade, thirdPartyShell, thirdPartyTrade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, drawerOpen, errors,
     screenshots: [".qa-home-desktop.png", ".qa-rankings-desktop.png", ".qa-draft-public-desktop.png", ".qa-trade-public-desktop.png", ".qa-home-connected-desktop.png", ".qa-player-tablet.png", ".qa-draft-league-desktop.png", ".qa-trade-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));

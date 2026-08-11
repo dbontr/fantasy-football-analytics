@@ -295,6 +295,11 @@
 
   function chooseUserPick(players, state, settings, teamId, strategy, board, seed, context, tracker = null, oraclePolicy = null) {
     if (strategy === "oracle") return oraclePolicyPick(context || createRoomContext(players, settings, board), state, teamId, tracker, oraclePolicy);
+    if (strategy === "site-board") {
+      const sourceContext = createRoomContext(players, settings, board);
+      const sourceTracker = createTracker(sourceContext, state);
+      return cpuPick(players, state, settings, teamId, { strategy: "espn-market", board, seed, context: sourceContext, tracker: sourceTracker });
+    }
     return cpuPick(players, state, settings, teamId, { strategy, board, seed, context, tracker });
   }
 
@@ -385,7 +390,7 @@
       const summary = core.draftPickSummary(state, settings);
       const isUser = Number(summary.teamId) === userTeamId;
       const selected = isUser
-        ? chooseUserPick(options.players || [], state, settings, userTeamId, options.userStrategy || "oracle", options.board, options.seed, context, tracker, options.oraclePolicy || null)
+        ? chooseUserPick(options.players || [], state, settings, userTeamId, options.userStrategy || "oracle", options.userBoard || options.board, options.seed, context, tracker, options.oraclePolicy || null)
         : cpuPick(options.players || [], state, settings, summary.teamId, { strategy: options.opponentStrategy || "mixed", board: options.board, seed: options.seed, context, tracker });
       if (!selected) break;
       state = core.applyDraftPick(state, selected.id, settings);

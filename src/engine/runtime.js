@@ -981,15 +981,16 @@
 
   function applyRosterAction(teams, userTeamId, action) {
     const next = cloneLeagueTeams(teams);
-    const user = findTeam(next, userTeamId);
-    if (!user) throw new RangeError(`Unknown user team ${userTeamId}`);
     if (!action || action.type === "none") return next;
+    const actorTeamId = String(action.actorTeamId || userTeamId);
+    const actor = findTeam(next, actorTeamId);
+    if (!actor) throw new RangeError(`Unknown action team ${actorTeamId}`);
     const playerMap = transferPlayerMap(next);    const sendIds = new Set((action.sendPlayerIds || []).map(String));
     const receiveIds = new Set([
       ...(action.receivePlayerIds || []),
       ...(action.receivePlayers || []).map((player) => String(player.id)),
     ].map(String));
-    const sentPlayers = user.roster.filter((player) => sendIds.has(String(player.id)));
+    const sentPlayers = actor.roster.filter((player) => sendIds.has(String(player.id)));
     const explicitIncoming = new Map((action.receivePlayers || []).map((player) => [String(player.id), player]));
     let incoming = [...receiveIds].map((id) => explicitIncoming.get(id) || playerMap.get(id)).filter(Boolean);
 
@@ -1002,10 +1003,10 @@
     }
 
     const removeIds = new Set([...sendIds, ...(action.dropPlayerId ? [String(action.dropPlayerId)] : [])]);
-    user.roster = user.roster.filter((player) => !removeIds.has(String(player.id)));
+    actor.roster = actor.roster.filter((player) => !removeIds.has(String(player.id)));
     const additions = [...incoming, ...(action.addPlayer ? [action.addPlayer] : [])];
     for (const player of additions) {
-      if (player && !user.roster.some((row) => String(row.id) === String(player.id))) user.roster.push(player);
+      if (player && !actor.roster.some((row) => String(row.id) === String(player.id))) actor.roster.push(player);
     }
     return next;
   }

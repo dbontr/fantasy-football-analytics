@@ -1,0 +1,107 @@
+{
+  "version": "site-benchmark-2026.1",
+  "season": 2018,
+  "methodology": "48 paired 10/12-team PPR drafts across early/middle/late slots; common CPU room strategy/seeds; realized weekly optimal-starter points; site rows use archived public ADP ordering only.",
+  "disclaimer": "Retrospective descriptive benchmark. Not a qualification gate or future-performance guarantee.",
+  "poolPlayers": 428,
+  "rows": [
+    {
+      "name": "SnapCount",
+      "drafts": 48,
+      "meanRealizedStarterPoints": 2270.7,
+      "winRateVsSnapCount": null
+    },
+    {
+      "name": "3-site consensus",
+      "drafts": 48,
+      "meanRealizedStarterPoints": 1956.74,
+      "winRateVsSnapCount": 0.10416666666666667
+    },
+    {
+      "name": "MyFantasyLeague ADP",
+      "drafts": 48,
+      "meanRealizedStarterPoints": 1953.84,
+      "winRateVsSnapCount": 0.0625
+    },
+    {
+      "name": "FantasyData ADP",
+      "drafts": 48,
+      "meanRealizedStarterPoints": 1934.6,
+      "winRateVsSnapCount": 0.10416666666666667
+    },
+    {
+      "name": "Fantasy Football Calculator",
+      "drafts": 48,
+      "meanRealizedStarterPoints": 1878.31,
+      "winRateVsSnapCount": 0.08333333333333333
+    }
+  ],
+  "sourceCoverage": {
+    "FantasyData ADP": 428,
+    "Fantasy Football Calculator": 165,
+    "MyFantasyLeague ADP": 264,
+    "3-site consensus": 428
+  },
+  "sources": {
+    "historicalPool": {
+      "espn": {
+        "url": "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2018/segments/0/leaguedefaults/3?view=kona_player_info",
+        "sha256": "f71d455555bed1f32ef620d50cd7e14d159bdc9f75a6c4633c196f8e09c9b981",
+        "bytes": 9809577
+      },
+      "fantasyData": [
+        {
+          "position": "QB",
+          "url": "https://fantasydata.com/nfl/ppr-adp/qb?season=2018",
+          "sha256": "6d4b26e331057f90b6bf44acb7a11ea140d1243789e717bdebd0588b3b4c8f86",
+          "bytes": 190506
+        },
+        {
+          "position": "RB",
+          "url": "https://fantasydata.com/nfl/ppr-adp/rb?season=2018",
+          "sha256": "86ae37748349e1b099da6f2409263c141186e3aa829302ece8fde7d66c2e0667",
+          "bytes": 190642
+        },
+        {
+          "position": "WR",
+          "url": "https://fantasydata.com/nfl/ppr-adp/wr?season=2018",
+          "sha256": "db83fa07927063e2f7b301435683ccfd3198b61df9e08eb33c665fd7b41fc7f8",
+          "bytes": 190754
+        },
+        {
+          "position": "TE",
+          "url": "https://fantasydata.com/nfl/ppr-adp/te?season=2018",
+          "sha256": "ec730ad17a4648445c164444bf1e3d88dbb82fbb09b2aaa415c77e3318a8290f",
+          "bytes": 190568
+        },
+        {
+          "position": "K",
+          "url": "https://fantasydata.com/nfl/ppr-adp/k?season=2018",
+          "sha256": "9059e1c0a4c9ee6ed99e5d70b10cd87efc784392adb33ad2de20c9659158292a",
+          "bytes": 174298
+        },
+        {
+          "position": "DST",
+          "url": "https://fantasydata.com/nfl/ppr-adp/dst?season=2018",
+          "sha256": "5b47fc017f96d2fc086b5916995d6842f06bc15bd69b32b33c49f4a1b8e3ad50",
+          "bytes": 159952
+        }
+      ]
+    },
+    "ffc": {
+      "url": "https://fantasyfootballcalculator.com/api/v1/adp/ppr?teams=12&year=2018",
+      "sha256": "88fc642143e406522f41bdba067df30bac9ded66e1da74715950f104c1346a07",
+      "bytes": 37285
+    },
+    "mflAdp": {
+      "url": "https://api.myfantasyleague.com/2018/export?TYPE=adp&JSON=1&COUNT=500&POS=*&PERIOD=ALL&IS_PPR=1",
+      "sha256": "3e874e6137f9ffb79d7c28b40b5d57f35900c4e7ead6b74e6373b7175cf03a60",
+      "bytes": 56212
+    },
+    "mflPlayers": {
+      "url": "https://api.myfantasyleague.com/2018/export?TYPE=players&JSON=1",
+      "sha256": "02aa0ac0546a46f0a6b53d6ce2ed4583d9924baf78fd0e9e2862eaa3db852f24",
+      "bytes": 186344
+    }
+  }
+}

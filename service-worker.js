@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.21.0-draft-center-live-board";
+const CACHE = "snapcount-browser-v1.22.0-sidebar-sync-outlooks";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -32,6 +32,7 @@ const STATIC_ASSETS = [
   "./data/health-calibration-2026.json",
   "./data/rookies-2026.json",
   "./data/camp-2026.json",
+  "./data/validation/site-benchmark-2018.json",
 ];
 
 self.addEventListener("install", (event) => {

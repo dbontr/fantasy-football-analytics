@@ -19,10 +19,15 @@ test("coaching profile is context-only until its mean effect earns validation", 
     confidence: 0.8,
     newStaff: true,
     headCoach: "Example Coach",
+    offensiveCoordinator: "Example OC",
+    offensivePlayCaller: "Example Caller",
     schemeLabel: "spread",
   });
   assert.equal(evidence["coaching.mean_delta"], undefined);
   assert.equal(evidence["coaching.staff_context"].newStaff, true);
+  assert.equal(evidence["coaching.staff_context"].playCaller, "Example Caller");
+  assert.equal(evidence["coaching.playcaller_context"].playCaller, "Example Caller");
+  assert.equal(evidence["coaching.playcaller_context"].value, 0);
   assert.match(evidence["coaching.staff_context"].source, /direct mean effect disabled/i);
 });
 

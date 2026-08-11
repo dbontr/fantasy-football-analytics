@@ -299,3 +299,21 @@ test("final live score overrides forecast uncertainty exactly", () => {
   assert.equal(settled.availability.probability, 1);
   assert.equal(settled.finalScoreApplied, true);
 });
+
+test("future-win actions can apply a trade between two other teams while evaluating the user", () => {
+  const settings = { slots: { QB: 1, RB: 0, WR: 0, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 1 } };
+  const user = makePlayer("observer-qb", "QB", "DET", 15, { projectionStdDev: 0.5 });
+  const strong = makePlayer("actor-strong", "QB", "GB", 24, { projectionStdDev: 0.5 });
+  const weak = makePlayer("partner-weak", "QB", "MIN", 7, { projectionStdDev: 0.5 });
+  const result = engine.evaluateFutureWinActions({
+    teams: [{ teamId: "1", roster: [user] }, { teamId: "2", roster: [strong] }, { teamId: "3", roster: [weak] }],
+    userTeamId: "1", settings, startWeek: 1, regularSeasonEnd: 2,
+    fantasySchedule: { 1: [["1", "2"]], 2: [["1", "3"]] }, simulations: 1200, seed: "third-party-trade",
+    actions: [{ id: "others-trade", type: "trade", actorTeamId: "2", opponentTeamId: "3", sendPlayerIds: ["actor-strong"], receivePlayerIds: ["partner-weak"] }],
+  });
+  const hold = result.actions.find((row) => row.id === "hold");
+  const trade = result.actions.find((row) => row.id === "others-trade");
+  assert.equal(trade.action.actorTeamId, "2");
+  assert.ok(trade.outcome.matchupWinProbabilities.find((row) => row.week === 1).winProbability > hold.outcome.matchupWinProbabilities.find((row) => row.week === 1).winProbability);
+  assert.ok(trade.outcome.matchupWinProbabilities.find((row) => row.week === 2).winProbability < hold.outcome.matchupWinProbabilities.find((row) => row.week === 2).winProbability);
+});
