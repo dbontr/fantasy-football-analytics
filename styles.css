@@ -3074,6 +3074,22 @@ footer { border-top-color: var(--line); color: #8a93a0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* SnapCount UI system 2026.9: one visual language across every workflow */
+:root {
+  --sc-navy: #12365f;
+  --sc-navy-deep: #0d2949;
+  --sc-blue: #1268d7;
+  --sc-canvas: #f6f8fc;
+  --sc-surface: #ffffff;
+  --sc-surface-soft: #f8faff;
+  --sc-border: #dce4ef;
+  --sc-border-strong: #c9d5e5;
+  --sc-radius-control: 12px;
+  --sc-radius-card: 18px;
+  --sc-radius-panel: 22px;
+  --sc-shadow: 0 1px 2px rgba(16,35,61,.04), 0 8px 28px rgba(16,35,61,.045);
+}
+
 /* single-sidebar refinement */
 :root { --radius: 16px; --radius-sm: 12px; --radius-lg: 20px; }
 .app-shell { grid-template-columns: 252px minmax(0, 1fr); }
@@ -3136,4 +3152,342 @@ input, select, textarea { border-radius: 12px !important; }
 @media (max-width: 900px) { .workspace-header { grid-template-columns: auto minmax(0,1fr); } .workspace-actions { display: none; } }
 .table-module, .draft-launch-card, .season-controls, .league-settings-details, .trade-checker, .intelligence-module { border-radius: 16px !important; overflow: hidden; }
 .toolbar, .manual-profile-primary, .draft-primary-controls { border-radius: 14px; }
-.draft-team-column header, .table-header { border-radius: 0; }
+.draft-team-column header { border-radius: 14px 14px 0 0; }
+.table-header { border-radius: 18px 18px 0 0; }
+
+/* universal product surfaces: remove legacy square styling */
+body { background: var(--sc-canvas); }
+.app-sidebar.context-sidebar {
+  border-right: 0;
+  background: var(--sc-navy);
+  color: #fff;
+  box-shadow: 4px 0 22px rgba(13,41,73,.12);
+}
+.sidebar-brand { border-bottom-color: rgba(255,255,255,.13); color: #fff; }
+.sidebar-brand small, .sidebar-season { color: var(--sidebar-muted, #aac0da); }
+.sidebar-group > span { color: #91acd0; }
+.sidebar-nav-item { color: #e6eef8; }
+.sidebar-nav-item .sidebar-icon { color: #a9bdd8; }
+.sidebar-nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.sidebar-nav-item.active { background: #fff; color: var(--sc-navy); box-shadow: 0 5px 16px rgba(4,19,38,.12); }
+.sidebar-nav-item.active .sidebar-icon { color: var(--sc-blue); }
+.sidebar-bottom { border-top-color: rgba(255,255,255,.13); }
+.sidebar-settings { color: #d9e5f4; }
+.sidebar-settings:hover { background: rgba(255,255,255,.08); color: #fff; }
+.sidebar-runtime { color: #8fa8c7; }
+.sidebar-sync { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: #fff; }
+.sidebar-sync:hover { border-color: rgba(255,255,255,.34); background: rgba(255,255,255,.13); }
+.sidebar-sync.connected { border-color: rgba(126,211,164,.38); background: rgba(67,146,104,.2); color: #fff; }
+.sidebar-sync-copy small { color: #b9cbe1; }
+.sidebar-sync.connected .sidebar-sync-copy small { color: #c9ead7; }
+.sidebar-sync-chevron { color: #b9cbe1; }
+
+:root {
+  --bg: var(--sc-canvas);
+  --surface: var(--sc-surface);
+  --surface-2: var(--sc-surface-soft);
+  --surface-3: #eef3fa;
+  --ink: #172033;
+  --muted: #627086;
+  --faint: #8b97a9;
+  --line: var(--sc-border);
+  --field: #fbfcfe;
+  --field-line: var(--sc-border-strong);
+  --signal: var(--sc-blue);
+  --signal-2: var(--sc-navy);
+  --accent: var(--sc-blue);
+}
+
+.module, .result-space, .public-top-card, .league-connect-card, .manual-league-card,
+.trade-side, .trade-verdict, .trade-summary, .decision-card, .draft-mode-card,
+.draft-strategy-card, .draft-room-section, .draft-recent-pick, .draft-team-column,
+.draft-room-pick, .league-settings-details, .trade-checker, .intelligence-module,
+.season-controls, .optional-tool, .friendly-promise, .rail-panel, .manual-profile-primary,
+.draft-launch-card, .outlook-explainer {
+  border: 1px solid var(--sc-border) !important;
+  border-radius: var(--sc-radius-card) !important;
+  background: var(--sc-surface) !important;
+  box-shadow: var(--sc-shadow) !important;
+}
+
+/* Controls and small surfaces share one radius/interaction model. */
+.primary, .secondary, .ghost, .mini-button, button:not(.sidebar-nav-item):not(.sidebar-settings):not(.sidebar-sync) {
+  border-radius: var(--sc-radius-control);
+}
+input, select, textarea {
+  min-height: 42px;
+  border: 1px solid var(--sc-border-strong) !important;
+  border-radius: var(--sc-radius-control) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+textarea { min-height: 110px; }
+input:hover, select:hover, textarea:hover { border-color: #aabbd2 !important; }
+input:focus, select:focus, textarea:focus { border-color: var(--sc-blue) !important; box-shadow: 0 0 0 3px rgba(18,104,215,.1) !important; }
+.toolbar, .draft-primary-controls, .trade-league-controls, .trade-mode-bar {
+  border: 1px solid var(--sc-border) !important;
+  border-radius: var(--sc-radius-card) !important;
+  background: var(--sc-surface) !important;
+  box-shadow: none !important;
+}
+.metric, .why-box, .lineup-row, .outlook-card, .news-item, .source-row {
+  border: 1px solid #e5eaf2 !important;
+  border-radius: 14px !important;
+  background: var(--sc-surface-soft) !important;
+  box-shadow: none !important;
+}
+.pos-pill, .rookie-pill, .connection-state, .season-pill, .outlook-chip { border-radius: 999px !important; }
+
+/* Tables read as one calm surface instead of a grid of boxes. */
+.table-module { overflow: hidden; }
+.table-header {
+  padding: 18px 20px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--sc-border) !important;
+  border-radius: 18px 18px 0 0 !important;
+  background: #fff !important;
+}
+.table-wrap { overflow: auto; border-radius: 0 0 18px 18px; }
+table { border-collapse: separate; border-spacing: 0; }
+th { background: #f7f9fc; color: #708097; }
+th, td { border-right: 0 !important; border-bottom: 1px solid #e9edf3 !important; }
+tbody tr:last-child td { border-bottom: 0 !important; }
+tbody tr:hover td { background: #fafcff; }
+
+/* Expanders use the same component language as cards. */
+details { border-radius: var(--sc-radius-card); }
+details > summary { border-radius: var(--sc-radius-card); }
+details[open] > summary { border-radius: 18px 18px 0 0; border-bottom: 1px solid var(--sc-border); }
+.advanced-details, .optional-tool, .league-settings-details { overflow: hidden; }
+.advanced-details > summary, .optional-tool > summary, .league-settings-details > summary {
+  min-height: 52px;
+  padding: 14px 18px;
+  background: #fff;
+}
+
+.home-tools-v2 button, .quick-action { border-radius: var(--sc-radius-card) !important; }
+.action-row { gap: 10px; }
+.section-heading { margin-bottom: 22px; }
+.section-heading h1 { max-width: 880px; line-height: 1.04; }
+.section-heading > p { max-width: 720px; line-height: 1.55; }
+.panel { padding-top: 30px; }
+
+/* My Team: sidebar already owns navigation, so the page only shows team state and actions. */
+#myleague .home-dashboard { grid-template-columns: minmax(0, 1fr) !important; gap: 18px; }
+#myleague .home-feed { width: min(100%, 980px); margin: 0 auto; }
+#myleague .home-rail { display: none !important; }
+#myleague .league-command-strip { display: none !important; }
+#myleague .desk-headline {
+  margin-bottom: 18px;
+  padding: 4px 2px 12px;
+  border: 0;
+  background: transparent;
+}
+#myleague .desk-headline h1 { max-width: 760px; font-size: clamp(34px, 4vw, 50px); line-height: 1.03; }
+#myleague .desk-headline > p { max-width: 660px; }
+#myleague .league-settings-details,
+#myleague #trade-ideas-panel { margin-top: 14px; border-radius: var(--sc-radius-card) !important; }
+#myleague .league-setup-grid { gap: 14px; padding: 18px; }
+#myleague .manual-profile-primary { padding: 18px; }
+#myleague .connect-actions { gap: 10px; }
+#myleague .privacy-note { line-height: 1.5; }
+#myleague #trade-result { margin-top: 14px; }
+
+/* Remove legacy decorative strips and squared nested separators. */
+.scoreboard, .source-list, .gap-grid { gap: 10px; background: transparent !important; border: 0 !important; }
+.scoreboard article, .gap-grid > div { border: 0 !important; border-radius: 14px; background: var(--sc-surface-soft); }
+.source-row { margin-bottom: 6px; }
+.or-rule { margin: 6px 0; color: #8793a5; }
+
+/* Draft Assistant: progressive disclosure, not a wall of settings. */
+#draft .draft-heading { margin-bottom: 16px; }
+#draft .draft-heading > p { max-width: 700px; }
+#draft .draft-league-context {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #eaf3ff !important;
+  box-shadow: none !important;
+}
+#draft .draft-mode-choice { max-width: 920px; margin: 6px 0 22px; gap: 16px; }
+#draft .draft-mode-card { min-height: 0; padding: 22px; }
+#draft .draft-mode-card h2 { margin-bottom: 7px; }
+#draft .draft-mode-card p { max-width: 520px; line-height: 1.5; }
+#draft .draft-launch-card { padding: 20px; }
+#draft .draft-primary-controls { gap: 12px; padding: 16px; background: #f8faff !important; }
+#draft .advanced-details { margin-top: 12px; border: 1px solid var(--sc-border); background: #fff; }
+#draft .draft-strategy-card { padding: 20px; }
+#draft .draft-room-section { padding: 18px; }
+#draft .draft-room-toolbar { gap: 10px; }
+#draft .draft-team-column { background: #fbfcff !important; box-shadow: none !important; }
+#draft .draft-room-pick, #draft .draft-recent-pick { background: #f7f9fd !important; box-shadow: none !important; }
+#draft .pick-history { border-radius: 14px; }
+#draft .draft-alt { border-radius: 12px; background: #f7f9fd; }
+#draft .draft-strategy-metrics > div { border-radius: 12px; background: #f7f9fd; }
+
+@media (max-width: 900px) {
+  #draft .draft-mode-choice { grid-template-columns: 1fr; }
+  #draft .draft-primary-controls { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 560px) {
+  #draft .draft-primary-controls { grid-template-columns: 1fr; }
+}
+
+/* Player, lineup and waiver pages use a simple control -> answer hierarchy. */
+#player .workbench { grid-template-columns: minmax(260px, 300px) minmax(0,1fr); gap: 18px; }
+#player .friendly-controls { align-self: start; padding: 18px; }
+#player .friendly-controls > * + * { margin-top: 2px; }
+#player .result-space { min-height: 320px; }
+#player .intelligence-module { margin-top: 18px; }
+#lineup .toolbar, #waivers .toolbar { max-width: 980px; padding: 16px 18px; }
+#lineup .roster-strip { margin: 14px 0; gap: 8px; }
+.roster-chip { border: 1px solid var(--sc-border); border-radius: 999px; background: #fff; }
+#lineup .result-space, #waivers .result-space { min-height: 260px; }
+.empty-state { background: #fff !important; color: #7a8799; }
+.empty-state p { max-width: 520px; line-height: 1.55; }
+
+/* Trade Analyzer: two clear sides, one action row. */
+#trades .trade-checker { grid-template-columns: minmax(0,1fr) 42px minmax(0,1fr); gap: 14px; padding: 18px; }
+#trades .trade-league-controls { grid-column: 1 / -1; margin: 0 0 2px; padding: 14px 16px; }
+#trades .trade-side { padding: 16px; border: 0 !important; background: #f8faff !important; box-shadow: none !important; }
+#trades .trade-arrow { width: 38px; height: 38px; align-self: center; border-radius: 50%; background: #edf3fb; color: var(--sc-blue); }
+#trades .trade-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: end; gap: 10px; padding-top: 16px; border-top: 1px solid var(--sc-border); }
+#trades .trade-actions label { min-width: 120px; }
+#trades .trade-typeahead { border-radius: 12px; }
+#trades .trade-typeahead-results { border-radius: 12px; box-shadow: 0 12px 30px rgba(18,38,65,.12); }
+#trades .trade-player-row { border-radius: 11px; }
+#trades #trade-check-result { margin-top: 18px; }
+
+@media (max-width: 760px) {
+  #player .workbench { grid-template-columns: 1fr; }
+  #trades .trade-checker { grid-template-columns: 1fr; }
+  #trades .trade-arrow { transform: rotate(90deg); justify-self: center; }
+  #trades .trade-actions { grid-column: 1; flex-wrap: wrap; justify-content: stretch; }
+  #trades .trade-actions > * { flex: 1 1 150px; }
+}
+
+/* Rankings and outlooks share a quiet list-first layout. */
+#rankings .rankings-toolbar, #outlooks .outlook-toolbar { padding: 16px 18px; gap: 12px; }
+#rankings .rankings-module, #outlooks .outlook-module { margin-top: 16px; }
+#outlooks .outlook-explainer { margin-bottom: 14px; padding: 16px 18px; box-shadow: none !important; }
+#outlooks .outlook-table select { min-height: 38px; }
+
+/* Season Outlook keeps setup secondary to the answer. */
+#league .league-grid { grid-template-columns: minmax(260px, 310px) minmax(0,1fr); gap: 18px; align-items: start; }
+#league .season-controls { padding: 18px; box-shadow: none !important; }
+#league .season-controls .advanced-details { margin-top: 10px; border: 1px solid var(--sc-border); }
+#league .season-connection-summary { border-radius: 14px; background: #f4f8fd; }
+#league .result-space { min-height: 320px; }
+
+/* Home stays light: large idea, three tools, one evidence surface. */
+#overview .home-hero-v2 { max-width: 980px; }
+#overview .home-benefits span { border-radius: 999px; }
+#overview .home-tools-v2 { gap: 14px; }
+#overview .home-tools-v2 button { border: 1px solid var(--sc-border); background: #fff; box-shadow: none; }
+#overview .home-tools-v2 button:hover { border-color: #b7c8dd; box-shadow: 0 8px 24px rgba(18,42,72,.06); }
+#overview .home-benchmark-v2 { border: 1px solid var(--sc-border); border-radius: var(--sc-radius-panel); background: #fff; box-shadow: var(--sc-shadow); }
+.benchmark-track { border-radius: 999px; }
+.benchmark-fill { border-radius: 999px; }
+
+/* Miscellaneous generated UI must not fall back to the old square language. */
+.friendly-verdict, .friendly-result-head, .trade-mode-note, .playcaller-context,
+.draft-strategy-call, .draft-room-status, .draft-room-summary, .draft-room-empty,
+.season-connection-summary, .trust-row, .connect-row, .news-pulse > *, .fact-list > div {
+  border-radius: 14px !important;
+}
+.quick-action > span, .friendly-icon, .brand-mark { border-radius: 12px !important; }
+
+@media (max-width: 900px) {
+  #league .league-grid { grid-template-columns: 1fr; }
+  .app-sidebar.context-sidebar { background: var(--sc-navy); }
+}
+
+/* Status and connection states use the same calm surface language. */
+.app-status:not(:empty) {
+  width: min(calc(100% - 36px), 920px) !important;
+  margin: 12px auto 0 !important;
+  padding: 10px 14px !important;
+  border: 1px solid #ccdaec !important;
+  border-radius: 14px !important;
+  background: #f2f7fd !important;
+  box-shadow: 0 5px 18px rgba(18,42,72,.05) !important;
+  color: #31577f !important;
+  text-align: left !important;
+}
+.app-status.good:not(:empty) { border-color: #c8e5d3 !important; background: #f0f9f4 !important; color: #2e6d4b !important; }
+.app-status.error:not(:empty) { border-color: #f0cec9 !important; background: #fff4f2 !important; color: #9b4840 !important; }
+.league-connect-card { background-image: none !important; }
+.league-connect-card::before { display: none !important; }
+.league-connect-card h2 { color: var(--ink) !important; }
+.provider-badge { border-radius: 999px !important; }
+
+/* Rookie/camp modules no longer carry the old cream/gold treatment. */
+.rookie-pill { border-color: #bfd3ec !important; background: #eef5fd !important; color: #285d96 !important; }
+.rookie-chip, .rookie-history-note strong { color: #285d96 !important; }
+.rookie-profile {
+  border: 1px solid var(--sc-border) !important;
+  border-radius: var(--sc-radius-card) !important;
+  background: #f8faff !important;
+  box-shadow: none !important;
+}
+.rookie-profile .metric { background: #fff !important; }
+.camp-pill { border-radius: 999px !important; padding: 2px 7px; }
+.camp-read { border: 1px solid var(--sc-border) !important; border-radius: 16px; background: #f8faff !important; }
+.camp-facts span:last-child { border-bottom: 0; }
+
+#draft .draft-strategy-body { gap: 12px; padding: 12px; }
+#draft .draft-strategy-call { padding: 16px; border: 0 !important; border-radius: 14px; background: #fff; }
+#draft .draft-strategy-context { padding: 16px; border-radius: 14px; background: #f7f9fd; }
+#draft .draft-strategy-metrics { gap: 8px; }
+
+.metric-grid { gap: 10px !important; border: 0 !important; background: transparent !important; }
+.metric:first-child { box-shadow: none !important; }
+.trade-partner { padding: 0 0 10px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; }
+.trade-partner select { margin-top: 6px; }
+.rankings-table button, .outlook-table button, table .mini-button {
+  border-color: var(--sc-border-strong) !important;
+  background: #fff !important;
+  color: var(--sc-navy) !important;
+  box-shadow: none !important;
+}
+.rankings-table button:hover, .outlook-table button:hover, table .mini-button:hover { border-color: #9db8d9 !important; background: #f4f8fd !important; }
+
+/* Sidebar destinations behave like real pages, not anchors inside My Team. */
+#myleague.trade-ideas-active .desk-headline,
+#myleague.trade-ideas-active #my-league-settings,
+#myleague.trade-ideas-active .system-details { display: none !important; }
+#myleague.trade-ideas-active .home-feed { width: min(100%, 980px); padding-top: 28px; }
+#myleague.trade-ideas-active #trade-ideas-panel { margin-top: 0; }
+#myleague.trade-ideas-active #trade-ideas-panel > summary { display: none; }
+#myleague.trade-ideas-active #trade-ideas-panel[open] { padding-top: 0; }
+
+/* Avoid desktop horizontal scroll in compact result tables. */
+#outlooks .outlook-table { width: 100%; min-width: 0; table-layout: fixed; }
+#outlooks .outlook-table th:nth-child(1) { width: 46px; }
+#outlooks .outlook-table th:nth-child(2) { width: 24%; }
+#outlooks .outlook-table th:nth-child(3) { width: 22%; }
+#outlooks .outlook-table .outlook-chip { display: none; }
+#outlooks .outlook-table select { width: 100%; min-width: 0; }
+#league .table-wrap { overflow-x: hidden; }
+#league table { width: 100%; min-width: 0; table-layout: fixed; }
+#league th, #league td { padding: 10px 8px; white-space: normal; overflow-wrap: anywhere; }
+#league th { font-size: 9px; line-height: 1.25; }
+#league td { font-size: 12px; }
+
+#myleague.trade-ideas-active #trade-ideas-panel > summary {
+  display: flex !important;
+  pointer-events: none;
+  cursor: default;
+  min-height: 72px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--sc-border);
+  border-radius: 18px 18px 0 0 !important;
+}
+#myleague.trade-ideas-active #trade-ideas-panel > summary::marker,
+#myleague.trade-ideas-active #trade-ideas-panel > summary::-webkit-details-marker { display: none; content: ""; }
+#myleague.trade-ideas-active #trade-ideas-panel > summary strong { font-size: 22px; }
+#myleague.trade-ideas-active #run-trades { margin: 18px 20px 0; }
+#myleague.trade-ideas-active #trade-result { margin: 14px 20px 20px; box-shadow: none !important; }

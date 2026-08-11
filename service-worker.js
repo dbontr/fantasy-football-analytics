@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.24.0-single-sidebar-curves";
+const CACHE = "snapcount-browser-v1.25.0-unified-clean-ui";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

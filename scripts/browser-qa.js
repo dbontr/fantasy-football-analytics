@@ -67,9 +67,16 @@ async function main() {
     await delay(250);
     const metrics = await evaluate(`(() => {
       const context=document.querySelector('.context-sidebar'); const rail=document.querySelector('.global-rail'); const header=document.querySelector('.workspace-header');
-      return { playerCount:document.querySelector('#player-count')?.textContent, activePanel:document.querySelector('.panel.active')?.dataset.panel, viewportWidth:innerWidth, documentWidth:document.documentElement.scrollWidth, horizontalOverflow:document.documentElement.scrollWidth > innerWidth + 1, contextDisplay:context ? getComputedStyle(context).display : 'missing', contextPosition:context ? getComputedStyle(context).position : 'missing', contextTransform:context ? getComputedStyle(context).transform : 'missing', railDisplay:rail ? getComputedStyle(rail).display : 'missing', contextNavItems:document.querySelectorAll('.context-nav-item').length, sidebarWidth:context ? Math.round(context.getBoundingClientRect().width) : 0, syncBottom:document.querySelector('#sidebar-sync-button') ? Math.round(document.querySelector('#sidebar-sync-button').getBoundingClientRect().bottom) : 0, visibleLeagueNav:document.querySelectorAll('.context-nav .league-only:not(.hidden)').length, workspaceHeaderDisplay:header ? getComputedStyle(header).display : 'missing', benchmarkRows:document.querySelectorAll('#home-benchmark-chart .benchmark-row').length, background:getComputedStyle(document.body).backgroundColor, brandLoaded:Boolean(document.querySelector('.sidebar-brand img')?.complete && document.querySelector('.sidebar-brand img')?.naturalWidth > 0), title:document.title, primaryBackground:getComputedStyle(document.querySelector('.primary')).backgroundColor, topbar:Boolean(document.querySelector('.topbar')), legacyBrandVisible:/Oracle/i.test(document.body.innerText) };
+      const surfaceSelector='.module,.result-space,.toolbar,.trade-side,.trade-checker,.draft-mode-card,.draft-strategy-card,.draft-room-section,.league-settings-details,.advanced-details,.optional-tool,.metric,.why-box,.lineup-row,.outlook-card,.news-item,.season-controls,.rookie-profile,.camp-read';
+      const visibleSurfaces=[...document.querySelectorAll(surfaceSelector)].filter((node)=>{const rect=node.getBoundingClientRect();const cs=getComputedStyle(node);return rect.width>=2&&rect.height>=2&&cs.display!=='none'&&cs.visibility!=='hidden';});
+      const sharpSurfaces=visibleSurfaces.filter((node)=>parseFloat(getComputedStyle(node).borderTopLeftRadius||'0')<10);
+      const legacyWarmColors=new Set(['rgb(255, 250, 240)','rgb(255, 253, 248)','rgb(248, 244, 235)','rgb(248, 250, 247)']);
+      const legacyWarmSurfaces=visibleSurfaces.filter((node)=>legacyWarmColors.has(getComputedStyle(node).backgroundColor));
+      return { playerCount:document.querySelector('#player-count')?.textContent, activePanel:document.querySelector('.panel.active')?.dataset.panel, viewportWidth:innerWidth, documentWidth:document.documentElement.scrollWidth, horizontalOverflow:document.documentElement.scrollWidth > innerWidth + 1, contextDisplay:context ? getComputedStyle(context).display : 'missing', contextPosition:context ? getComputedStyle(context).position : 'missing', contextTransform:context ? getComputedStyle(context).transform : 'missing', railDisplay:rail ? getComputedStyle(rail).display : 'missing', contextNavItems:document.querySelectorAll('.context-nav-item').length, sidebarWidth:context ? Math.round(context.getBoundingClientRect().width) : 0, sidebarBackground:context ? getComputedStyle(context).backgroundColor : 'missing', syncBottom:document.querySelector('#sidebar-sync-button') ? Math.round(document.querySelector('#sidebar-sync-button').getBoundingClientRect().bottom) : 0, visibleLeagueNav:document.querySelectorAll('.context-nav .league-only:not(.hidden)').length, workspaceHeaderDisplay:header ? getComputedStyle(header).display : 'missing', benchmarkRows:document.querySelectorAll('#home-benchmark-chart .benchmark-row').length, background:getComputedStyle(document.body).backgroundColor, brandLoaded:Boolean(document.querySelector('.sidebar-brand img')?.complete && document.querySelector('.sidebar-brand img')?.naturalWidth > 0), title:document.title, primaryBackground:getComputedStyle(document.querySelector('.primary')).backgroundColor, topbar:Boolean(document.querySelector('.topbar')), sharpSurfaceCount:sharpSurfaces.length, sharpSurfaceClasses:sharpSurfaces.slice(0,8).map((node)=>node.className), legacyWarmSurfaceCount:legacyWarmSurfaces.length, legacyWarmSurfaceClasses:legacyWarmSurfaces.slice(0,8).map((node)=>node.className), legacyBrandVisible:/Oracle/i.test(document.body.innerText) };
     })()`);
     if (metrics.legacyBrandVisible) throw new Error(`Legacy Oracle branding is visible in ${name}`);
+    if (metrics.sharpSurfaceCount) throw new Error(`Legacy sharp surfaces remain in ${name}: ${JSON.stringify(metrics.sharpSurfaceClasses)}`);
+    if (metrics.legacyWarmSurfaceCount) throw new Error(`Legacy warm-theme surfaces remain in ${name}: ${JSON.stringify(metrics.legacyWarmSurfaceClasses)}`);
     if (captureScreenshots) { const capture=await send("Page.captureScreenshot", { format:"png", captureBeyondViewport:false }); fs.writeFileSync(`.qa-${name}.png`, Buffer.from(capture.data,"base64")); }
     return metrics;
   }
@@ -95,7 +102,7 @@ async function main() {
   if (profileState.mode !== "serve-frozen-qualified-analytics" || gradeDrift || profileState.startSit !== "raw-live-ppr-exact-lineup" || profileState.draft !== "segmented-qualified" || profileState.objective !== "maximize-future-head-to-head-wins" || profileState.objectiveStatus !== "prospective-overlay") throw new Error("Frozen qualified analytics profile / future-win objective did not load");
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.activePanel !== "overview" || home.contextNavItems !== 11 || home.contextPosition !== "sticky" || home.railDisplay !== "missing" || home.sidebarWidth < 240 || home.sidebarWidth > 270) throw new Error(`Single desktop sidebar failed: ${JSON.stringify(home)}`);
-  if (home.horizontalOverflow || home.background !== "rgb(247, 248, 251)") throw new Error("SnapCount canvas/layout check failed");
+  if (home.horizontalOverflow || home.background !== "rgb(246, 248, 252)" || home.sidebarBackground !== "rgb(18, 54, 95)") throw new Error(`SnapCount canvas/sidebar layout check failed: ${JSON.stringify(home)}`);
   if (!home.brandLoaded || !home.title.startsWith("SnapCount")) throw new Error("SnapCount branding check failed");
   if (home.primaryBackground !== "rgb(18, 104, 215)") throw new Error(`Primary action is not using the new blue palette: ${home.primaryBackground}`);
   if (home.benchmarkRows !== 6) throw new Error(`Home historical comparison did not render six sources: ${home.benchmarkRows}`);
@@ -115,6 +122,9 @@ async function main() {
   await waitFor(`document.querySelectorAll('#outlook-table tr').length === 2`, 5000);
   const outlookState = await evaluate(`({text:document.querySelector('#outlook-table')?.textContent||'',values:[...document.querySelectorAll('#outlook-table [data-player-outlook]')].map(s=>s.value)})`);
   if (!outlookState.text.includes('Jahmyr Gibbs') || !outlookState.text.includes('Puka Nacua') || !outlookState.values.includes('positive') || !outlookState.values.includes('neutral')) throw new Error(`Unknown/Neutral outlook state failed: ${JSON.stringify(outlookState)}`);
+  const outlookDesktop = await snapshot("outlooks-desktop", 1440, 1000);
+  const outlookTableFits = await evaluate(`document.querySelector('#outlooks .table-wrap').scrollWidth <= document.querySelector('#outlooks .table-wrap').clientWidth + 1`);
+  if (outlookDesktop.horizontalOverflow || !outlookTableFits) throw new Error('Outlooks desktop overflow');
 
   await evaluate(`document.querySelector('[data-panel-target="rankings"]').click(); true`);
   await waitFor(`document.querySelectorAll('#rankings-table tr').length >= 50`, 10000);
@@ -179,14 +189,19 @@ async function main() {
   await evaluate(`document.querySelector('#espn-team-select').value='1'; document.querySelector('#use-espn-team').click(); true`);
   await waitFor(`!document.querySelector('#league-command-strip').classList.contains('hidden') && document.querySelectorAll('#roster-strip .roster-chip').length===3`, 10000);
   const espnSync = await evaluate(`(() => ({team:document.querySelector('#espn-connected-team').textContent,league:document.querySelector('#home-league-label').textContent,roster:document.querySelectorAll('#roster-strip .roster-chip').length,week:document.querySelector('#lineup-week').value,title:document.querySelector('#my-league-title')?.textContent||''}))()`);
-  if (espnSync.team !== 'QA Champions' || espnSync.league !== 'QA Sunday League' || espnSync.roster !== 3 || espnSync.week !== '3' || espnSync.title !== 'QA Champions command center.') throw new Error("ESPN league sync flow failed");
+  if (espnSync.team !== 'QA Champions' || espnSync.league !== 'QA Sunday League' || espnSync.roster !== 3 || espnSync.week !== '3' || espnSync.title !== 'QA Champions') throw new Error("ESPN league sync flow failed");
   const importedRules = await evaluate(`({state:document.querySelector('#manual-profile-state')?.textContent,summary:document.querySelector('#manual-profile-summary')?.textContent})`);
   if (!importedRules.state.includes('Autofilled from ESPN') || !importedRules.summary.includes('PPR')) throw new Error(`ESPN league rules did not autofill universal profile: ${JSON.stringify(importedRules)}`);
   const connectedLeagueUi = await evaluate(`({shellConnected:document.querySelector('.app-shell')?.classList.contains('league-connected'),visibleLeagueNav:document.querySelectorAll('.context-nav .league-only:not(.hidden)').length,tradeIdeasVisible:!document.querySelector('#trade-ideas-panel')?.classList.contains('hidden'),tradeIdeasInLeague:Boolean(document.querySelector('#myleague #trade-ideas-panel')),switcherConnected:document.querySelector('#sidebar-sync-button')?.classList.contains('connected'),syncTitle:document.querySelector('#sidebar-sync-title')?.textContent||'',syncCopy:document.querySelector('#sidebar-sync-copy')?.textContent||'',draftContext:document.querySelector('[data-nav-key="draft"]')?.dataset.draftContext,tradeMode:document.querySelector('[data-nav-key="trades"]')?.dataset.tradeMode,draftLabel:getComputedStyle(document.querySelector('[data-nav-key="draft"] .nav-label-league')).display})`);
-  if (!connectedLeagueUi.shellConnected || connectedLeagueUi.visibleLeagueNav !== 5 || !connectedLeagueUi.tradeIdeasVisible || !connectedLeagueUi.tradeIdeasInLeague || !connectedLeagueUi.switcherConnected || connectedLeagueUi.syncTitle !== 'QA Champions' || connectedLeagueUi.syncCopy !== 'QA Sunday League' || connectedLeagueUi.draftContext !== 'league' || connectedLeagueUi.tradeMode !== 'league' || connectedLeagueUi.draftLabel === 'none') throw new Error(`Connected navigation did not upgrade in place: ${JSON.stringify(connectedLeagueUi)}`);
+  if (!connectedLeagueUi.shellConnected || connectedLeagueUi.visibleLeagueNav !== 5 || connectedLeagueUi.tradeIdeasVisible || !connectedLeagueUi.tradeIdeasInLeague || !connectedLeagueUi.switcherConnected || connectedLeagueUi.syncTitle !== 'QA Champions' || connectedLeagueUi.syncCopy !== 'QA Sunday League' || connectedLeagueUi.draftContext !== 'league' || connectedLeagueUi.tradeMode !== 'league' || connectedLeagueUi.draftLabel === 'none') throw new Error(`Connected navigation did not upgrade in place: ${JSON.stringify(connectedLeagueUi)}`);
   await evaluate(`document.querySelector('[data-nav-key="home"]').click(); true`);
   const connectedHome = await snapshot("home-connected-desktop", 1440, 1000);
-  if (connectedHome.horizontalOverflow || connectedHome.activePanel !== 'overview' || connectedHome.visibleLeagueNav !== 5) throw new Error(`Connected home/navigation layout failed: ${JSON.stringify(connectedHome)}`);
+  if (connectedHome.horizontalOverflow || connectedHome.activePanel !== 'overview' || connectedHome.visibleLeagueNav !== 5 || connectedHome.sidebarBackground !== 'rgb(18, 54, 95)') throw new Error(`Connected home/navigation layout failed: ${JSON.stringify(connectedHome)}`);
+  await evaluate(`document.querySelector('[data-nav-key="team"]').click(); true`);
+  await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'myleague'`, 5000);
+  const myTeamUi = await evaluate(`({rail:getComputedStyle(document.querySelector('#myleague .home-rail')).display,commands:getComputedStyle(document.querySelector('#myleague .league-command-strip')).display,radius:parseFloat(getComputedStyle(document.querySelector('#myleague .league-settings-details')).borderTopLeftRadius)||0})`);
+  const myTeamDesktop = await snapshot("my-team-desktop", 1440, 1000);
+  if (myTeamUi.rail !== 'none' || myTeamUi.commands !== 'none' || myTeamUi.radius < 16 || myTeamDesktop.horizontalOverflow) throw new Error(`My Team cleanup failed: ${JSON.stringify({myTeamUi,myTeamDesktop})}`);
 
   await send("Page.navigate", { url: appUrl });
   await waitFor(`document.querySelector('#player-count')?.textContent === '700' && document.querySelector('#espn-connection-state')?.textContent === 'Connected'`, 15000);
@@ -297,6 +312,8 @@ async function main() {
     text: document.querySelector('#lineup-result').textContent
   }))()`);
   if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP") || !lineup.text.includes("WIN CHANCE VS QA RIVALS")) throw new Error("Opponent-aware start/sit flow failed");
+  const lineupDesktop = await snapshot("lineup-desktop", 1440, 1000);
+  if (lineupDesktop.horizontalOverflow) throw new Error('Lineup desktop overflow');
 
   await evaluate(`document.querySelector('[data-set-trade-mode="basic"]').click(); true`);
   await waitFor(`document.querySelector('#trade-mode-note')?.textContent.includes('Basic Value') && document.querySelector('#trade-partner-label')?.classList.contains('hidden')`, 5000);
@@ -339,20 +356,27 @@ async function main() {
   await waitFor(`document.querySelector('.panel.active')?.dataset.panel === 'myleague' && document.querySelector('#trade-ideas-panel')?.open`, 5000);
   await evaluate(`document.querySelector('#run-trades').click(); true`);
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('Trade ideas are ready')`, 35000);
-  const tradeIdeas = await evaluate(`({length:document.querySelector('#trade-result').textContent.length,inLeague:Boolean(document.querySelector('#myleague #trade-ideas-panel')),inTrade:Boolean(document.querySelector('#trades #trade-ideas-panel'))})`);
-  if (tradeIdeas.length < 20 || !tradeIdeas.inLeague || tradeIdeas.inTrade) throw new Error(`My League trade ideas placement/flow failed: ${JSON.stringify(tradeIdeas)}`);
+  const tradeIdeas = await evaluate(`({length:document.querySelector('#trade-result').textContent.length,inLeague:Boolean(document.querySelector('#myleague #trade-ideas-panel')),inTrade:Boolean(document.querySelector('#trades #trade-ideas-panel')),view:document.querySelector('#myleague')?.classList.contains('trade-ideas-active'),active:document.querySelector('.context-nav-item.active')?.dataset.navKey||''})`);
+  if (tradeIdeas.length < 20 || !tradeIdeas.inLeague || tradeIdeas.inTrade || !tradeIdeas.view || tradeIdeas.active !== 'trade-ideas') throw new Error(`My League trade ideas placement/flow failed: ${JSON.stringify(tradeIdeas)}`);
+  const tradeIdeasDesktop = await snapshot("trade-ideas-desktop", 1440, 1000);
+  if (tradeIdeasDesktop.horizontalOverflow) throw new Error('Trade ideas desktop overflow');
 
   await evaluate(`document.querySelector('[data-league-jump="waivers"]').click(); document.querySelector('#waiver-mode').value='priority'; document.querySelector('#run-waivers').click(); true`);
   await waitFor(`document.querySelector('#global-status')?.textContent.includes('waiver recommendations are ready')`, 35000);
   const waivers = await evaluate(`document.querySelector('#waiver-result').textContent`);
   if (!waivers.includes("Add") && !waivers.includes("No pickup")) throw new Error("Friendly waiver flow failed");
   if (["De'Von Achane","Cam Skattebo","Tee Higgins","DK Metcalf","George Kittle"].some((name)=>waivers.includes(name))) throw new Error(`Waiver pool exposed a player rostered by QA Rivals: ${waivers}`);
+  const waiversDesktop = await snapshot("waivers-desktop", 1440, 1000);
+  if (waiversDesktop.horizontalOverflow) throw new Error('Waivers desktop overflow');
 
   await evaluate(`document.querySelector('[data-league-jump="league"]').click(); document.querySelector('#build-demo-league').click(); document.querySelector('#league-scenarios').value='500'; document.querySelector('#run-league').click(); true`);
   await waitFor(`document.querySelectorAll('#league-result tbody tr').length >= Number(document.querySelector('#manual-league-teams')?.value || 4)`, 35000);
   const season = await evaluate(`(() => ({rows:document.querySelectorAll('#league-result tbody tr').length,text:document.querySelector('#league-result').textContent,status:document.querySelector('#league-source-status').textContent}))()`);
   const expectedSeasonTeams = await evaluate(`Number(document.querySelector('#manual-league-teams')?.value || 4)`);
   if (season.rows < expectedSeasonTeams || !season.text.includes("Make playoffs") || !season.text.includes("Win league") || !season.status.includes("Season outlook ready")) throw new Error("Season outlook failed");
+  const seasonDesktop = await snapshot("season-desktop", 1440, 1000);
+  const seasonTableFits = await evaluate(`document.querySelector('#league .table-wrap').scrollWidth <= document.querySelector('#league .table-wrap').clientWidth + 1`);
+  if (seasonDesktop.horizontalOverflow || !seasonTableFits) throw new Error('Season desktop overflow');
 
   await evaluate(`document.querySelector('[data-league-jump="draft"]').click(); true`);
   const draftMobile = await snapshot("draft-mobile", 390, 844);
@@ -386,8 +410,8 @@ async function main() {
   const postDisconnectMock = await evaluate(`({panel:document.querySelector('.panel.active')?.dataset.panel,title:document.querySelector('#draft-title')?.textContent||'',modeHidden:document.querySelector('#draft-mode-wrap')?.classList.contains('hidden')})`);
   if (postDisconnectMock.panel !== 'draft' || !postDisconnectMock.title.includes('mock draft') || !postDisconnectMock.modeHidden) throw new Error(`Public Mock Draft was lost after disconnect: ${JSON.stringify(postDisconnectMock)}`);
 
-  const result = { home, homeStructure, outlookState, publicRankings, rankingsDesktop, publicDraftBefore, publicMock, publicDraftDesktop, publicTrade, publicTradeDesktop, noConnectionAccess, syncGateBefore, myLeagueBefore, relockedLeague, postDisconnectTrade, postDisconnectMock, espnSync, connectedLeagueUi, connectedHome, persistedLeague, persistedOutlooks, player, veteran, liveNews, rookie, rookieTablet, leagueDraftShell, leagueMockPreset, mockFlow, board, benchmark, liveDraftStart, liveOnClock, draftRoom, draftDesktop, lineup, syncedBasicTrade, syncedBasicResult, tradePartnerControl, trade, thirdPartyShell, thirdPartyTrade, tradeDesktop, tradeIdeas, waivers, season, draftMobile, tradeMobile, homeMobile, drawerOpen, errors,
-    screenshots: [".qa-home-desktop.png", ".qa-rankings-desktop.png", ".qa-draft-public-desktop.png", ".qa-trade-public-desktop.png", ".qa-home-connected-desktop.png", ".qa-player-tablet.png", ".qa-draft-league-desktop.png", ".qa-trade-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };
+  const result = { home, homeStructure, outlookState, outlookDesktop, publicRankings, rankingsDesktop, publicDraftBefore, publicMock, publicDraftDesktop, publicTrade, publicTradeDesktop, noConnectionAccess, syncGateBefore, myLeagueBefore, myTeamDesktop, relockedLeague, postDisconnectTrade, postDisconnectMock, espnSync, connectedLeagueUi, connectedHome, persistedLeague, persistedOutlooks, player, veteran, liveNews, rookie, rookieTablet, leagueDraftShell, leagueMockPreset, mockFlow, board, benchmark, liveDraftStart, liveOnClock, draftRoom, draftDesktop, lineup, lineupDesktop, syncedBasicTrade, syncedBasicResult, tradePartnerControl, trade, thirdPartyShell, thirdPartyTrade, tradeDesktop, tradeIdeas, tradeIdeasDesktop, waivers, waiversDesktop, season, seasonDesktop, draftMobile, tradeMobile, homeMobile, drawerOpen, errors,
+    screenshots: [".qa-home-desktop.png", ".qa-rankings-desktop.png", ".qa-outlooks-desktop.png", ".qa-draft-public-desktop.png", ".qa-trade-public-desktop.png", ".qa-home-connected-desktop.png", ".qa-my-team-desktop.png", ".qa-player-tablet.png", ".qa-draft-league-desktop.png", ".qa-lineup-desktop.png", ".qa-trade-desktop.png", ".qa-trade-ideas-desktop.png", ".qa-waivers-desktop.png", ".qa-season-desktop.png", ".qa-draft-mobile.png", ".qa-trade-mobile.png", ".qa-home-mobile.png"] };
   fs.writeFileSync(".qa-results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) throw new Error(`Browser logged ${errors.length} error(s)`);

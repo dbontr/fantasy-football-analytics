@@ -287,7 +287,7 @@
     const enabled = hasEspnMyLeagueAccess();
     const team = enabled ? espnTeamById(state.espnConnection?.teamId) : null;
     $("#league-tools-panel")?.classList.toggle("hidden", !enabled);
-    $("#trade-ideas-panel")?.classList.toggle("hidden", !enabled);
+    if (!enabled) $("#trade-ideas-panel")?.classList.add("hidden");
     $("#show-espn-connect")?.classList.toggle("hidden", enabled);
     $("#use-any-league")?.classList.toggle("hidden", !enabled);
     $("#manual-league-card")?.classList.toggle("hidden", !enabled);
@@ -304,7 +304,7 @@
     if ($("#my-league-settings")) $("#my-league-settings").open = !enabled;
     if ($("#open-league-settings")) $("#open-league-settings").textContent = enabled ? "League settings" : "Connect ESPN";
     if (team) {
-      $("#my-league-title").textContent = `${team.name} command center.`;
+      $("#my-league-title").textContent = team.name;
       return;
     }
     $("#my-league-title").textContent = "Connect ESPN to unlock My League.";
@@ -323,11 +323,13 @@
     }
     if (target === "trade-ideas") {
       activatePanel("myleague");
+      $("#myleague")?.classList.add("trade-ideas-active");
+      $$(".context-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.navKey === "trade-ideas"));
       const panel = $("#trade-ideas-panel");
       if (panel) {
         panel.classList.remove("hidden");
         panel.open = true;
-        setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
       return;
     }
@@ -352,6 +354,8 @@
     $$(".global-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.globalRoute === globalKey));
     $("#sidebar-sync-button")?.classList.toggle("active", name === "myleague");
     $$(".panel").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
+    $("#myleague")?.classList.remove("trade-ideas-active");
+    if (name === "myleague") $("#trade-ideas-panel")?.classList.add("hidden");
     setMyLeagueMenuOpen(false);
     if (name === "rankings") renderPublicRankings();
     if (name === "overview") renderHomeBenchmark();
