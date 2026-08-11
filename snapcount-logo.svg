@@ -1,16 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 286 54" role="img" aria-labelledby="title desc">
-  <title id="title">SnapCount Fantasy Football</title>
-  <desc id="desc">SnapCount wordmark with a snapped football crossing the line of scrimmage.</desc>
-  <g transform="translate(1 1)">
-    <rect width="52" height="52" rx="9" fill="#0b0d10" stroke="#33383f"/>
-    <path d="M13 8v36" stroke="#c8102e" stroke-width="4"/>
-    <path d="M7 14h11M7 26h11M7 38h11" stroke="#c8102e" stroke-width="2.5"/>
-    <g transform="rotate(-18 31 26)">
-      <path d="M18 26c3.4-7.5 7.7-11 12.8-11s9.4 3.5 12.8 11c-3.4 7.5-7.7 11-12.8 11S21.4 33.5 18 26Z" fill="#fff"/>
-      <path d="M30.8 18.8v14.4M27 22h7.6M26.3 26h9M27 30h7.6" stroke="#111316" stroke-width="2" stroke-linecap="round"/>
-    </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 90" role="img" aria-labelledby="title desc">
+  <title id="title">SnapCount</title>
+  <desc id="desc">White S and C flanking a white American football with lengthwise laces.</desc>
+  <g fill="#fff">
+    <text x="4" y="68" font-family="Arial Black,Impact,Arial,sans-serif" font-size="64" font-weight="900">S</text>
+    <path d="M105 4C133 22 139 61 105 86C71 61 77 22 105 4Z"/>
+    <text x="151" y="68" font-family="Arial Black,Impact,Arial,sans-serif" font-size="64" font-weight="900">C</text>
   </g>
-  <text x="66" y="29" fill="#ffffff" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="25" font-weight="900" letter-spacing="0.3">SNAP</text>
-  <text x="137" y="29" fill="#c8102e" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="25" font-weight="900" letter-spacing="0.3">COUNT</text>
-  <text x="67" y="44" fill="#aeb4bd" font-family="Arial,Helvetica,sans-serif" font-size="8.5" font-weight="700" letter-spacing="2.1">FANTASY FOOTBALL</text>
+  <g fill="none" stroke="#111316" stroke-linecap="round">
+    <path d="M88 22Q105 29 122 22M88 68Q105 61 122 68" stroke-width="5"/>
+    <path d="M105 30V61" stroke-width="4"/>
+    <path d="M97 34H113M96 41H114M96 48H114M96 55H114" stroke-width="3.6"/>
+  </g>
 </svg>

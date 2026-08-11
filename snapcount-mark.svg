@@ -1,12 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">SnapCount mark</title>
-  <desc id="desc">A snapped football moving across a red line of scrimmage.</desc>
-  <rect x="2" y="2" width="60" height="60" rx="11" fill="#111316"/>
-  <path d="M16 11v42" stroke="#c8102e" stroke-width="5" stroke-linecap="square"/>
-  <path d="M8 17h13M8 31h13M8 45h13" stroke="#c8102e" stroke-width="3"/>
-  <g transform="rotate(-18 37 32)">
-    <path d="M22 32c4-9 9.2-13 15-13s11 4 15 13c-4 9-9.2 13-15 13s-11-4-15-13Z" fill="#fff"/>
-    <path d="M37 23.5v17" stroke="#111316" stroke-width="2.8" stroke-linecap="round"/>
-    <path d="M32.5 27h9M31.5 32h11M32.5 37h9" stroke="#111316" stroke-width="2.2" stroke-linecap="round"/>
+  <desc id="desc">White S and C flanking a white American football with lengthwise laces.</desc>
+  <rect width="128" height="128" rx="18" fill="#111316"/>
+  <g fill="#fff">
+    <text x="8" y="79" font-family="Arial Black,Impact,Arial,sans-serif" font-size="44" font-weight="900">S</text>
+    <path d="M64 18C82 30 86 79 64 104C42 79 46 30 64 18Z"/>
+    <text x="91" y="79" font-family="Arial Black,Impact,Arial,sans-serif" font-size="44" font-weight="900">C</text>
+  </g>
+  <g fill="none" stroke="#111316" stroke-linecap="round">
+    <path d="M53 36Q64 41 75 36M53 86Q64 81 75 86" stroke-width="4"/>
+    <path d="M64 45V78" stroke-width="3.5"/>
+    <path d="M58 49H70M57 56H71M57 63H71M58 70H70" stroke-width="3"/>
   </g>
 </svg>

@@ -49,6 +49,13 @@ async function main() {
     }
     throw new Error(`Timed out waiting for ${expression}`);
   };
+  async function chooseTradePlayer(side, index, query, expected = query) {
+    const listSelector = `#trade-${side}-list`;
+    await evaluate(`(() => { const input=document.querySelectorAll('${listSelector} [data-trade-player-input]')[${index}]; if(!input) return false; input.focus(); input.value=${JSON.stringify(query)}; input.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
+    await waitFor(`[...document.querySelectorAll('${listSelector} .trade-suggestion')].some((row)=>row.textContent.includes(${JSON.stringify(expected)}))`, 10000);
+    await evaluate(`(() => { const option=[...document.querySelectorAll('${listSelector} .trade-suggestion')].find((row)=>row.textContent.includes(${JSON.stringify(expected)})); option?.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return Boolean(option); })()`);
+  }
+
   await send("Runtime.enable");
   await send("Log.enable");
   await send("Page.enable");
@@ -71,6 +78,7 @@ async function main() {
       mastheadContextDisplay: getComputedStyle(document.querySelector('.masthead-context')).display,
       background: getComputedStyle(document.body).backgroundColor,
       brand: document.querySelector('.brand-logo')?.getAttribute('alt'),
+      brandLoaded: Boolean(document.querySelector('.brand-logo')?.complete && document.querySelector('.brand-logo')?.naturalWidth > 0),
       title: document.title,
       primaryBackground: getComputedStyle(document.querySelector('.primary')).backgroundColor,
       legacyBrandVisible: /Oracle/i.test(document.body.innerText),
@@ -116,7 +124,7 @@ async function main() {
   const home = await snapshot("home-desktop", 1440, 1000);
   if (home.tabs !== 5 || home.publicCards !== 4) throw new Error("Public-first navigation did not render");
   if (home.horizontalOverflow || home.background !== "rgb(243, 244, 246)") throw new Error("SnapCount sports-desk canvas/layout check failed");
-  if (home.brand !== "SnapCount Fantasy Football" || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
+  if (home.brand !== "SnapCount Fantasy Football" || !home.brandLoaded || !home.title.startsWith("SnapCount") || home.legacyBrandVisible) throw new Error("SnapCount branding check failed");
   if (home.primaryBackground !== "rgb(200, 16, 46)") throw new Error("Primary action is not using the sports-red SnapCount palette");
   if (home.mastheadContextDisplay !== "none") throw new Error("League rules leaked into the visible masthead");
   const publicNav = await evaluate(`(() => ({labels:[...document.querySelectorAll('.tab')].map((row)=>row.textContent.trim()),disabled:[...document.querySelectorAll('.tab')].filter((row)=>row.disabled).length}))()`);
@@ -135,12 +143,24 @@ async function main() {
   const rankingsDesktop = await snapshot("rankings-desktop", 1440, 1000);
   if (rankingsDesktop.horizontalOverflow || rankingsDesktop.activePanel !== 'rankings') throw new Error("Rankings desktop layout failed");
 
-  await evaluate(`(() => { document.querySelector('[data-panel-target="trades"]').click(); const give=document.querySelector('#trade-give-search'); give.value='Jahmyr'; give.dispatchEvent(new Event('input',{bubbles:true})); const get=document.querySelector('#trade-search'); get.value='Bijan'; get.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
-  await waitFor(`document.querySelector('#trade-give-1 option:nth-child(2)')?.textContent.includes('Jahmyr') && document.querySelector('#trade-get-1 option:nth-child(2)')?.textContent.includes('Bijan')`, 10000);
-  await evaluate(`(() => { document.querySelector('#trade-give-1').selectedIndex=1; document.querySelector('#trade-get-1').selectedIndex=1; document.querySelector('#analyze-trade').click(); return true; })()`);
+  await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
+  await waitFor(`document.querySelectorAll('#trade-give-list [data-trade-player-input]').length === 2 && document.querySelectorAll('#trade-get-list [data-trade-player-input]').length === 2`);
+  const publicTradeShell = await evaluate(`({partnerHidden:document.querySelector('#trade-partner-label')?.classList.contains('hidden'),giveScope:document.querySelector('#trade-give-scope')?.textContent,getScope:document.querySelector('#trade-get-scope')?.textContent})`);
+  if (!publicTradeShell.partnerHidden || publicTradeShell.giveScope !== 'Any player' || publicTradeShell.getScope !== 'Any player') throw new Error(`Public trade shell is not unrestricted: ${JSON.stringify(publicTradeShell)}`);
+  await chooseTradePlayer('give', 0, 'Jahmyr', 'Jahmyr Gibbs');
+  await chooseTradePlayer('give', 1, 'Puka', 'Puka Nacua');
+  await waitFor(`document.querySelectorAll('#trade-give-list [data-trade-player-input]').length === 3`);
+  await chooseTradePlayer('give', 2, 'Jaxon', 'Jaxon Smith-Njigba');
+  await waitFor(`document.querySelectorAll('#trade-give-list [data-trade-player-input]').length === 4`);
+  await chooseTradePlayer('get', 0, 'Bijan', 'Bijan Robinson');
+  await chooseTradePlayer('get', 1, "Ja'Marr", "Ja'Marr Chase");
+  await waitFor(`document.querySelectorAll('#trade-get-list [data-trade-player-input]').length === 3`);
+  const publicTradeShape = await evaluate(`({giveRows:document.querySelectorAll('#trade-give-list [data-trade-player-input]').length,getRows:document.querySelectorAll('#trade-get-list [data-trade-player-input]').length,giveSelected:[...document.querySelectorAll('#trade-give-list [data-trade-player-input]')].filter((row)=>row.dataset.playerId).length,getSelected:[...document.querySelectorAll('#trade-get-list [data-trade-player-input]')].filter((row)=>row.dataset.playerId).length})`);
+  if (publicTradeShape.giveRows !== 4 || publicTradeShape.getRows !== 3 || publicTradeShape.giveSelected !== 3 || publicTradeShape.getSelected !== 2) throw new Error(`Dynamic trade rows failed: ${JSON.stringify(publicTradeShape)}`);
+  await evaluate(`document.querySelector('#analyze-trade').click(); true`);
   await waitFor(`document.querySelector('#trade-check-result')?.textContent.includes('STANDALONE VALUE CHECK')`, 45000);
   const publicTrade = await evaluate(`document.querySelector('#trade-check-result').textContent`);
-  if (!publicTrade.includes('VALUE YOU GIVE') || !publicTrade.includes('VALUE YOU GET') || !publicTrade.includes('TRADE BALANCE') || !publicTrade.includes('My League') || publicTrade.includes('FUTURE GAME WIN CHANCE')) throw new Error(`Standalone trade analysis failed: ${publicTrade}`);
+  if (!publicTrade.includes('VALUE YOU GIVE') || !publicTrade.includes('VALUE YOU GET') || !publicTrade.includes('TRADE BALANCE') || !publicTrade.includes('Jaxon Smith-Njigba') || !publicTrade.includes("Ja'Marr Chase") || !publicTrade.includes('My League') || publicTrade.includes('FUTURE GAME WIN CHANCE')) throw new Error(`Standalone big-trade analysis failed: ${publicTrade}`);
   const publicTradeDesktop = await snapshot("trade-public-desktop", 1440, 1000);
   if (publicTradeDesktop.horizontalOverflow || publicTradeDesktop.activePanel !== 'trades') throw new Error("Public trade desktop layout failed");
 
@@ -313,17 +333,23 @@ async function main() {
   if (lineup.roster < 10 || lineup.starters < 8 || !lineup.text.includes("RECOMMENDED LINEUP") || !lineup.text.includes("WIN CHANCE VS QA RIVALS")) throw new Error("Opponent-aware start/sit flow failed");
 
   await evaluate(`document.querySelector('[data-panel-target="trades"]').click(); true`);
-  await waitFor(`document.querySelectorAll('#trade-give-1 option').length > 2 && document.querySelectorAll('#trade-get-1 option').length > 2`);
-  await evaluate(`(() => { const search=document.querySelector('#trade-search'); search.value='Stafford'; search.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
-  const tradeSearch = await evaluate(`document.querySelector('#trade-get-1 option:nth-child(2)')?.textContent || ''`);
-  if (!tradeSearch.includes('Stafford')) throw new Error('Trade target search failed');
-  await evaluate(`(() => {
-    const give = document.querySelector('#trade-give-1'); const get = document.querySelector('#trade-get-1');
-    give.selectedIndex = 1; get.selectedIndex = 1; document.querySelector('#analyze-trade').click(); return true;
-  })()`);
+  await waitFor(`!document.querySelector('#trade-partner-label').classList.contains('hidden') && document.querySelectorAll('#trade-partner option').length >= 2`);
+  const tradePartnerControl = await evaluate(`({value:document.querySelector('#trade-partner')?.value,options:[...document.querySelectorAll('#trade-partner option')].map((row)=>row.textContent),giveScope:document.querySelector('#trade-give-scope')?.textContent})`);
+  if (tradePartnerControl.value || !tradePartnerControl.options.some((row)=>row.includes('QA Rivals')) || tradePartnerControl.giveScope !== 'Your roster') throw new Error(`Connected trade partner control failed: ${JSON.stringify(tradePartnerControl)}`);
+  await evaluate(`(() => { const select=document.querySelector('#trade-partner'); select.value='2'; select.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`);
+  await waitFor(`document.querySelector('#trade-get-scope')?.textContent.includes('QA Rivals') && document.querySelectorAll('#trade-get-list [data-trade-player-input]').length === 2`);
+  await evaluate(`(() => { const input=document.querySelector('#trade-get-list [data-trade-player-input]'); input.focus(); input.value='Bijan'; input.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
+  await waitFor(`document.querySelector('#trade-get-list .trade-no-suggestions')?.textContent.includes('No matching players')`);
+  await evaluate(`(() => { const input=document.querySelector('#trade-give-list [data-trade-player-input]'); input.focus(); input.value='Stafford'; input.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`);
+  await waitFor(`document.querySelector('#trade-give-list .trade-no-suggestions')?.textContent.includes('No matching players')`);
+  await chooseTradePlayer('give', 0, 'Jahmyr', 'Jahmyr Gibbs');
+  await chooseTradePlayer('get', 0, 'Stafford', 'Matthew Stafford');
+  const restrictedTrade = await evaluate(`({partner:document.querySelector('#trade-partner option:checked')?.textContent,give:document.querySelector('#trade-give-list [data-trade-player-input]')?.value,get:document.querySelector('#trade-get-list [data-trade-player-input]')?.value})`);
+  if (!restrictedTrade.partner.includes('QA Rivals') || !restrictedTrade.give.includes('Jahmyr Gibbs') || !restrictedTrade.get.includes('Matthew Stafford')) throw new Error(`Connected typeahead selection failed: ${JSON.stringify(restrictedTrade)}`);
+  await evaluate(`document.querySelector('#analyze-trade').click(); true`);
   await waitFor(`Boolean(document.querySelector('#trade-check-result .trade-verdict'))`, 25000);
   const trade = await evaluate(`document.querySelector('#trade-check-result').textContent`);
-  if (!["ACCEPT", "PASS", "CLOSE CALL"].some((word) => trade.includes(word)) || !trade.includes("FUTURE GAME WIN CHANCE") || !trade.includes("QA Rivals")) throw new Error("Opponent-aware direct trade analyzer failed");
+  if (!["ACCEPT", "PASS", "CLOSE CALL"].some((word) => trade.includes(word)) || !trade.includes("FUTURE GAME WIN CHANCE") || !trade.includes("QA Rivals") || !trade.includes('Jahmyr Gibbs') || !trade.includes('Matthew Stafford')) throw new Error("Opponent-aware direct trade analyzer failed");
   const tradeDesktop = await snapshot("trade-desktop", 1440, 1000);
   if (tradeDesktop.horizontalOverflow) throw new Error("Trade desktop overflow");
 

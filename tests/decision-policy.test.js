@@ -16,3 +16,13 @@ test("qualified waiver minimum score can suppress marginal claims", () => {
   const high = core.waiverRecommendations(roster, freeAgents, core.DEFAULT_SETTINGS, 5, 4, { minimumScore: low[0].score + 1 });
   assert.equal(high.length, 0);
 });
+
+test("direct trade analysis consumes every player in a larger package", () => {
+  const settings = { teams: 10, slots: { QB: 0, RB: 1, WR: 1, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 4 } };
+  const give = [row("g1", "Give RB", "RB", 12), row("g2", "Give WR One", "WR", 11), row("g3", "Give WR Two", "WR", 9)];
+  const keep = row("keep", "Keep RB", "RB", 8);
+  const receive = [row("r1", "Receive RB", "RB", 14), row("r2", "Receive WR", "WR", 13)];
+  const analysis = core.analyzeTrade({ roster: [...give, keep], give, receive, players: [...give, keep, ...receive], settings, week: 1 });
+  assert.deepEqual(analysis.afterRoster.map((player) => player.id).sort(), ["keep", "r1", "r2"]);
+  assert.ok(Number.isFinite(analysis.giveValue) && Number.isFinite(analysis.receiveValue));
+});

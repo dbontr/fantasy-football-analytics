@@ -308,9 +308,9 @@
     <section class="panel" data-panel="trades" id="trades">
       <div class="section-heading"><div><p class="eyebrow">TRADE ANALYZER</p><h1>Who wins this trade?</h1></div><p>Compare any players immediately. Add My League to see how the deal changes your specific roster, opponents, and season.</p></div>
       <article class="module trade-checker">
-        <div class="trade-side"><strong>I GIVE</strong><label>Find a player<input id="trade-give-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-give-1"></select></label><label>Player 2 (optional)<select id="trade-give-2"></select></label></div>
+        <div class="trade-side" data-trade-side="give"><div class="trade-side-head"><strong>I GIVE</strong><span id="trade-give-scope">Any player</span></div><div id="trade-give-list" class="trade-player-list" data-trade-list="give"></div></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
-        <div class="trade-side"><strong>I GET</strong><label>Find a player<input id="trade-search" type="search" placeholder="Type a name…" autocomplete="off"></label><label>Player 1<select id="trade-get-1"></select></label><label>Player 2 (optional)<select id="trade-get-2"></select></label></div>
+        <div class="trade-side" data-trade-side="get"><div class="trade-side-head"><strong>I GET</strong><span id="trade-get-scope">Any player</span></div><label id="trade-partner-label" class="trade-partner hidden">Trade partner<select id="trade-partner"><option value="">Choose who you are trading with</option></select></label><div id="trade-get-list" class="trade-player-list" data-trade-list="get"></div></div>
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Add <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>

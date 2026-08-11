@@ -53,6 +53,7 @@
     leagueMeta: null,
     leagueProfile: null,
     myLeagueEnabled: false,
+    tradePartnerTeamId: null,
     leagueState: null,
     connectedTeamId: null,
     pendingLeagueImport: null,
@@ -1555,23 +1556,192 @@
     return state.players.filter((player) => ids.has(String(player.id)));
   }
 
-  function populateTradeSelectors() {
-    const giveIds = ["#trade-give-1", "#trade-give-2"];
-    const getIds = ["#trade-get-1", "#trade-get-2"];
-    if (!$(giveIds[0]) || !state.players.length) return;
+  function tradeRows(side) {
+    return [...$$(`[data-trade-list="${side}"] .trade-player-row`)];
+  }
+
+  function tradeSelectedIds(side) {
+    return tradeRows(side).map((row) => row.querySelector("[data-trade-player-input]")?.dataset.playerId || "").filter(Boolean);
+  }
+
+  function tradePartnerTeams() {
+    const userTeamId = connectedUserTeamId();
+    if (!userTeamId || !state.leagueTeams?.length) return [];
+    return state.leagueTeams.filter((team) => String(team.teamId) !== String(userTeamId) && (team.roster || []).length);
+  }
+
+  function selectedTradePartnerTeam() {
+    if (!state.tradePartnerTeamId) return null;
+    return tradePartnerTeams().find((team) => String(team.teamId) === String(state.tradePartnerTeamId)) || null;
+  }
+
+  function tradePartnerMode() {
+    return tradePartnerTeams().length > 0;
+  }
+
+  function tradePlayerLabel(player) {
+    return `${player.name} · ${player.position} ${player.team || "FA"}`;
+  }
+
+  function tradePlayerPool(side) {
     const roster = rosterPlayers();
-    const rosterSet = new Set(roster.map((player) => String(player.id)));
-    const giveQuery = $("#trade-give-search")?.value || "";
-    const givePool = roster.length
-      ? [...roster].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999))
-      : rankedPlayers().filter((player) => playerMatchesSearch(player, giveQuery)).slice(0, giveQuery ? 120 : 320);
-    const giveOptions = [`<option value="">Choose a player</option>`, ...givePool.map((player) => `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}</option>`)].join("");
-    const tradeQuery = $("#trade-search")?.value || "";
-    const connected = Boolean(state.leagueTeams?.length && roster.length);
-    const getPool = rankedPlayers().filter((player) => !rosterSet.has(String(player.id)) && (!connected || Boolean(leagueTeamForPlayer(player.id))) && playerMatchesSearch(player, tradeQuery)).slice(0, tradeQuery ? 120 : 320);
-    const getOptions = [`<option value="">Choose a player</option>`, ...getPool.map((player) => { const owner = leagueTeamForPlayer(player.id); return `<option value="${esc(player.id)}">${esc(player.name)} · ${esc(player.position)} ${esc(player.team)}${owner ? ` · ${esc(owner.name)}` : ""}</option>`; })].join("");
-    giveIds.forEach((selector) => { const previous = $(selector).value; $(selector).innerHTML = giveOptions; if ([...$(selector).options].some((option) => option.value === previous)) $(selector).value = previous; });
-    getIds.forEach((selector) => { const previous = $(selector).value; $(selector).innerHTML = getOptions; if ([...$(selector).options].some((option) => option.value === previous)) $(selector).value = previous; });
+    const ranked = rankedPlayers();
+    if (tradePartnerMode()) {
+      if (side === "give") return [...roster].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
+      return [...(selectedTradePartnerTeam()?.roster || [])].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
+    }
+    if (state.myLeagueEnabled && roster.length) {
+      if (side === "give") return [...roster].sort((a, b) => (a.pprRank || 9999) - (b.pprRank || 9999));
+      const rosterSet = new Set(roster.map((player) => String(player.id)));
+      return ranked.filter((player) => !rosterSet.has(String(player.id)));
+    }
+    return ranked;
+  }
+
+  function closeTradeSuggestions(input) {
+    const list = input.closest(".trade-typeahead")?.querySelector(".trade-suggestions");
+    if (!list) return;
+    list.classList.add("hidden");
+    input.setAttribute("aria-expanded", "false");
+  }
+
+  function closeAllTradeSuggestions(except = null) {
+    $$('[data-trade-player-input]').forEach((input) => { if (input !== except) closeTradeSuggestions(input); });
+  }
+
+  function renderTradeSuggestions(input) {
+    const list = input.closest(".trade-typeahead")?.querySelector(".trade-suggestions");
+    if (!list) return;
+    const side = input.dataset.tradeSide;
+    if (side === "get" && tradePartnerMode() && !selectedTradePartnerTeam()) {
+      list.innerHTML = `<div class="trade-no-suggestions">Choose a trade partner first.</div>`;
+      list.classList.remove("hidden");
+      input.setAttribute("aria-expanded", "true");
+      return;
+    }
+    const selectedElsewhere = new Set($$('[data-trade-player-input]').filter((row) => row !== input).map((row) => row.dataset.playerId).filter(Boolean));
+    const query = input.value.trim();
+    const rows = tradePlayerPool(side)
+      .filter((player) => !selectedElsewhere.has(String(player.id)) && playerMatchesSearch(player, query))
+      .slice(0, 10);
+    if (!rows.length) {
+      list.innerHTML = `<div class="trade-no-suggestions">No matching players.</div>`;
+      list.classList.remove("hidden");
+      input.setAttribute("aria-expanded", "true");
+      return;
+    }
+    list.innerHTML = rows.map((player) => `<button type="button" class="trade-suggestion" role="option" data-trade-option="${esc(player.id)}"><strong>${esc(player.name)}</strong><span>${esc(player.position)} · ${esc(player.team || "FA")}</span></button>`).join("");
+    list.classList.remove("hidden");
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  function selectTradePlayer(input, playerId) {
+    const player = playerById(playerId);
+    if (!player) return;
+    input.value = tradePlayerLabel(player);
+    input.dataset.playerId = String(player.id);
+    input.classList.add("has-selection");
+    closeTradeSuggestions(input);
+    normalizeTradeRows(input.dataset.tradeSide);
+  }
+
+  function handleTradeInputKeydown(event) {
+    const input = event.currentTarget;
+    const list = input.closest(".trade-typeahead")?.querySelector(".trade-suggestions");
+    const options = list ? [...list.querySelectorAll("[data-trade-option]")] : [];
+    if (event.key === "Escape") { closeTradeSuggestions(input); return; }
+    if (!["ArrowDown", "ArrowUp", "Enter"].includes(event.key) || !options.length) return;
+    event.preventDefault();
+    let index = options.findIndex((option) => option.classList.contains("active"));
+    if (event.key === "ArrowDown") index = index < options.length - 1 ? index + 1 : 0;
+    if (event.key === "ArrowUp") index = index > 0 ? index - 1 : options.length - 1;
+    if (event.key === "Enter") {
+      const choice = options[Math.max(0, index)];
+      if (choice) selectTradePlayer(input, choice.dataset.tradeOption);
+      return;
+    }
+    options.forEach((option, optionIndex) => option.classList.toggle("active", optionIndex === index));
+    options[index]?.scrollIntoView({ block: "nearest" });
+  }
+
+  function appendTradeRow(side, playerId = "") {
+    const list = $(`#trade-${side}-list`);
+    if (!list) return null;
+    const row = document.createElement("div");
+    row.className = "trade-player-row";
+    row.innerHTML = `<span class="trade-player-number"></span><div class="trade-typeahead"><input type="text" data-trade-player-input data-trade-side="${side}" placeholder="Type a player name…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="trade-suggestions hidden" role="listbox"></div></div>`;
+    list.appendChild(row);
+    const input = row.querySelector("[data-trade-player-input]");
+    input.addEventListener("focus", () => { closeAllTradeSuggestions(input); if (input.dataset.playerId) input.select(); else renderTradeSuggestions(input); });
+    input.addEventListener("input", () => {
+      if (input.dataset.playerId) { delete input.dataset.playerId; input.classList.remove("has-selection"); }
+      renderTradeSuggestions(input);
+      normalizeTradeRows(side);
+    });
+    input.addEventListener("keydown", handleTradeInputKeydown);
+    row.querySelector(".trade-suggestions").addEventListener("mousedown", (event) => {
+      const option = event.target.closest("[data-trade-option]");
+      if (!option) return;
+      event.preventDefault();
+      selectTradePlayer(input, option.dataset.tradeOption);
+    });
+    if (playerId) { const player = playerById(playerId); if (player) { input.value = tradePlayerLabel(player); input.dataset.playerId = String(player.id); input.classList.add("has-selection"); } }
+    return row;
+  }
+
+  function normalizeTradeRows(side) {
+    let rows = tradeRows(side);
+    while (rows.length < 2) { appendTradeRow(side); rows = tradeRows(side); }
+    while (rows.length > 2) {
+      const last = rows[rows.length - 1].querySelector("[data-trade-player-input]")?.dataset.playerId;
+      const previous = rows[rows.length - 2].querySelector("[data-trade-player-input]")?.dataset.playerId;
+      if (last || previous) break;
+      rows[rows.length - 1].remove();
+      rows = tradeRows(side);
+    }
+    if (rows.length && rows.every((row) => row.querySelector("[data-trade-player-input]")?.dataset.playerId)) appendTradeRow(side);
+    tradeRows(side).forEach((row, index) => {
+      row.querySelector(".trade-player-number").textContent = `Player ${index + 1}${index > 0 ? " (optional)" : ""}`;
+    });
+  }
+
+  function renderTradeSide(side, selectedIds = []) {
+    const list = $(`#trade-${side}-list`);
+    if (!list) return;
+    list.innerHTML = "";
+    const allowed = new Set(tradePlayerPool(side).map((player) => String(player.id)));
+    selectedIds.filter((id) => allowed.has(String(id))).forEach((id) => appendTradeRow(side, id));
+    normalizeTradeRows(side);
+  }
+
+  function syncTradePartnerControl() {
+    const label = $("#trade-partner-label");
+    const select = $("#trade-partner");
+    const partners = tradePartnerTeams();
+    const show = partners.length > 0;
+    label?.classList.toggle("hidden", !show);
+    if (!show) {
+      state.tradePartnerTeamId = null;
+      if (select) select.innerHTML = `<option value="">Choose who you are trading with</option>`;
+    } else if (select) {
+      const valid = partners.some((team) => String(team.teamId) === String(state.tradePartnerTeamId));
+      if (!valid) state.tradePartnerTeamId = null;
+      select.innerHTML = `<option value="">Choose who you are trading with</option>${partners.map((team) => `<option value="${esc(team.teamId)}">${esc(team.name)}</option>`).join("")}`;
+      select.value = state.tradePartnerTeamId || "";
+    }
+    const roster = rosterPlayers();
+    const partner = selectedTradePartnerTeam();
+    $("#trade-give-scope").textContent = tradePartnerMode() || (state.myLeagueEnabled && roster.length) ? "Your roster" : "Any player";
+    $("#trade-get-scope").textContent = tradePartnerMode() ? (partner ? `${partner.name} roster` : "Choose a trade partner") : (state.myLeagueEnabled && roster.length ? "All other players" : "Any player");
+  }
+
+  function populateTradeSelectors() {
+    if (!$("#trade-give-list") || !state.players.length) return;
+    const giveIds = tradeSelectedIds("give");
+    const getIds = tradeSelectedIds("get");
+    syncTradePartnerControl();
+    renderTradeSide("give", giveIds);
+    renderTradeSide("get", getIds);
   }
 
   async function persistRoster() {
@@ -1806,7 +1976,7 @@
       const giveProjection = give.reduce((sum, player) => sum + Number(player.decisionProjection || baselineWeekProjection(player, week)), 0);
       const getProjection = receive.reduce((sum, player) => sum + Number(player.decisionProjection || baselineWeekProjection(player, week)), 0);
       $("#trade-check-result").className = "result-space";
-      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>STANDALONE VALUE CHECK</span><strong>${verdict}</strong><p>${edgePct >= 0 ? "The players you get carry more standalone value." : "The players you give carry more standalone value."}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>VALUE YOU GIVE</span><strong>${num(analysis.giveValue, 1)}</strong></div><div class="metric"><span>VALUE YOU GET</span><strong>${num(analysis.receiveValue, 1)}</strong></div><div class="metric"><span>VALUE EDGE</span><strong class="${edgePct >= 0 ? "good" : "warn"}">${edgePct >= 0 ? "+" : ""}${num(edgePct, 1)}%</strong></div><div class="metric"><span>WEEK ${week} PROJECTION</span><strong>${num(getProjection - giveProjection, 1)} pts</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary">This is a league-independent package comparison. Set up <strong>My League</strong> to add roster fit, actual ownership, opponent schedule, transaction rules, and future-win impact.</div><p class="fineprint">${esc(decisionContextLabel(contextState))}.</p>`;
+      $("#trade-check-result").innerHTML = `<div class="trade-verdict ${tone}"><span>STANDALONE VALUE CHECK</span><strong>${verdict}</strong><p>${edgePct >= 0 ? "The players you get carry more standalone value." : "The players you give carry more standalone value."}</p></div><div class="metric-grid friendly-metrics"><div class="metric"><span>VALUE YOU GIVE</span><strong>${num(analysis.giveValue, 1)}</strong></div><div class="metric"><span>VALUE YOU GET</span><strong>${num(analysis.receiveValue, 1)}</strong></div><div class="metric"><span>VALUE EDGE</span><strong class="${edgePct >= 0 ? "good" : "warn"}">${edgePct >= 0 ? "+" : ""}${num(edgePct, 1)}%</strong></div><div class="metric"><span>WEEK ${week} PROJECTION</span><strong>${num(getProjection - giveProjection, 1)} pts</strong></div><div class="metric"><span>TRADE BALANCE</span><strong>${analysis.fairness}/100</strong></div></div><div class="trade-summary"><strong>You give:</strong> ${esc(give.map((player) => player.name).join(" + "))}<br><strong>You get:</strong> ${esc(receive.map((player) => player.name).join(" + "))}<br><span>This is a league-independent package comparison. Set up <strong>My League</strong> to add roster fit, actual ownership, opponent schedule, transaction rules, and future-win impact.</span></div><p class="fineprint">${esc(decisionContextLabel(contextState))}.</p>`;
       status("Standalone trade comparison ready.", "good");
     } catch (error) {
       status(error.message, "error");
@@ -1815,10 +1985,19 @@
 
   async function analyzeSelectedTrade() {
     let roster = rosterPlayers();
-    const giveIds = [$("#trade-give-1").value, $("#trade-give-2").value].filter(Boolean);
-    const getIds = [$("#trade-get-1").value, $("#trade-get-2").value].filter(Boolean);
+    const giveIds = tradeSelectedIds("give");
+    const getIds = tradeSelectedIds("get");
     if (!giveIds.length || !getIds.length) return status("Choose at least one player on each side of the trade.", "error");
     if (giveIds.some((id) => getIds.includes(id))) return status("The same player cannot be on both sides of the trade.", "error");
+    const partnerMode = tradePartnerMode();
+    const partner = selectedTradePartnerTeam();
+    if (partnerMode && !partner) return status("Choose who you are trading with first.", "error");
+    if (partnerMode) {
+      const givePoolIds = new Set(roster.map((player) => String(player.id)));
+      const receivePoolIds = new Set((partner.roster || []).map((player) => String(player.id)));
+      if (giveIds.some((id) => !givePoolIds.has(String(id)))) return status("Every player you give must be on your roster.", "error");
+      if (getIds.some((id) => !receivePoolIds.has(String(id)))) return status(`Every player you receive must be on ${partner.name}'s roster.`, "error");
+    }
     const week = Number($("#trade-week").value || 1);
     if (!roster.length) return analyzeStandaloneTrade(giveIds, getIds, week);
     const tradeRosterUsage = transactionRosterUsage();
@@ -1843,15 +2022,17 @@
       const analysis = core.analyzeTrade({ roster: decisionRoster, give, receive, players: state.players.map((player) => leagueApi.playerForScoring(player, settings)), settings, week });
       const tradePolicy = servingPolicy("trades");
       const acceptScore = Number(tradePolicy.acceptScore || 28), passScore = Number(tradePolicy.passScore || -28);
-      const ownerIds = [...new Set(getIds.map((id) => leagueTeamForPlayer(id)?.teamId).filter(Boolean).map(String))]
-        .filter((id) => id !== connectedUserTeamId());
-      const opponentTeam = ownerIds.length === 1 ? (state.leagueTeams || []).find((team) => String(team.teamId) === ownerIds[0]) || null : null;
+      let opponentTeam = partnerMode ? partner : null;
+      if (!opponentTeam) {
+        const ownerIds = [...new Set(getIds.map((id) => leagueTeamForPlayer(id)?.teamId).filter(Boolean).map(String))].filter((id) => id !== connectedUserTeamId());
+        opponentTeam = ownerIds.length === 1 ? (state.leagueTeams || []).find((team) => String(team.teamId) === ownerIds[0]) || null : null;
+      }
       let future = null, futureAction = null, opponentBefore = null;
       if (opponentTeam && hasRealFantasySchedule()) {
         future = await runFutureWinActions([{
           id: "selected-trade", type: "trade", label: "Proposed trade",
           opponentTeamId: String(opponentTeam.teamId), sendPlayerIds: giveIds, receivePlayerIds: getIds,
-        }], "trades", week, 2200, `trade-future-${giveIds.sort().join("-")}-${getIds.sort().join("-")}-${week}`, 900);
+        }], "trades", week, 2200, `trade-future-${[...giveIds].sort().join("-")}-${[...getIds].sort().join("-")}-${week}`, 900);
         futureAction = future?.actions?.find((row) => row.id === "selected-trade") || null;
         opponentBefore = future?.actions?.find((row) => row.id === "hold")?.opponents?.[String(opponentTeam.teamId)] || null;
       }
@@ -2185,6 +2366,7 @@
     state.pendingLeagueImport = null;
     state.leagueProfile = leagueApi.normalizeProfile({ source: "manual", teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
     state.myLeagueEnabled = false;
+    state.tradePartnerTeamId = null;
     state.espnLeague = null;
     state.espnConnection = null;
     state.espnNeedsSession = false;
@@ -2230,8 +2412,12 @@
     $("#player-search").addEventListener("input", () => { const rows = fillPlayerPicker("#player-select", $("#player-search").value); if (rows[0]) { $("#player-select").value = String(rows[0].id); renderNewsPulse(); } });
     ["#rankings-search", "#rankings-position", "#rankings-view", "#rankings-week"].forEach((selector) => $(selector)?.addEventListener(selector === "#rankings-search" ? "input" : "change", renderPublicRankings));
     $("#roster-search").addEventListener("input", () => fillPlayerPicker("#roster-add", $("#roster-search").value));
-    $("#trade-give-search").addEventListener("input", populateTradeSelectors);
-    $("#trade-search").addEventListener("input", populateTradeSelectors);
+    $("#trade-partner").addEventListener("change", () => {
+      state.tradePartnerTeamId = $("#trade-partner").value || null;
+      renderTradeSide("get", []);
+      syncTradePartnerControl();
+    });
+    document.addEventListener("mousedown", (event) => { if (!event.target.closest(".trade-typeahead")) closeAllTradeSuggestions(); });
     $("#draft-pick-search").addEventListener("input", () => renderDraftManualOptions());
     $("#run-player").addEventListener("click", runPlayerLab);
     $("#load-intelligence").addEventListener("click", loadPlayerIntelligence);
