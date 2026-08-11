@@ -14,12 +14,12 @@
   <div class="app-shell">
     <aside class="app-sidebar context-sidebar" aria-label="SnapCount navigation">
       <a class="sidebar-brand" href="#overview" data-jump="overview" aria-label="SnapCount home">
-        <img src="./snapcount-mark.svg" alt="">
+        <img src="./snapcount-mark-sidebar.svg" alt="">
         <span><strong>SnapCount</strong><small>Fantasy Football</small></span>
       </a>
       <div class="sidebar-season"><span>NFL</span><strong>2026</strong></div>
       <nav class="sidebar-nav context-nav" aria-label="Fantasy football tools">
-        <div class="sidebar-group"><span>PLAYBOOK</span>
+        <div class="sidebar-group"><span>DASHBOARD</span>
           <button class="sidebar-nav-item context-nav-item active" data-nav-key="home" data-panel-target="overview"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5M5 9v12h14V9M9 21v-6h6v6"/></svg></span><span>Home</span></button>
           <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="team" data-panel-target="myleague"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20v-8l8-7 8 7v8M8 20v-5h8v5"/></svg></span><span>My Team</span></button>
         </div>
@@ -27,12 +27,12 @@
           <button class="sidebar-nav-item context-nav-item upgradeable-nav" data-nav-key="draft" data-panel-target="draft" data-draft-context="public"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></span><span class="nav-label-basic">Mock Draft</span><span class="nav-label-league">Draft Assistant</span></button>
           <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="lineup" data-league-nav="lineup"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 4 4 12-12M4 20h16"/></svg></span><span>Start / Sit</span></button>
         </div>
-        <div class="sidebar-group"><span>RESEARCH</span>
+        <div class="sidebar-group"><span>PLAYERS</span>
           <button class="sidebar-nav-item context-nav-item" data-nav-key="rankings" data-panel-target="rankings"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9m7 9V5m7 13v-6"/></svg></span><span>Rankings</span></button>
           <button class="sidebar-nav-item context-nav-item" data-nav-key="player" data-panel-target="player"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.3 3.3-6.5 7.5-6.5s6.7 2.2 7.5 6.5"/></svg></span><span>Player Analysis</span></button>
           <button class="sidebar-nav-item context-nav-item" data-nav-key="outlooks" data-panel-target="outlooks"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7"/></svg></span><span>My Outlooks</span></button>
         </div>
-        <div class="sidebar-group"><span>MARKET</span>
+        <div class="sidebar-group"><span>ROSTER & LEAGUE</span>
           <button class="sidebar-nav-item context-nav-item upgradeable-nav" data-nav-key="trades" data-panel-target="trades" data-trade-mode="basic"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4 4m-4-4 4-4"/></svg></span><span>Trade Analyzer</span></button>
           <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="trade-ideas" data-league-nav="trade-ideas"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h8m-8 5h14M5 17h10M16 4l3 3-3 3"/></svg></span><span>Trade Ideas</span></button>
           <button class="sidebar-nav-item context-nav-item league-only hidden" data-nav-key="waivers" data-league-nav="waivers"><span class="sidebar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></span><span>Waiver Wire</span></button>
@@ -106,10 +106,21 @@
 
           <section id="league-command-strip" class="league-command-strip hidden" aria-label="Connected league shortcuts">
             <div><span id="home-league-label">MY TEAM</span><strong id="home-team-name">—</strong><small id="home-team-record">—</small></div>
-            <button data-jump="lineup"><span>START / SIT</span><strong>Set lineup</strong></button>
-            <button data-jump="waivers"><span>WAIVERS</span><strong>Waiver targets</strong></button>
-            <button data-jump="trades" data-trade-mode="league"><span>ADVANCED TRADE</span><strong>League impact</strong></button>
+            <button data-jump="lineup"><span>LINEUP</span><strong>Set starters</strong></button>
+            <button data-jump="waivers"><span>WAIVERS</span><strong>Find pickups</strong></button>
+            <button data-jump="trades" data-trade-mode="league"><span>TRADES</span><strong>Compare teams</strong></button>
             <button data-jump="league"><span>SEASON</span><strong>Playoff odds</strong></button>
+          </section>
+
+          <section id="team-dashboard" class="team-dashboard hidden" aria-label="My team overview">
+            <article class="team-week-card">
+              <div class="team-card-heading"><span>THIS WEEK</span><strong id="team-dashboard-matchup">Week —</strong><small id="team-dashboard-matchup-meta">Schedule unavailable</small></div>
+              <div class="team-dashboard-metrics"><div><span>RECORD</span><strong id="team-dashboard-record">—</strong></div><div><span>LEAGUE</span><strong id="team-dashboard-league">—</strong></div><div><span>WAIVERS</span><strong id="team-dashboard-waivers">—</strong></div></div>
+            </article>
+            <article class="team-roster-card">
+              <div class="team-card-heading team-roster-heading"><div><span>ROSTER</span><strong>Your players</strong><small id="team-dashboard-roster-count">—</small></div><button class="secondary" data-jump="lineup">Set lineup</button></div>
+              <div id="team-dashboard-roster" class="team-dashboard-roster"></div>
+            </article>
           </section>
 
           <details id="my-league-settings" class="league-settings-details" open><summary>ESPN connection & league settings</summary>
@@ -374,10 +385,10 @@
     <section class="panel" data-panel="trades" id="trades">
       <div class="section-heading"><div><p class="eyebrow" id="trade-eyebrow">TRADE VALUE</p><h1 id="trade-title">Compare player value.</h1></div><p id="trade-description">A clean, league-independent value check. It stays available even after you sync a league.</p></div><div class="trade-mode-bar"><div id="trade-mode-note" class="trade-mode-note"><strong>Basic Trade Value</strong><span>Compares worth to worth. No roster or league assumptions.</span></div><div id="trade-mode-switch" class="trade-mode-switch hidden" aria-label="Trade analysis mode"><button type="button" data-set-trade-mode="basic" class="active">Basic value</button><button type="button" data-set-trade-mode="league">League impact</button></div></div>
       <article class="module trade-checker">
-        <div id="trade-league-controls" class="trade-league-controls hidden"><label>Trade from whose perspective?<select id="trade-actor-team"></select></label><p>Pick any manager as Team A. SnapCount can model a trade between two other teams and show how it changes your own future matchups and league equity.</p></div>
-        <div class="trade-side" data-trade-side="give"><div class="trade-side-head"><strong>I GIVE</strong><span id="trade-give-scope">Any player</span></div><div id="trade-give-list" class="trade-player-list" data-trade-list="give"></div></div>
+        <div id="trade-league-controls" class="trade-league-controls hidden"><label>Party A<select id="trade-actor-team"></select></label><label id="trade-partner-label">Party B<select id="trade-partner"><option value="">Choose Party B</option></select></label><p>Party A defaults to your team. Change either side to model any two managers; when your team is not involved, SnapCount shows the effect on your schedule and league equity.</p></div>
+        <div class="trade-side" data-trade-side="give"><div class="trade-side-head"><strong>SIDE A SENDS</strong><span id="trade-give-scope">Any player</span></div><div id="trade-give-list" class="trade-player-list" data-trade-list="give"></div></div>
         <div class="trade-arrow" aria-hidden="true">⇄</div>
-        <div class="trade-side" data-trade-side="get"><div class="trade-side-head"><strong>I GET</strong><span id="trade-get-scope">Any player</span></div><label id="trade-partner-label" class="trade-partner hidden">Trade partner<select id="trade-partner"><option value="">Choose who you are trading with</option></select></label><div id="trade-get-list" class="trade-player-list" data-trade-list="get"></div></div>
+        <div class="trade-side" data-trade-side="get"><div class="trade-side-head"><strong>SIDE B SENDS</strong><span id="trade-get-scope">Any player</span></div><div id="trade-get-list" class="trade-player-list" data-trade-list="get"></div></div>
         <div class="trade-actions"><label>Week<select id="trade-week"></select></label><button id="analyze-trade" class="primary">Analyze this trade</button></div>
       </article>
       <div id="trade-check-result" class="result-space empty-state"><p>Choose players on both sides to compare the deal. No league setup is required. Connect ESPN in <strong>My League</strong> for roster fit, opponent, schedule, and transaction context.</p></div>
