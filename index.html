@@ -267,9 +267,27 @@
     <section class="panel" data-panel="draft" id="draft">
       <div class="section-heading draft-heading"><div><p class="eyebrow" id="draft-eyebrow">MOCK DRAFT</p><h1 id="draft-title">Run a mock draft.</h1></div><p id="draft-description">Choose the league basics and your draft spot. CPU teams make every opponent pick automatically, so you only make your own decisions.</p></div>
       <div id="draft-league-context" class="draft-league-context hidden"><span>MY LEAGUE</span><strong id="draft-league-context-name">ESPN league settings</strong><small>League size, scoring, and lineup structure are synced from My League.</small></div>
-      <div class="module draft-launch-card">
+      <div id="draft-public-preset" class="draft-league-context draft-public-preset hidden"><span>MY LEAGUE PRESET</span><strong id="draft-public-preset-name">League settings loaded</strong><small>This is the normal mock draft with your league format prefilled. You can still change anything below.</small></div>
+
+      <div id="draft-league-hub" class="draft-mode-choice hidden">
+        <article class="module draft-mode-card draft-mode-card-live">
+          <p class="eyebrow">DRAFT NIGHT</p>
+          <h2>Live Draft Assistant</h2>
+          <p>Track every real pick and get a strategy call that updates for your roster needs, market value, positional runs, and who is likely to survive to your next turn.</p>
+          <label>My draft spot<input id="league-draft-position" type="number" min="1" max="20" value="1"></label>
+          <button id="draft-start-live" class="primary">Start Live Draft Assistant</button>
+        </article>
+        <article class="module draft-mode-card">
+          <p class="eyebrow">PRACTICE</p>
+          <h2>Mock this league</h2>
+          <p>Open the regular Mock Draft with your ESPN league size, scoring, roster structure, rounds, and draft spot already filled in.</p>
+          <button id="draft-launch-league-mock" class="secondary">Mock draft</button>
+        </article>
+      </div>
+
+      <div id="draft-launch-card" class="module draft-launch-card">
         <div class="draft-primary-controls">
-          <label id="draft-mode-wrap" class="hidden">Draft mode<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft helper</option></select></label>
+          <label id="draft-mode-wrap" class="hidden">Draft mode<select id="draft-mode"><option value="sim" selected>Mock draft</option><option value="live">Live draft assistant</option></select></label>
           <label id="draft-teams-wrap">Teams<input id="draft-teams" type="number" min="4" max="20" value="12"></label>
           <label>My draft spot<input id="draft-position" type="number" min="1" max="20" value="6"></label>
           <label>Rounds<input id="draft-rounds" type="number" min="6" max="24" value="16"></label>
@@ -279,8 +297,8 @@
           <button id="draft-undo" class="ghost">Undo last pick</button>
           <div class="toolbar-stat"><span>NEXT PICK</span><strong id="draft-next">—</strong></div>
         </div>
-        <details class="advanced-details draft-settings-more"><summary>More mock draft settings</summary>
-          <label>How other teams draft<select id="draft-opponent-strategy"></select></label>
+        <details class="advanced-details draft-settings-more"><summary>Draft room settings</summary>
+          <label>How to model the other teams<select id="draft-opponent-strategy"></select></label>
           <details class="advanced-details nested-details"><summary>Use Yahoo, NFL, or another ranking list</summary>
             <label>Paste rankings<textarea id="draft-custom-board" rows="6" placeholder="rank,name&#10;1,Player Name&#10;2,Another Player"></textarea></label>
             <div class="action-row compact"><button id="draft-import-board" class="secondary">Use these rankings</button><button id="draft-clear-board" class="ghost">Use built-in market</button></div>
@@ -289,17 +307,10 @@
         </details>
       </div>
 
-      <div class="draft-focus-grid">
-        <article class="module table-module draft-recommendations">
-          <div class="table-header"><div><p class="eyebrow">ON THE CLOCK</p><h2>Who should I draft right now?</h2></div><span id="draft-meta">Set your draft spot, then start.</span></div>
-          <div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Our take</th><th>Chance he’s there next turn</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div>
-        </article>
-        <aside id="draft-roster" class="module result-space empty-state draft-roster-card"><p>Your drafted roster will appear here.</p></aside>
-      </div>
-
-      <details id="draft-live-controls" class="module optional-tool hidden">
-        <summary><span><small>LIVE DRAFT HELPER</small><strong>Record the real draft room</strong></span><em>For ESPN or another live draft</em></summary>
-        <p id="draft-flow-help" class="helper-copy">Live Draft Helper records the actual picks you see. SnapCount never invents opponent picks in live mode.</p>
+      <details id="draft-live-controls" class="module optional-tool hidden" open>
+        <summary><span><small>LIVE DRAFT ASSISTANT</small><strong>Enter the next real pick</strong></span><em id="draft-live-turn">Pick 1 · Team 1</em></summary>
+        <p id="draft-flow-help" class="helper-copy">Record each pick from the real room. Your strategy call and recommendations update after every selection; SnapCount never invents a live pick.</p>
+        <div id="draft-live-room-note" class="draft-live-room-note">Waiting for the draft to start.</div>
         <div class="draft-live-entry">
           <label>Find the player<input id="draft-pick-search" type="search" placeholder="Type a name…" autocomplete="off"></label>
           <label>Player picked<select id="draft-manual-player"></select></label>
@@ -307,19 +318,34 @@
         </div>
       </details>
 
-      <details class="module optional-tool draft-history-details">
-        <summary><span><small>DRAFT ROOM</small><strong>Recent picks</strong></span><em>Open the room history</em></summary>
-        <div id="draft-history" class="result-space empty-state"><p>Pick history will appear here.</p></div>
-      </details>
+      <article id="draft-strategy" class="module draft-strategy-card">
+        <div class="table-header"><div><p class="eyebrow">DRAFT STRATEGY</p><h2>Your plan for this turn</h2></div><span id="draft-strategy-status">Waiting for the room</span></div>
+        <div id="draft-strategy-body" class="draft-strategy-body"><p class="fineprint">Start the draft to see roster needs, positional pressure, value, and the best strategic targets.</p></div>
+      </article>
 
-      <details class="module optional-tool draft-board-details">
+      <section id="draft-room-section" class="module draft-room-section">
+        <div class="table-header draft-room-header"><div><p class="eyebrow">DRAFT ROOM</p><h2>See the whole board</h2></div><span id="draft-room-status">No picks yet</span></div>
+        <p class="helper-copy">Every column is a team. In a mock, CPU picks appear here automatically; in Live Draft Assistant, the board mirrors the real picks you enter.</p>
+        <div id="draft-history" class="draft-recent-strip"><p class="fineprint">Recent picks will appear here.</p></div>
+        <div class="draft-room-board-wrap"><div id="draft-room-board" class="draft-room-board"></div></div>
+      </section>
+
+      <div id="draft-focus-grid" class="draft-focus-grid">
+        <article class="module table-module draft-recommendations">
+          <div class="table-header"><div><p class="eyebrow">ON THE CLOCK</p><h2>Who should I draft right now?</h2></div><span id="draft-meta">Set your draft spot, then start.</span></div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Strategy fit</th><th>Chance he’s there next turn</th><th></th></tr></thead><tbody id="draft-table"></tbody></table></div>
+        </article>
+        <aside id="draft-roster" class="module result-space empty-state draft-roster-card"><p>Your drafted roster will appear here.</p></aside>
+      </div>
+
+      <details id="draft-board-details" class="module optional-tool draft-board-details">
         <summary><span><small>PRE-DRAFT</small><strong>SnapCount Big Board</strong></span><em>Open the full player board</em></summary>
         <div class="table-header"><div><p class="eyebrow">OUR DRAFT LIST</p><h2>SnapCount Big Board</h2></div><label class="inline-filter">Position<select id="draft-board-position"><option value="ALL">All</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label></div>
         <p class="helper-copy">Higher scores mean a better mix of projection, positional value, risk, and rookie upside.</p>
         <div id="draft-big-board" class="big-board-list"></div>
       </details>
 
-      <details class="module optional-tool draft-benchmark-details">
+      <details id="draft-benchmark-details" class="module optional-tool draft-benchmark-details">
         <summary><span><small>OPTIONAL</small><strong>Compare our draft strategy</strong></span><em>Run a simulation benchmark</em></summary>
         <div class="draft-benchmark-controls">
           <label>Number of mock drafts<select id="draft-benchmark-count"><option>40</option><option selected>100</option><option>200</option></select></label>

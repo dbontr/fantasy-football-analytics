@@ -48,6 +48,8 @@
     draftStarted: false,
     draftContext: "public",
     publicDraftSettings: null,
+    publicDraftPreset: null,
+    publicDraftPresetSettings: null,
     playerRunToken: 0,
     ledger: new evidenceApi.EvidenceLedger(),
     rosterIds: [],
@@ -1386,19 +1388,27 @@
     $("#draft-teams").value = String(snapshot.teams || 12);
     $("#draft-position").value = String(snapshot.draftPosition || 6);
     $("#draft-rounds").value = String(snapshot.rounds || 16);
-    $("#draft-scoring").value = ["ppr", "half-ppr", "standard"].includes(snapshot.scoring) ? snapshot.scoring : "ppr";
+    $("#draft-scoring").value = ["ppr", "half-ppr", "standard", "custom"].includes(snapshot.scoring) ? snapshot.scoring : "ppr";
     $("#draft-qb-format").value = snapshot.qbFormat || "one-qb";
   }
 
   function syncDraftModeSurface() {
     const leagueContext = state.draftContext === "league" && hasEspnMyLeagueAccess();
     const live = leagueContext && $("#draft-mode")?.value === "live";
-    $("#draft-mode-wrap")?.classList.toggle("hidden", !leagueContext);
+    const leagueHub = leagueContext && !state.draftStarted;
+    $("#draft-mode-wrap")?.classList.add("hidden");
     $("#draft-teams-wrap")?.classList.toggle("hidden", leagueContext);
     $("#draft-scoring-wrap")?.classList.toggle("hidden", leagueContext);
     $("#draft-qb-format-wrap")?.classList.toggle("hidden", leagueContext);
     $("#draft-league-context")?.classList.toggle("hidden", !leagueContext);
-    $("#draft-live-controls")?.classList.toggle("hidden", !live);
+    $("#draft-public-preset")?.classList.toggle("hidden", state.draftContext !== "public" || !state.publicDraftPreset);
+    $("#draft-league-hub")?.classList.toggle("hidden", !leagueHub);
+    ["#draft-launch-card", "#draft-strategy", "#draft-focus-grid", "#draft-room-section", "#draft-board-details"].forEach((selector) => {
+      $(selector)?.classList.toggle("hidden", leagueHub);
+    });
+    $("#draft-benchmark-details")?.classList.toggle("hidden", leagueHub || live);
+    $("#draft-live-controls")?.classList.toggle("hidden", !live || leagueHub);
+    if (live && !leagueHub && $("#draft-live-controls")) $("#draft-live-controls").open = true;
     if (!live && $("#draft-live-controls")) $("#draft-live-controls").open = false;
   }
 
@@ -1414,31 +1424,75 @@
     }
     if (next === "league") {
       syncDraftControlsToLeagueProfile();
+      $("#draft-mode").value = "live";
       const team = espnTeamById(state.espnConnection?.teamId);
-      $("#draft-league-context-name").textContent = team ? `${team.name} · ${leagueProfileSummary()}` : leagueProfileSummary();
+      const summary = team ? `${team.name} · ${leagueProfileSummary()}` : leagueProfileSummary();
+      $("#draft-league-context-name").textContent = summary;
+      if ($("#league-draft-position")) {
+        $("#league-draft-position").max = String(currentLeagueSettings().teams);
+        $("#league-draft-position").value = String(clamp(Number($("#draft-position").value || 1), 1, currentLeagueSettings().teams));
+      }
       $("#draft-eyebrow").textContent = "MY LEAGUE DRAFT";
       $("#draft-title").textContent = team ? `${team.name} Draft Center` : "My League Draft Center";
-      $("#draft-description").textContent = "Your ESPN league size, scoring, and lineup structure are already applied. Choose your draft spot, then run a mock or use the live helper.";
+      $("#draft-description").textContent = "Use Live Draft Assistant on draft night, or launch a separate mock with this league's settings already filled in.";
     } else {
       if (changed && state.publicDraftSettings) restoreDraftUi(state.publicDraftSettings);
       $("#draft-mode").value = "sim";
-      if ($("#draft-scoring").value === "custom") $("#draft-scoring").value = "ppr";
+      if ($("#draft-scoring").value === "custom" && !state.publicDraftPresetSettings) $("#draft-scoring").value = "ppr";
       $("#draft-eyebrow").textContent = "MOCK DRAFT";
       $("#draft-title").textContent = "Run a mock draft.";
-      $("#draft-description").textContent = "Choose the league basics and your draft spot. CPU teams make every opponent pick automatically, so you only make your own decisions.";
+      $("#draft-description").textContent = "Practice against a full CPU room, see every team's picks, and get strategy-aware recommendations on every turn.";
+      if ($("#draft-public-preset-name") && state.publicDraftPreset) $("#draft-public-preset-name").textContent = state.publicDraftPreset;
     }
     const customOption = $("#draft-scoring option[value=\"custom\"]");
-    if (customOption) customOption.disabled = next !== "league";
+    if (customOption) customOption.disabled = next !== "league" && !state.publicDraftPresetSettings;
     syncDraftModeSurface();
   }
 
+  function leagueMockPreset(position = null) {
+    const settings = currentLeagueSettings();
+    const rosterSize = Object.values(settings.slots || {}).reduce((sum, value) => sum + Math.max(0, Number(value || 0)), 0);
+    const rounds = rosterSize >= 6 && rosterSize <= 24 ? rosterSize : clamp(Number(settings.rounds || 16), 6, 24);
+    const draftPosition = clamp(Number(position || $("#draft-position")?.value || 1), 1, settings.teams);
+    const qbFormat = Number(settings.slots?.QB) >= 2 ? "two-qb" : Number(settings.slots?.SUPERFLEX) > 0 ? "superflex" : "one-qb";
+    return {
+      ui: { teams: settings.teams, draftPosition, rounds, scoring: settings.scoring, qbFormat },
+      settings: core.cloneSettings({ ...settings, draftPosition, rounds, qbFormat }),
+    };
+  }
+
+  async function launchLeagueMockDraft() {
+    if (!hasEspnMyLeagueAccess()) return status("Connect ESPN and choose your team first.", "error");
+    const preset = leagueMockPreset($("#league-draft-position")?.value);
+    const team = espnTeamById(state.espnConnection?.teamId);
+    state.publicDraftSettings = preset.ui;
+    state.publicDraftPresetSettings = preset.settings;
+    state.publicDraftPreset = `${team?.name || "My League"} · ${leagueProfileSummary()}`;
+    activatePanel("draft", { draftContext: "public" });
+    await resetDraft({ refine: false });
+    status(`Mock Draft loaded with ${team?.name || "your league"} settings.`, "good");
+  }
+
+  async function startLeagueLiveAssistant() {
+    if (!hasEspnMyLeagueAccess()) return status("Connect ESPN and choose your team first.", "error");
+    const teams = currentLeagueSettings().teams;
+    $("#draft-position").value = String(clamp(Number($("#league-draft-position")?.value || 1), 1, teams));
+    $("#draft-mode").value = "live";
+    state.draftState = core.createDraftState(currentDraftSettings());
+    state.draftStarted = true;
+    await renderDraft({ refine: false });
+    status("Live Draft Assistant ready. Enter each real pick as it happens.", "good");
+  }
+
   function currentDraftSettings() {
-    const leagueSettings = state.draftContext === "league" && hasEspnMyLeagueAccess()
+    const baseSettings = state.draftContext === "league" && hasEspnMyLeagueAccess()
       ? currentLeagueSettings()
-      : core.cloneSettings({ teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
+      : state.draftContext === "public" && state.publicDraftPresetSettings
+        ? core.cloneSettings(state.publicDraftPresetSettings)
+        : core.cloneSettings({ teams: 12, scoring: "ppr", slots: { ...core.DEFAULT_SETTINGS.slots, BN: 7 } });
     const scoring = $("#draft-scoring").value || "ppr";
     const qbFormat = $("#draft-qb-format")?.value || "one-qb";
-    const profileSlots = { ...leagueSettings.slots };
+    const profileSlots = { ...baseSettings.slots };
     if (qbFormat === "two-qb") { profileSlots.QB = 2; profileSlots.SUPERFLEX = 0; }
     else if (qbFormat === "superflex") { profileSlots.QB = Math.max(1, Number(profileSlots.QB || 0)); profileSlots.SUPERFLEX = Math.max(1, Number(profileSlots.SUPERFLEX || 0)); }
     else { profileSlots.QB = Math.max(1, Number(profileSlots.QB || 0)); profileSlots.SUPERFLEX = 0; }
@@ -1447,7 +1501,7 @@
       rounds: Number($("#draft-rounds").value || 16),
       draftPosition: Number($("#draft-position").value || 6),
       scoring, qbFormat, slots: profileSlots,
-      customScoring: state.draftContext === "league" && scoring === "custom" ? leagueSettings.customScoring : null,
+      customScoring: scoring === "custom" ? baseSettings.customScoring : null,
     });
   }
 
@@ -1498,26 +1552,128 @@
     const ids = state.draftState?.rosters?.[String(settings.draftPosition)] || [];
     return ids.map((id) => playerById(id)).filter(Boolean);
   }
+
+  function draftTeamLabel(teamId, settings) {
+    if (Number(teamId) !== Number(settings.draftPosition)) return `Team ${teamId}`;
+    const team = espnTeamById(state.espnConnection?.teamId);
+    const named = state.draftContext === "league" || state.publicDraftPreset;
+    return team && named ? `YOU · ${team.name}` : "YOU";
+  }
+
+  function draftRosterNeeds(settings) {
+    const roster = draftUserRoster(settings);
+    const counts = roster.reduce((result, player) => {
+      result[player.position] = Number(result[player.position] || 0) + 1;
+      return result;
+    }, {});
+    const needs = [];
+    ["QB", "RB", "WR", "TE"].forEach((position) => {
+      const missing = Math.max(0, Number(settings.slots?.[position] || 0) - Number(counts[position] || 0));
+      if (missing) needs.push(`${position}${missing > 1 ? ` ×${missing}` : ""}`);
+    });
+    const skillOwned = Number(counts.RB || 0) + Number(counts.WR || 0) + Number(counts.TE || 0);
+    const skillStarters = Number(settings.slots?.RB || 0) + Number(settings.slots?.WR || 0) + Number(settings.slots?.TE || 0) + Number(settings.slots?.FLEX || 0);
+    if (skillOwned < skillStarters && !needs.some((need) => /RB|WR|TE/.test(need))) needs.push("FLEX skill");
+    if (Number(settings.slots?.SUPERFLEX || 0) > 0 && Number(counts.QB || 0) < 2) needs.unshift("2nd QB / SF");
+    return { roster, counts, needs };
+  }
+
+  function observedDraftRun(position, settings) {
+    const windowSize = Math.max(6, Math.min(12, Number(settings.teams || 12)));
+    const recent = [...(state.draftState?.picks || [])].slice(-windowSize);
+    if (!recent.length) return { rate: 0, count: 0, total: 0 };
+    const count = recent.reduce((sum, pick) => sum + (playerById(pick.playerId)?.position === position ? 1 : 0), 0);
+    return { rate: count / recent.length, count, total: recent.length };
+  }
+
+  function strategicDraftTake(row, settings) {
+    const live = $("#draft-mode")?.value === "live";
+    const observed = live ? observedDraftRun(row.position, settings) : { rate: 0, count: 0, total: 0 };
+    const runRisk = Math.max(Number(row.runRisk || 0), observed.rate);
+    if (row.need > 0 && runRisk >= 0.4) return `${row.position} is a roster need and the room is taking the position quickly`;
+    if (row.returnChance <= 0.22) return "Take him now — he probably won't make it back";
+    if (row.vona >= 8) return `Waiting costs about ${num(row.vona)} points of draft value`;
+    if (row.need > 0) return `Fills a ${row.position} starter need without abandoning value`;
+    if (row.rookieTailScore >= 1.5) return "High-upside rookie who still fits the draft plan";
+    if (runRisk >= 0.45) return `${row.position} pressure is building in this room`;
+    return row.reasons?.[0] || "Strong mix of market price, value, and roster construction";
+  }
+
   function renderDraftTable(recommendations, summary, settings) {
     const mode = $("#draft-mode").value;
     $("#draft-table").innerHTML = recommendations.map((row, index) => {
-      const canRecord = state.draftStarted && (mode === "live" || summary.isUserPick);
+      const canPick = state.draftStarted && summary.isUserPick;
       const camp = campSignalFor(row);
       const campPill = camp?.available && ["up", "down", "mixed"].includes(camp.direction)
         ? `<em class="camp-pill ${campClass(camp)}" title="Advisory only; does not change the qualified Draft ranking">CAMP ${camp.direction === "up" ? "↑" : camp.direction === "down" ? "↓" : "•"}</em>` : "";
-      const take = row.returnChance <= 0.22 ? "Take him now — he probably won't make it back" : row.rookieTailScore >= 1.5 ? "High-upside rookie worth considering" : row.vona >= 8 ? "Strong value at this pick" : row.need > 0 ? `Fills a ${row.position} need` : (row.reasons?.[0] || "Good value for your roster");
-      return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}</strong><span>${esc(row.position)} · ${esc(row.team)}</span></td><td class="draft-take">${esc(take)}</td><td><strong>${pct(row.returnChance)}</strong></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canRecord ? "" : "disabled"}>${mode === "live" ? "Record pick" : "Draft him"}</button></td></tr>`;
+      const observed = mode === "live" ? observedDraftRun(row.position, settings) : { rate: 0, count: 0, total: 0 };
+      const runRisk = Math.max(Number(row.runRisk || 0), observed.rate);
+      const signals = [
+        row.need > 0 ? `<span class="draft-signal need">ROSTER NEED</span>` : "",
+        row.vona >= 5 ? `<span class="draft-signal">WAIT COST +${esc(num(row.vona))}</span>` : "",
+        runRisk >= 0.4 ? `<span class="draft-signal run">${esc(row.position)} RUN ${Math.round(runRisk * 100)}%</span>` : "",
+      ].filter(Boolean).join("");
+      const take = strategicDraftTake(row, settings);
+      const action = mode === "live" ? (summary.isUserPick ? "I drafted him" : "Your target") : "Draft him";
+      return `<tr><td class="board-rank-cell">${index + 1}</td><td class="player-cell"><strong>${esc(row.name)}${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${campPill}</strong><span>${esc(row.position)} · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · market #${Math.round(row.marketRank)}` : ""}</span></td><td class="draft-take"><strong>${esc(row.decision || "Target")}</strong><span>${esc(take)}</span><div class="draft-signal-row">${signals}</div></td><td class="draft-return"><strong>${pct(row.returnChance)}</strong><small>${row.nextTeamPick ? `next turn P${row.nextTeamPick}` : ""}</small></td><td><button class="mini-button pick-button" data-draft-player="${esc(row.id)}" ${canPick ? "" : "disabled"}>${action}</button></td></tr>`;
     }).join("");
     $$('[data-draft-player]').forEach((button) => button.addEventListener("click", () => draftPlayerChoice(button.dataset.draftPlayer).catch((error) => status(error.message, "error"))));
   }
 
-  function renderDraftPanels(settings) {
+  function renderDraftStrategy(recommendations, summary, settings) {
+    const body = $("#draft-strategy-body");
+    const statusNode = $("#draft-strategy-status");
+    if (!body || !statusNode) return;
+    const top = recommendations?.[0];
+    const needs = draftRosterNeeds(settings);
+    if (!top) {
+      statusNode.textContent = "No targets available";
+      body.innerHTML = `<p class="fineprint">No strategy targets are available for this draft state.</p>`;
+      return;
+    }
+    const run = observedDraftRun(top.position, settings);
+    const needsText = needs.needs.length ? needs.needs.join(" · ") : "Starter core filled — prioritize value and depth";
+    const phase = !state.draftStarted ? "STRATEGY PREVIEW" : summary.isUserPick ? "YOU'RE ON THE CLOCK" : `PLANNING FOR PICK ${top.nextTeamPick || "—"}`;
+    statusNode.textContent = phase;
+    const alternatives = recommendations.slice(1, 4).map((row) => `<div class="draft-alt"><span>${esc(row.position)}</span><strong>${esc(row.name)}</strong><small>${esc(strategicDraftTake(row, settings))}</small></div>`).join("");
+    body.innerHTML = `<div class="draft-strategy-call"><span class="strategy-kicker">TOP STRATEGY CALL</span><h3>${esc(top.name)} <small>${esc(top.position)} · ${esc(top.team)}</small></h3><p>${esc(strategicDraftTake(top, settings))}</p><div class="draft-strategy-metrics"><div><span>Roster needs</span><strong>${esc(needsText)}</strong></div><div><span>Market price</span><strong>${Number.isFinite(top.marketRank) ? `#${Math.round(top.marketRank)}` : "—"}</strong></div><div><span>Wait cost</span><strong>${top.vona > 0 ? `+${num(top.vona)}` : "Low"}</strong></div><div><span>Back next turn</span><strong>${pct(top.returnChance)}</strong></div><div><span>${top.position} room trend</span><strong>${run.total ? `${run.count} of last ${run.total}` : "No run yet"}</strong></div></div></div><div class="draft-strategy-context"><div><span>HOW SNAPCOUNT IS DRAFTING</span><p>This is not best-player-available alone. The qualified strategy balances market cost, value over replacement, your roster construction, positional scarcity, injury risk, and timing to your next pick.</p></div><div class="draft-alternatives"><span>OTHER GOOD PATHS</span>${alternatives || "<p class='fineprint'>No alternatives yet.</p>"}</div></div>`;
+  }
+
+  function renderDraftRoomBoard(settings, summary) {
+    const board = $("#draft-room-board");
+    const recentNode = $("#draft-history");
+    if (!board || !recentNode) return;
+    const picks = [...(state.draftState?.picks || [])];
+    const recent = picks.slice(-10).reverse();
+    $("#draft-room-status").textContent = summary.remaining > 0 ? `Round ${summary.round} · Pick ${summary.pickNumber} · ${draftTeamLabel(summary.teamId, settings)} on clock` : "Draft complete";
+    recentNode.innerHTML = recent.length ? recent.map((pick) => {
+      const player = playerById(pick.playerId);
+      return `<div class="draft-recent-pick pos-${esc(String(player?.position || "").toLowerCase())}"><span>P${pick.pick}</span><strong>${esc(draftTeamLabel(pick.teamId, settings))}</strong><b>${player ? esc(player.name) : esc(pick.playerId)}</b><small>${player ? esc(player.position) : ""}</small></div>`;
+    }).join("") : `<p class="fineprint">No picks yet. Start the mock or enter the first live pick.</p>`;
+    board.style.setProperty("--draft-team-count", String(settings.teams));
+    board.innerHTML = Array.from({ length: settings.teams }, (_, index) => index + 1).map((teamId) => {
+      const teamPicks = picks.filter((pick) => Number(pick.teamId) === teamId);
+      const counts = teamPicks.reduce((result, pick) => {
+        const position = playerById(pick.playerId)?.position;
+        if (position) result[position] = Number(result[position] || 0) + 1;
+        return result;
+      }, {});
+      const composition = ["QB", "RB", "WR", "TE"].filter((position) => counts[position]).map((position) => `${counts[position]} ${position}`).join(" · ");
+      const pickRows = teamPicks.map((pick) => {
+        const player = playerById(pick.playerId);
+        return `<div class="draft-room-pick pos-${esc(String(player?.position || "").toLowerCase())}"><span>R${pick.round} · P${pick.pick}</span><strong>${player ? esc(player.name) : esc(pick.playerId)}</strong><small>${player ? `${esc(player.position)} · ${esc(player.team || "FA")}` : ""}</small></div>`;
+      }).join("");
+      const classes = ["draft-team-column", Number(teamId) === Number(settings.draftPosition) ? "user-team" : "", state.draftStarted && summary.remaining > 0 && Number(summary.teamId) === teamId ? "on-clock" : ""].filter(Boolean).join(" ");
+      return `<section class="${classes}"><header><span>${Number(teamId) === Number(settings.draftPosition) ? "YOUR TEAM" : `TEAM ${teamId}`}</span><strong>${esc(draftTeamLabel(teamId, settings))}</strong><small>${composition || "No picks yet"}</small></header><div class="draft-team-picks">${pickRows || '<div class="draft-room-empty">Waiting</div>'}</div></section>`;
+    }).join("");
+  }
+
+  function renderDraftPanels(settings, summary, recommendations) {
     const roster = draftUserRoster(settings);
     $("#draft-roster").className = "module result-space draft-roster-card";
     $("#draft-roster").innerHTML = `<div class="table-header"><h3>Your roster</h3><span>${roster.length}/${settings.rounds}</span></div><div class="roster-strip">${roster.map((player) => `<div class="roster-chip"><span>${esc(player.position)}</span>${esc(player.name)}${player.rookie ? '<b class="rookie-chip">R</b>' : ''}</div>`).join("") || "<span class='fineprint'>No picks yet.</span>"}</div>`;
-    const recent = [...(state.draftState?.picks || [])].slice(-18).reverse();
-    $("#draft-history").className = "result-space";
-    $("#draft-history").innerHTML = `<div class="table-header"><h3>Recent picks</h3><span>${state.draftState?.picks?.length || 0} total</span></div><div class="pick-history">${recent.map((pick) => { const player = playerById(pick.playerId); return `<div class="lineup-row"><span>${pick.pick}</span><strong>T${pick.teamId} · ${player ? esc(player.name) : esc(pick.playerId)}</strong><b>${player ? esc(player.position) : ""}</b></div>`; }).join("") || "<p class='fineprint'>No picks yet.</p>"}</div>`;
+    renderDraftStrategy(recommendations, summary, settings);
+    renderDraftRoomBoard(settings, summary);
   }
   function renderDraftManualOptions(settings = currentDraftSettings()) {
     const drafted = new Set((state.draftState?.picks || []).map((pick) => String(pick.playerId)));
@@ -1536,14 +1692,20 @@
     renderDraftManualOptions(settings);
     $("#draft-next").textContent = summary.remaining > 0 ? `P${summary.pickNumber} / T${summary.teamId}` : "COMPLETE";
     const qualification = leagueApi.isQualifiedPprDraftScope(settings) ? "A+ QUALIFIED PPR" : "CUSTOM FORMAT · TRANSFER POLICY";
-    const phase = !state.draftStarted ? "READY" : summary.remaining <= 0 ? "DRAFT COMPLETE" : summary.isUserPick ? "YOUR PICK" : `team ${summary.teamId}`;
+    const phase = !state.draftStarted ? "READY" : summary.remaining <= 0 ? "DRAFT COMPLETE" : summary.isUserPick ? "YOUR PICK" : `${draftTeamLabel(summary.teamId, settings)} PICK`;
     $("#draft-meta").textContent = `${state.draftState.picks.length} picks · ${phase} · ${qualification}`;
     const mode = $("#draft-mode").value;
+    if ($("#draft-live-turn")) $("#draft-live-turn").textContent = summary.remaining > 0 ? `Pick ${summary.pickNumber} · ${draftTeamLabel(summary.teamId, settings)}` : "Draft complete";
+    if ($("#draft-live-room-note")) $("#draft-live-room-note").textContent = summary.remaining <= 0
+      ? "The live draft is complete."
+      : summary.isUserPick
+        ? "You are on the clock. Use the strategy table below, then record the player you actually draft."
+        : `${draftTeamLabel(summary.teamId, settings)} is on the clock. Record that team's actual pick; your recommendations will update immediately.`;
     const startButton = $("#draft-reset");
     if (startButton) {
       startButton.disabled = state.draftBusy;
       startButton.textContent = mode === "live"
-        ? (state.draftStarted ? "Reset live room" : "Start live helper")
+        ? (state.draftStarted ? "Reset live room" : "Start live assistant")
         : (state.draftStarted ? "Restart mock" : "Start mock");
     }
     if ($("#draft-undo")) $("#draft-undo").disabled = state.draftBusy || !state.draftState.picks.length;
@@ -1553,7 +1715,7 @@
       state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
     );
     renderDraftTable(initial, summary, settings);
-    renderDraftPanels(settings);
+    renderDraftPanels(settings, summary, initial);
     const token = ++state.draftRenderToken;
     if (options.refine !== false && state.draftStarted && summary.remaining > 0) {
       try {
@@ -1564,13 +1726,32 @@
           state.players, state.draftState, settings, settings.draftPosition, state.draftBoard, draftPolicyForSettings(settings), 18,
         );
         renderDraftTable(refined, summary, settings);
+        renderDraftStrategy(refined, summary, settings);
       } catch (_) { /* analytical fallback is already rendered */ }
+    }
+  }
+
+  async function animateDraftRoom(previousState, finalState, settings) {
+    const start = previousState?.picks?.length || 0;
+    const added = [...(finalState?.picks || [])].slice(start);
+    if (!added.length) return;
+    let animated = {
+      picks: [...(previousState?.picks || [])],
+      rosters: Object.fromEntries(Object.entries(previousState?.rosters || {}).map(([teamId, ids]) => [teamId, [...ids]])),
+    };
+    for (const pick of added) {
+      animated = core.applyDraftPick(animated, pick.playerId, settings, pick.teamId);
+      state.draftState = animated;
+      const summary = core.draftPickSummary(animated, settings);
+      renderDraftRoomBoard(settings, summary);
+      $("#draft-next").textContent = summary.remaining > 0 ? `P${summary.pickNumber} / T${summary.teamId}` : "COMPLETE";
+      await new Promise((resolve) => setTimeout(resolve, 70));
     }
   }
 
   async function advanceDraftToUser(options = {}) {
     if ($("#draft-mode").value === "live") {
-      if (!options.quiet) status("Live Draft Helper never invents picks. Record the real room below.", "good");
+      if (!options.quiet) status("Live Draft Assistant never invents picks. Record the real room below.", "good");
       return { cpuPicks: 0, state: state.draftState };
     }
     if (state.draftBusy) return null;
@@ -1581,7 +1762,9 @@
     if ($("#draft-undo")) $("#draft-undo").disabled = true;
     if (!options.quiet) status("Simulating the room to your next pick…");
     try {
-      const result = await runWorker("draft-room-advance", { options: { players: state.players, state: state.draftState, settings, userTeamId: settings.draftPosition, strategy: $("#draft-opponent-strategy").value || "mixed", board: draftBoardPayload(), seed: "oracle-room-2026" } });
+      const previousState = state.draftState;
+      const result = await runWorker("draft-room-advance", { options: { players: state.players, state: previousState, settings, userTeamId: settings.draftPosition, strategy: $("#draft-opponent-strategy").value || "mixed", board: draftBoardPayload(), seed: "oracle-room-2026" } });
+      await animateDraftRoom(previousState, result.state, settings);
       state.draftState = result.state;
       return result;
     } catch (error) {
@@ -1589,8 +1772,7 @@
       throw error;
     } finally {
       state.draftBusy = false;
-      await renderDraft({ refine: false });
-      renderDraft();
+      await renderDraft();
     }
   }
 
@@ -1598,15 +1780,16 @@
     if (!id || state.draftBusy) return;
     const settings = currentDraftSettings();
     const mode = $("#draft-mode").value;
-    if (!state.draftStarted) return status(mode === "sim" ? "Start the mock first." : "Start the live draft helper first.", "error");
+    if (!state.draftStarted) return status(mode === "sim" ? "Start the mock first." : "Start the live draft assistant first.", "error");
     const before = core.draftPickSummary(state.draftState, settings);
     if (mode === "sim" && !before.isUserPick) return status("CPU teams are still ahead of your pick. Restart the mock if the room is stuck.", "error");
     state.draftState = core.applyDraftPick(state.draftState, id, settings);
     $("#draft-pick-search").value = "";
     await renderDraft({ refine: false });
     const after = core.draftPickSummary(state.draftState, settings);
-    if (after.remaining <= 0) return status("Mock draft complete. Your final roster is ready.", "good");
-    if ($("#draft-mode").value === "sim") {
+    const picked = playerById(id);
+    if (after.remaining <= 0) return status(mode === "sim" ? "Mock draft complete. Your final roster is ready." : "Live draft complete. The full room and your final roster are recorded.", "good");
+    if (mode === "sim") {
       status("Pick locked. Other teams are drafting…");
       const result = await advanceDraftToUser({ quiet: true });
       const next = core.draftPickSummary(state.draftState, settings);
@@ -1614,7 +1797,7 @@
       else if ((result?.cpuPicks || 0) === 0) status(`Back-to-back pick — you’re still on the clock at pick ${next.pickNumber}.`, "good");
       else status(`You’re on the clock at pick ${next.pickNumber}. ${result.cpuPicks} opponent pick${result.cpuPicks === 1 ? "" : "s"} simulated.`, "good");
     } else {
-      status(`Recorded pick ${after.pickNumber - 1}. Enter the next real pick.`, "good");
+      status(`P${after.pickNumber - 1}: ${draftTeamLabel(before.teamId, settings)} took ${picked?.name || "that player"}. ${draftTeamLabel(after.teamId, settings)} is next.`, "good");
       renderDraft();
     }
   }
@@ -1645,7 +1828,7 @@
       }
     } else {
       $("#draft-live-controls").open = true;
-      status("Live Draft Helper ready. Record the real picks below.", "good");
+      status("Live Draft Assistant reset. Enter the real room from pick 1.", "good");
     }
   }
 
@@ -1654,9 +1837,9 @@
     await resetDraft({ refine: false });
     syncDraftModeSurface();
     $("#draft-flow-help").textContent = $("#draft-mode").value === "live"
-      ? "Live Draft Helper records the real picks from ESPN, Yahoo, Sleeper, NFL, CBS, or any other room. SnapCount never invents opponent picks."
+      ? "Live Draft Assistant records the real picks from ESPN, Yahoo, Sleeper, NFL, CBS, or any other room and updates your strategy after every selection. SnapCount never invents opponent picks."
       : "Mock Draft runs the opponent picks automatically and returns the room to you every time you are on the clock.";
-    status($("#draft-mode").value === "live" ? "Live helper ready to start." : "Mock draft ready to start.", "good");
+    status($("#draft-mode").value === "live" ? "Live Draft Assistant ready to start." : "Mock draft ready to start.", "good");
   }
 
   function undoDraftPick() {
@@ -2521,6 +2704,8 @@
     state.draftBoard = null;
     state.draftContext = "public";
     state.publicDraftSettings = null;
+    state.publicDraftPreset = null;
+    state.publicDraftPresetSettings = null;
     $("#draft-custom-board").value = "";
     populateLeagueProfileForm();
     setDraftContext("public");
@@ -2576,6 +2761,8 @@
       if (!event.target.closest(".my-league-nav")) setMyLeagueMenuOpen(false);
     });
     $("#draft-pick-search").addEventListener("input", () => renderDraftManualOptions());
+    $("#draft-start-live").addEventListener("click", () => startLeagueLiveAssistant().catch((error) => status(error.message, "error")));
+    $("#draft-launch-league-mock").addEventListener("click", () => launchLeagueMockDraft().catch((error) => status(error.message, "error")));
     $("#run-player").addEventListener("click", runPlayerLab);
     $("#load-intelligence").addEventListener("click", loadPlayerIntelligence);
     $("#sync-live-intelligence").addEventListener("click", syncLiveIntelligence);
