@@ -3919,3 +3919,144 @@ tbody tr:hover td { background: #edf4fb !important; }
   font-weight: 650;
   letter-spacing: .005em !important;
 }
+
+
+/* Player identity + residual outlook presentation */
+.player-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.player-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d4dfeb;
+  border-radius: 9px;
+  background: #f2f6fa;
+}
+.player-headshot {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.player-team-logo {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 2px;
+  object-fit: contain;
+  border: 1px solid #d7e0ea;
+  border-radius: 5px;
+  background: #fff;
+}
+.player-media.team-only .player-team-logo {
+  position: static;
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+}
+.player-identity-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.player-identity-copy > strong { line-height: 1.25; }
+.player-identity-copy > small {
+  color: #68798d;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.player-cell-visual { min-width: 240px; }
+.big-board-row .player-media {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+}
+.big-board-row .player-headshot { width: 38px; height: 38px; }
+.rank-source-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 7px;
+  border: 1px solid #d5dfe9;
+  border-radius: 6px;
+  background: #f7f9fb;
+  color: #556579;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.rank-source-chip.snap { border-color: #bfd2e8; background: #edf4fb; color: #174f8c; }
+.outlook-control-cell { min-width: 350px; }
+.outlook-control-cell > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.outlook-basis {
+  display: block;
+  max-width: 460px;
+  margin-top: 6px;
+  color: #68798d;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.outlook-chip {
+  border: 1px solid transparent;
+  margin-left: 0;
+}
+.outlook-chip.somewhat-positive, .outlook-select.somewhat-positive { background: #edf7f1; color: #3d7258; border-color: #cbe5d6; }
+.outlook-chip.positive, .outlook-select.positive { background: #e3f3ea; color: #196541; border-color: #abd5bc; }
+.outlook-chip.super-positive, .outlook-select.super-positive { background: #d3ecde; color: #075936; border-color: #7fbd9a; }
+.outlook-chip.neutral, .outlook-select.neutral { background: #eef1f4; color: #566371; border-color: #d4dbe2; }
+.outlook-chip.somewhat-negative, .outlook-select.somewhat-negative { background: #fbf0ef; color: #925b55; border-color: #ecd0cd; }
+.outlook-chip.negative, .outlook-select.negative { background: #f7e3e1; color: #963d35; border-color: #e1aaa5; }
+.outlook-chip.super-negative, .outlook-select.super-negative { background: #f1d4d1; color: #79251e; border-color: #ca827b; }
+.outlook-select.unknown { background: #fff; color: #526171; border-color: #cbd7e4; }
+.outlook-select { font-weight: 750; }
+.outlook-draft-note .outlook-chip { vertical-align: middle; }
+@media (max-width: 680px) {
+  .player-media { flex-basis: 38px; width: 38px; height: 38px; }
+  .player-headshot { width: 36px; height: 36px; }
+  .player-cell-visual { min-width: 205px; }
+  .outlook-control-cell { min-width: 300px; }
+}
+/* Outlook page uses a neutral, readable comparison layout. */
+#outlooks .outlook-explainer {
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 8px 22px !important;
+  border-color: #cfdae7 !important;
+  background: #f8fbff !important;
+}
+#outlooks .outlook-explainer > strong { grid-row: 1 / span 2; }
+#outlooks .outlook-explainer > span { min-width: 0; line-height: 1.55; }
+#outlooks .outlook-explainer > small { grid-column: 2; line-height: 1.5; }
+#outlooks .outlook-table { width: 100%; min-width: 0; table-layout: fixed; }
+#outlooks .outlook-table th:nth-child(1) { width: 5%; }
+#outlooks .outlook-table th:nth-child(2) { width: 27%; }
+#outlooks .outlook-table th:nth-child(3) { width: 13%; }
+#outlooks .outlook-table th:nth-child(4) { width: 15%; }
+#outlooks .outlook-table th:nth-child(5) { width: 40%; }
+#outlooks .outlook-table th, #outlooks .outlook-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#outlooks .outlook-table .outlook-chip { display: inline-flex; }
+#outlooks .outlook-table select { width: auto; min-width: 160px; max-width: 190px; }
+@media (max-width: 900px) {
+  #outlooks .outlook-explainer { grid-template-columns: 1fr !important; }
+  #outlooks .outlook-explainer > strong, #outlooks .outlook-explainer > small { grid-column: 1; grid-row: auto; }
+}

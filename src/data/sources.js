@@ -373,6 +373,8 @@
         projectionStdDev: Number(player.projectionStdDev || 0) * ratio,
         injuryStatus: match.injuryStatus || player.injuryStatus,
         active: match.active === false ? false : player.active,
+        espnPlayerId: String(match.id || player.id),
+        espnTeamId: Number.isFinite(Number(match.proTeamId)) ? Number(match.proTeamId) : null,
         market: {
           averageDraftPosition: Number.isFinite(Number(match.ownership?.averageDraftPosition)) ? Number(match.ownership.averageDraftPosition) : null,
           averageDraftPositionPercentChange: Number.isFinite(Number(match.ownership?.averageDraftPositionPercentChange)) ? Number(match.ownership.averageDraftPositionPercentChange) : null,
