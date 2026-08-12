@@ -62,3 +62,10 @@
 
   return { DB_NAME, DB_VERSION, get, openDb, remove, set };
 });
+
+if (typeof document !== "undefined" && !document.querySelector('script[data-snapcount-player-popout]')) {
+  const script = document.createElement("script");
+  script.src = "./src/outlook-player-popout.js";
+  script.dataset.snapcountPlayerPopout = "true";
+  document.head.appendChild(script);
+}
