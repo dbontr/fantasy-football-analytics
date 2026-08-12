@@ -7,11 +7,13 @@ const sources = require("../src/data/sources.js");
 test("free-source policy accepts allowlisted public endpoints", () => {
   assert.equal(sources.assertFreeUrl("sleeper", "https://api.sleeper.app/v1/players/nfl").source.id, "sleeper");
   assert.equal(sources.assertFreeUrl("nws", "https://api.weather.gov/points/42.3,-83.2").source.id, "nws");
+  assert.equal(sources.assertFreeUrl("espn", "https://site.web.api.espn.com/apis/search/v2?region=us&lang=en&query=DeVon%20Achane&limit=10").source.id, "espn");
 });
 
 test("free-source policy rejects credentials and arbitrary origins", () => {
   assert.throws(() => sources.assertFreeUrl("sleeper", "https://example.com/v1/players/nfl"));
   assert.throws(() => sources.assertFreeUrl("sleeper", "https://api.sleeper.app/v1/players/nfl?api_key=secret"));
+  assert.throws(() => sources.assertFreeUrl("espn", "https://site.web.api.espn.com/apis/search/v2?query=test&auth=secret"));
 });
 
 test("CSV parser handles quoted commas", () => {

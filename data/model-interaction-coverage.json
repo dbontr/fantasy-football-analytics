@@ -1,5 +1,5 @@
 {
-  "version": "snapcount-interaction-coverage-2026.3",
+  "version": "snapcount-interaction-coverage-2026.4",
   "principle": "Measure football interactions first; only a separately validated family may change the serving mean.",
   "families": {
     "target_share_and_targets": {
@@ -48,7 +48,7 @@
     },
     "camp_role_state": {
       "status": "uncertainty-only",
-      "scope": "training-camp/news evidence changes role uncertainty, never the serving mean directly"
+      "scope": "training-camp/news evidence plus direct coach/play-caller usage intent changes role uncertainty and shadow decision context; never the serving mean directly"
     },
     "qb_target_ecosystem": {
       "status": "context-only",

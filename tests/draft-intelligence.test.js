@@ -107,7 +107,7 @@ test("Draft Decision Mix loads from the browser store and patches qualified reco
   assert.ok(source.includes("shadow challenger"));
   assert.ok(store.includes("./src/engine/draft-intelligence.js"));
   assert.ok(store.includes("./draft-intelligence.css"));
-  assert.ok(worker.includes("snapcount-browser-v1.36.0-shadow-draft-intelligence"));
+  assert.ok(worker.includes("snapcount-browser-v1.37.0-usage-intent"));
   assert.ok(worker.includes("./src/engine/draft-intelligence.js"));
   assert.ok(worker.includes("./draft-intelligence.css"));
   assert.ok(worker.includes("./data/validation/draft-decision-mix-audit.json"));
