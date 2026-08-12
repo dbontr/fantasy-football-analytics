@@ -107,7 +107,7 @@ test("Draft Decision Mix loads from the browser store and patches qualified reco
   assert.ok(source.includes("shadow challenger"));
   assert.ok(store.includes("./src/engine/draft-intelligence.js"));
   assert.ok(store.includes("./draft-intelligence.css"));
-  assert.ok(worker.includes("snapcount-browser-v1.37.0-usage-intent"));
+  assert.ok(worker.includes("snapcount-browser-v1.38.0-outlook-notes"));
   assert.ok(worker.includes("./src/engine/draft-intelligence.js"));
   assert.ok(worker.includes("./draft-intelligence.css"));
   assert.ok(worker.includes("./data/validation/draft-decision-mix-audit.json"));
@@ -118,11 +118,12 @@ test("Draft Decision Mix loads from the browser store and patches qualified reco
   assert.ok(audit.components.espnResidualReinforcement.meanEdge < 0);
 });
 
-test("My Outlooks exposes ESPN-relative draft targets instead of abstract sentiment labels", () => {
-  assert.equal(intelligence.PERSONAL_VIEW_LABELS["very-positive"], "Much higher · ~1¼ rounds");
-  assert.equal(intelligence.PERSONAL_VIEW_LABELS.positive, "Higher · ~¾ round");
-  assert.equal(intelligence.PERSONAL_VIEW_LABELS["somewhat-positive"], "Moderately higher · ~⅓ round");
-  assert.equal(intelligence.PERSONAL_VIEW_LABELS["slightly-positive"], "Slightly higher · ~⅙ round");
-  assert.equal(intelligence.PERSONAL_VIEW_LABELS.neutral, "Same as ESPN");
-  assert.equal(intelligence.PERSONAL_VIEW_LABELS["very-negative"], "Much lower · ~1¼ rounds");
+test("My Outlooks exposes five note-only labels", () => {
+  assert.deepEqual(intelligence.PERSONAL_VIEW_LABELS, {
+    love: "Love",
+    like: "Like",
+    neutral: "Neutral",
+    concerned: "Concerned",
+    fade: "Fade",
+  });
 });

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.37.0-usage-intent";
+const CACHE = "snapcount-browser-v1.38.0-outlook-notes";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
