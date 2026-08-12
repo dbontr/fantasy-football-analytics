@@ -1,5 +1,5 @@
 {
-  "version": "snapcount-interaction-coverage-2026.2",
+  "version": "snapcount-interaction-coverage-2026.3",
   "principle": "Measure football interactions first; only a separately validated family may change the serving mean.",
   "families": {
     "target_share_and_targets": {
@@ -89,6 +89,10 @@
     "dst_pressure_sack_takeaway_interactions": {
       "status": "context-only",
       "scope": "2023-2025 defense sacks/QB hits/takeaways paired with opponent offense sacks/turnovers allowed"
+    },
+    "draft_decision_intelligence": {
+      "status": "bounded-decision-overlay",
+      "scope": "counterfactual starter value, manager-specific pick survival, ESPN residual disagreement, availability, QB-format scarcity, roster correlation, and shadow football context; hard-capped and never treated as an admitted forecast-mean effect"
     }
   }
 }
