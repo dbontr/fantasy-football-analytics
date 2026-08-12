@@ -1,1 +1,0 @@
-The My Outlooks analysis popout uses the same committed PPR projection basis as the My Outlooks board. The added average projected PPG metric excludes the bye week when weekly projections are available.
