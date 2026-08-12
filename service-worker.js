@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.28.0-team-trade-polish";
+const CACHE = "snapcount-browser-v1.29.0-football-context";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const STATIC_ASSETS = [
   "./src/engine/rookies.js",
   "./src/engine/correlation.js",
   "./src/engine/mean-calibration.js",
+  "./src/engine/football-context.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/context.js",
@@ -31,6 +32,7 @@ const STATIC_ASSETS = [
   "./data/analytics-runtime-profile.json",
   "./data/model-interaction-coverage.json",
   "./data/special-teams-2026.json",
+  "./data/football-context-2026.json",
   "./data/coaches-2026.json",
   "./data/health-calibration-2026.json",
   "./data/rookies-2026.json",

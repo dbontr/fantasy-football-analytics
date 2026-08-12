@@ -1,0 +1,167 @@
+{
+  "version": "football-context-audit-2026.1",
+  "frozenAt": "2026-08-12T00:33:13.966Z",
+  "status": "prospective-only-not-serving",
+  "artifactVersion": "snapcount-football-context-2026.1",
+  "coverage": {
+    "offenses": 32,
+    "defenses": 32,
+    "coachHistories": 47
+  },
+  "families": {
+    "teamVolumeToPlayerShare": "shadow-only",
+    "opponentPressureEfficiency": "shadow-only",
+    "offensiveLineVsFront": "shadow-only",
+    "playcallerSystem": "shadow-only",
+    "qbPassingRushingComponents": "shadow-only",
+    "teRoleSystem": "shadow-only",
+    "campRoleState": "uncertainty-only",
+    "decisionScheduleHorizon": "separately audited by surface"
+  },
+  "positionChecks": {
+    "QB": {
+      "measuredEvidence": [
+        "coaching.system_tendencies",
+        "line.pass_protection_proxy",
+        "line.run_block_proxy",
+        "matchup.pass_efficiency_grade",
+        "matchup.pressure_grade",
+        "matchup.red_zone_grade",
+        "matchup.rush_front_grade",
+        "system.motion",
+        "system.pass_rate",
+        "system.play_action",
+        "system.playcaller_pace",
+        "system.playcaller_pass",
+        "system.qb_run",
+        "system.rb_committee",
+        "system.red_zone",
+        "system.rush_concentration",
+        "system.target_concentration",
+        "system.team_volume"
+      ],
+      "shadowDriverCount": 17,
+      "shadowCorrection": 2.081064,
+      "servingMeanDelta": 0,
+      "components": {
+        "total": 0.7968,
+        "passing": 1.0816819199999999,
+        "rushing": 0.20258201600000003
+      }
+    },
+    "RB": {
+      "measuredEvidence": [
+        "coaching.system_tendencies",
+        "line.pass_protection_proxy",
+        "line.run_block_proxy",
+        "matchup.pass_efficiency_grade",
+        "matchup.pressure_grade",
+        "matchup.red_zone_grade",
+        "matchup.rush_front_grade",
+        "system.motion",
+        "system.pass_rate",
+        "system.play_action",
+        "system.playcaller_pace",
+        "system.playcaller_pass",
+        "system.rb_committee",
+        "system.red_zone",
+        "system.rush_concentration",
+        "system.target_concentration",
+        "system.team_volume"
+      ],
+      "shadowDriverCount": 12,
+      "shadowCorrection": 1.790557,
+      "servingMeanDelta": 0,
+      "components": {
+        "total": 0.7968,
+        "rushing": 0.8957792,
+        "passing": 0.08063999999999999,
+        "receiving": 0.0173376
+      }
+    },
+    "WR": {
+      "measuredEvidence": [
+        "coaching.system_tendencies",
+        "line.pass_protection_proxy",
+        "line.run_block_proxy",
+        "matchup.pass_efficiency_grade",
+        "matchup.pressure_grade",
+        "matchup.red_zone_grade",
+        "matchup.rush_front_grade",
+        "system.motion",
+        "system.pass_rate",
+        "system.play_action",
+        "system.playcaller_pace",
+        "system.playcaller_pass",
+        "system.rb_committee",
+        "system.red_zone",
+        "system.rush_concentration",
+        "system.target_concentration",
+        "system.team_volume"
+      ],
+      "shadowDriverCount": 15,
+      "shadowCorrection": 2.596736,
+      "servingMeanDelta": 0,
+      "components": {
+        "total": 0.7968,
+        "passing": 1.36576,
+        "receiving": 0.372736,
+        "rushing": 0.061439999999999995
+      }
+    },
+    "TE": {
+      "measuredEvidence": [
+        "coaching.system_tendencies",
+        "line.pass_protection_proxy",
+        "line.run_block_proxy",
+        "matchup.pass_efficiency_grade",
+        "matchup.pressure_grade",
+        "matchup.red_zone_grade",
+        "matchup.rush_front_grade",
+        "system.motion",
+        "system.pass_rate",
+        "system.play_action",
+        "system.playcaller_pace",
+        "system.playcaller_pass",
+        "system.rb_committee",
+        "system.red_zone",
+        "system.rush_concentration",
+        "system.target_concentration",
+        "system.te_usage",
+        "system.team_volume"
+      ],
+      "shadowDriverCount": 16,
+      "shadowCorrection": 2.88,
+      "servingMeanDelta": 0,
+      "components": {
+        "total": 0.791208791208791,
+        "passing": 1.3561763537667149,
+        "receiving": 0.6716059843770685,
+        "rushing": 0.06100887064742484
+      }
+    }
+  },
+  "campCheck": {
+    "servingMeanDelta": 0,
+    "roleUncertaintyBefore": 0.30000000000000004,
+    "roleUncertaintyAfter": 0.36208000000000007
+  },
+  "preRegisteredAdmission": {
+    "evaluationSeason": 2026,
+    "baseline": "same point-in-time ESPN PPR projection used by the frozen SnapCount model",
+    "noRetuneAfterOutcomeInspection": true,
+    "gates": {
+      "overallMaeImprovement": "> 0",
+      "overallRmseImprovement": "> 0",
+      "weeklyRankNonInferiority": ">= 0",
+      "pairedWeekBootstrapMaeLower95": "> 0",
+      "effectDirectionStability": "same sign in at least 4 of 5 rolling seasonal folds",
+      "ablationRequirement": "each promoted family must improve the full successor when removed/added"
+    },
+    "restrictions": {
+      "productionMeanChangedNow": false,
+      "mayUse2026ForTuning": false,
+      "mayPromoteIndividualFamilyWithoutAblation": false
+    }
+  }
+}

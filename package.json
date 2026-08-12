@@ -20,7 +20,7 @@
     "qualify:profile": "node scripts/draft-overfit-audit.js && node scripts/forecast-overfit-audit.js && node scripts/forecast-successor-candidate.js --verify && node scripts/future-win-audit.js --verify && node scripts/build-analytics-profile.js",
     "qualify:analytics": "node scripts/qualify-next-cycle.js",
     "verify:analytics": "node scripts/verify-analytics-profile.js",
-    "verify": "npm run check && npm test && npm run build && npm run audit:model && npm run audit:forecast && npm run verify:forecast-overfit && npm run verify:forecast-successor && npm run audit:correlation && npm run audit:context && npm run verify:draft-overfit && npm run verify:future-win && npm run verify:analytics",
+    "verify": "npm run check && npm test && npm run build && npm run audit:model && npm run audit:forecast && npm run verify:forecast-overfit && npm run verify:forecast-successor && npm run audit:correlation && npm run audit:context && npm run verify:football-context && npm run verify:draft-overfit && npm run verify:future-win && npm run verify:analytics",
     "serve": "node scripts/serve.js",
     "refresh:ppr": "node scripts/refresh-ppr-baseline.js",
     "refresh:rookies": "node scripts/build-rookie-model.js",
@@ -37,7 +37,10 @@
     "verify:forecast-overfit": "node scripts/forecast-overfit-audit.js --verify",
     "verify:forecast-successor": "node scripts/forecast-successor-candidate.js --verify",
     "audit:future-win": "node scripts/future-win-audit.js",
-    "verify:future-win": "node scripts/future-win-audit.js --verify"
+    "verify:future-win": "node scripts/future-win-audit.js --verify",
+    "audit:football-context": "node scripts/football-context-audit.js",
+    "verify:football-context": "node scripts/football-context-audit.js --verify",
+    "refresh:football-context": "node scripts/build-football-context.js"
   },
   "engines": {
     "node": ">=20"

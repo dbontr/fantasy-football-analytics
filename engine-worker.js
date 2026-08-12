@@ -6,6 +6,7 @@ importScripts(
   "./src/engine/rookies.js",
   "./src/engine/correlation.js",
   "./src/engine/mean-calibration.js",
+  "./src/engine/football-context.js",
   "./src/engine/runtime.js",
   "./src/engine/evidence.js",
   "./src/engine/intelligence.js",

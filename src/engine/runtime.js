@@ -11,10 +11,13 @@
   const meanCalibration = typeof module !== "undefined" && module.exports
     ? require("./mean-calibration.js")
     : root.SnapCountMeanCalibration;
-  const api = factory(core, rookies, correlationModel, meanCalibration);
+  const footballContext = typeof module !== "undefined" && module.exports
+    ? require("./football-context.js")
+    : root.SnapCountFootballContext;
+  const api = factory(core, rookies, correlationModel, meanCalibration, footballContext);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OracleBrowserEngine = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel, meanCalibration) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createEngine(core, rookies, correlationModel, meanCalibration, footballContext) {
   "use strict";
 
   const VERSION = "oracle-browser-2026.8-future-win";
@@ -296,6 +299,10 @@
       roleUncertainty = clamp(Math.max(roleUncertainty, finite(rookieProfile.roleFloor)), 0, 0.78);
       epistemic = clamp(Math.max(epistemic, finite(rookieProfile.epistemicFloor)), 0, 0.75);
     }
+    const roleContext = footballContext?.roleUncertaintyAdjustment?.(evidence) || { roleDelta: 0, availabilityDelta: 0 };
+    roleUncertainty = clamp(roleUncertainty + finite(roleContext.roleDelta), 0, 0.9);
+    epistemic = clamp(epistemic + finite(roleContext.availabilityDelta), 0, 0.85);
+    const shadow = livePprAnchor ? footballContext?.shadowDrivers?.(baseline.player, baseline, evidence) || null : null;
     const volatility = POSITION_VOLATILITY[baseline.player.position] || 0.46;
     const stdMultiplier = 1 + epistemic * 0.34 + roleUncertainty * 0.28 + conflict * 0.32;
     const activeStdDev = Math.max(activeMean * 0.12, baseline.standardDeviation, activeMean * volatility * 0.62) * stdMultiplier;
@@ -320,6 +327,7 @@
         role: roleUncertainty, evidenceConflict: conflict,
       },
       drivers,
+      shadowSuccessor: shadow ? { ...shadow, mean: Math.max(0, baseline.mean + finite(shadow.correction)) } : null,
       edge: { points: expected - baseline.mean, percent: baseline.mean > 0 ? (expected - baseline.mean) / baseline.mean : 0 },
     };
   }

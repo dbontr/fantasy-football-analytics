@@ -26,3 +26,16 @@ test("direct trade analysis consumes every player in a larger package", () => {
   assert.deepEqual(analysis.afterRoster.map((player) => player.id).sort(), ["keep", "r1", "r2"]);
   assert.ok(Number.isFinite(analysis.giveValue) && Number.isFinite(analysis.receiveValue));
 });
+
+test("waiver horizon favors sustained multi-week value over a one-week spike", () => {
+  const roster = [row("qb-h", "QB", "QB", 18), row("rb-h1", "RB1", "RB", 10), row("rb-h2", "RB2", "RB", 9), row("wr-h1", "WR1", "WR", 10), row("wr-h2", "WR2", "WR", 9), row("te-h", "TE", "TE", 7), row("bn-h", "Bench", "WR", 4)];
+  const spike = row("spike", "One Week Spike", "WR", 7);
+  spike.weeklyProjections = Array(18).fill(2); spike.weeklyProjections[3] = 24; spike.projectedPoints = 90;
+  const steady = row("steady", "Six Week Steady", "WR", 11);
+  steady.weeklyProjections = Array(18).fill(11); steady.projectedPoints = 187;
+  const oneWeek = core.waiverRecommendations(roster, [spike, steady], core.DEFAULT_SETTINGS, 2, 4, { minimumScore: 0, horizonWeeks: 1 });
+  const sixWeek = core.waiverRecommendations(roster, [spike, steady], core.DEFAULT_SETTINGS, 2, 4, { minimumScore: 0, horizonWeeks: 6, horizonDecay: 0.8 });
+  assert.equal(oneWeek[0].add.id, "spike");
+  assert.equal(sixWeek[0].add.id, "steady");
+  assert.equal(sixWeek[0].horizonWeeks, 6);
+});

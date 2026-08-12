@@ -1089,11 +1089,23 @@
   function waiverRecommendations(roster, freeAgents, settings = {}, limit = 12, week = null, options = {}) {
     const selectedWeek = week ? Math.round(clamp(week, 1, 18)) : null;
     const minimumScore = Math.max(0, finite(options.minimumScore, 0.25));
+    const horizonWeeks = selectedWeek ? Math.round(clamp(options.horizonWeeks ?? 6, 1, 8)) : 1;
+    const horizonDecay = clamp(options.horizonDecay ?? 0.8, 0.45, 1);
+    const horizonProjection = (player) => {
+      if (!selectedWeek || horizonWeeks <= 1) return selectedWeek ? playerWeekProjection(player, selectedWeek) : player.weeklyProjection;
+      let numerator = 0, denominator = 0;
+      for (let offset = 0; offset < horizonWeeks && selectedWeek + offset <= 18; offset += 1) {
+        const weight = horizonDecay ** offset;
+        numerator += playerWeekProjection(player, selectedWeek + offset) * weight;
+        denominator += weight;
+      }
+      return denominator ? numerator / denominator : playerWeekProjection(player, selectedWeek);
+    };
     const evaluation = (rawPlayer) => {
       const player = normalizePlayer(rawPlayer);
       return {
         ...player,
-        evaluationProjection: selectedWeek ? playerWeekProjection(player, selectedWeek) : player.weeklyProjection,
+        evaluationProjection: horizonProjection(player),
       };
     };
     const currentRoster = uniquePlayers(roster || []).map(evaluation);
@@ -1130,6 +1142,8 @@
           add,
           drop,
           week: selectedWeek,
+          horizonWeeks,
+          horizonDecay,
           score: Number(score.toFixed(2)),
           lineupGain: Number(lineupGain.toFixed(2)),
           depthGain: Number(depthGain.toFixed(2)),

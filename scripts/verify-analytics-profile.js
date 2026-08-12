@@ -21,6 +21,8 @@ const forecastProvenance = JSON.parse(fs.readFileSync(path.join(validationDir, "
 const forecastOverfit = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-overfit-audit.json"), "utf8"));
 const forecastSuccessor = JSON.parse(fs.readFileSync(path.join(validationDir, "forecast-successor-candidate.json"), "utf8"));
 const futureWin = JSON.parse(fs.readFileSync(path.join(validationDir, "future-win-audit.json"), "utf8"));
+const waiverAudit = JSON.parse(fs.readFileSync(path.join(validationDir, "waiver-audit-report.json"), "utf8"));
+const footballContextAudit = JSON.parse(fs.readFileSync(path.join(validationDir, "football-context-audit.json"), "utf8"));
 const hashBytes = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const hashFile = (file) => hashBytes(fs.readFileSync(file));
 const hashJsonFile = (file) => hashBytes(Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))));
@@ -58,6 +60,8 @@ assert(futureWin.result?.decisions === 140 && futureWin.result?.changedDecisions
 assert(futureWin.evidenceDiscipline?.tuningAllowedAfterInspection === false && futureWin.evidenceDiscipline?.prospectiveConfirmation === 2026, "future-win evidence-discipline drift");
 assert(profile.decisionObjective?.retrospectiveDiagnostic?.auditVersion === futureWin.version && profile.decisionObjective?.retrospectiveDiagnostic?.verdict === "noninferior-no-observed-switches" && profile.decisionObjective?.retrospectiveDiagnostic?.incrementalEdgeDemonstrated === false, "future-win historical interpretation drift");
 assert(Number(profile.waivers.minimumScore) >= 0, "waiver threshold missing");
+assert(profile.waivers.horizonWeeks === waiverAudit.policy?.horizonWeeks && Math.abs(Number(profile.waivers.horizonDecay) - Number(waiverAudit.policy?.horizonDecay)) < 1e-9, "waiver schedule horizon drift");
+assert(profile.context?.footballContextStatus === "prospective-only-not-serving" && footballContextAudit.status === "prospective-only-not-serving", "football-context successor serving lock drift");
 assert(Number(profile.trades.acceptScore) > 0 && Number(profile.trades.passScore) < 0, "trade thresholds missing");
 assert(profile.draft.policy === "segmented-qualified" && Object.keys(profile.draft.segments || {}).length >= 6, "draft policy missing");
 assert(profile.draft.postFreezeHoldoutSeason === 2018, "Draft A+ holdout season drift");
