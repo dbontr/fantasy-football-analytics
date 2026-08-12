@@ -11,6 +11,7 @@ test("published benchmark uses recognizable historical platform boards", () => {
   for (const name of ["SnapCount", "ESPN ADP", "Yahoo ADP", "CBS Sports ADP", "NFL.com ADP", "FantasyPros ECR"]) assert.ok(names.has(name));
   for (const oldName of ["3-site consensus", "FantasyData ADP", "Fantasy Football Calculator", "MyFantasyLeague ADP"]) assert.equal(names.has(oldName), false);
   assert.ok(report.rows.every((row) => row.drafts === 48 && Number.isFinite(row.meanRealizedStarterPoints) && row.sourceNote));
+  assert.match(report.rows.find((row) => row.name === "SnapCount").sourceNote, /shadow challenger excluded/i);
   assert.ok(report.sourceCoverage["ESPN ADP"] > 300);
   assert.ok(report.sourceCoverage["Yahoo ADP"] > 150);
   assert.ok(report.sourceCoverage["CBS Sports ADP"] > 150);

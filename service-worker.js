@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.35.0-draft-intelligence";
+const CACHE = "snapcount-browser-v1.36.0-shadow-draft-intelligence";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -41,6 +41,7 @@ const STATIC_ASSETS = [
   "./data/rookies-2026.json",
   "./data/camp-2026.json",
   "./data/validation/site-benchmark-2018.json",
+  "./data/validation/draft-decision-mix-audit.json",
 ];
 
 self.addEventListener("install", (event) => {
