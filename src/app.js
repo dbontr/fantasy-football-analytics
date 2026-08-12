@@ -3298,7 +3298,7 @@
       if (requested === "league-draft") activatePanel("draft", { draftContext: "league" });
       else if (requested && $(`[data-panel-target="${CSS.escape(requested)}"]`)) activatePanel(requested);
       else activatePanel("overview");
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.30.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.31.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
     } catch (error) {
       $("#bootstrap-status").textContent = "Load failed";
       syncRuntimeReadouts();

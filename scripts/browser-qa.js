@@ -142,6 +142,9 @@ async function main() {
   const outlookDesktop = await snapshot("outlooks-desktop", 1440, 1000);
   const outlookTableFits = await evaluate(`document.querySelector('#outlooks .table-wrap').scrollWidth <= document.querySelector('#outlooks .table-wrap').clientWidth + 1`);
   if (outlookDesktop.horizontalOverflow || !outlookTableFits) throw new Error('Outlooks desktop overflow');
+  const outlookNarrow = await snapshot("outlooks-narrow", 556, 1000);
+  const outlookCellContinuity = await evaluate(`(() => { const row=document.querySelector('#outlook-table tr[data-personal-rank]'); const cells=row ? [...row.children] : []; if(cells.length < 2) return {missing:true}; const first=cells[0].getBoundingClientRect(), second=cells[1].getBoundingClientRect(); return {missing:false,display:getComputedStyle(cells[0]).display,gap:Number((second.left-first.right).toFixed(2))}; })()`);
+  if (outlookNarrow.horizontalOverflow || outlookCellContinuity.missing || outlookCellContinuity.display !== 'table-cell' || Math.abs(outlookCellContinuity.gap) > 0.5) throw new Error(`Outlook rank/player cells leave a phantom gap: ${JSON.stringify({outlookNarrow,outlookCellContinuity})}`);
 
   await evaluate(`document.querySelector('[data-panel-target="rankings"]').click(); true`);
   await waitFor(`document.querySelectorAll('#rankings-table tr').length >= 50`, 10000);
