@@ -48,3 +48,13 @@ Confirm that exact candidate only; do not search alternatives. Use 8 new determi
 Confirmation passes only if aggregate paired starter-point delta versus the champion is positive, at least 5 of 7 seasons are positive, every leave-one-season-out average delta is positive, the candidate still clears all five historical control gates, and ESPN-market win rate remains at least 75%. This confirms simulation/season robustness on consumed development outcomes; it is not a new historical holdout.
 
 The confirmation script and this protocol must be committed before running it. No candidate change is allowed after confirmation. Any later 2018 result is descriptive only and cannot cause another iteration.
+
+## Confirmation result
+The frozen `7e4337a` challenger was evaluated once under the committed `structure-confirm-v1` protocol and **failed** the preregistered gate. It gained +12.78 mean realized starter points versus the champion in aggregate and retained all control qualifications, but only 4/7 seasons were positive (2019, 2021, 2022, 2023); 2020, 2024, and 2025 were negative. Leave-one-season-out aggregate delta stayed positive, but the required 5/7 positive-season breadth did not.
+
+Decision: reject the candidate for serving and do not retune the structural timing family from this result. Preserve the failed confirmation as falsification evidence.
+
+## Confirmation result
+The frozen `7e4337a` challenger was evaluated once under the committed `structure-confirm-v1` protocol and **failed** the preregistered gate. It gained +12.78 mean realized starter points versus the champion in aggregate and retained all control qualifications, but only 4/7 seasons were positive (2019, 2021, 2022, 2023); 2020, 2024, and 2025 were negative. Leave-one-season-out aggregate delta stayed positive, but the required 5/7 positive-season breadth did not.
+
+Decision: reject the candidate for serving and do not retune the structural timing family from this result. Preserve the failed confirmation as falsification evidence.
