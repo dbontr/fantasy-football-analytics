@@ -41,6 +41,8 @@
     preseasonByPlayer: new Map(),
     campArtifact: null,
     campIndex: new Map(),
+    preseasonAlphaArtifact: null,
+    preseasonAlphaIndex: new Map(),
     newsPulse: [],
     trendingAdds: new Map(),
     trendingDrops: new Map(),
@@ -1175,9 +1177,11 @@
 
   function campEvidenceFor(player) {
     const signal = campSignalFor(player);
+    const alpha = state.preseasonAlphaIndex.get(String(player?.id || "")) || null;
     return context.mergeEvidence(
       liveIntelligence.campEvidence(signal),
       footballContext?.campRoleEvidence?.(signal),
+      footballContext?.preseasonAlphaEvidence?.(alpha),
     );
   }
 
@@ -1458,6 +1462,32 @@
     return String(label || "Projection input");
   }
 
+  function preseasonAlphaMarkup(player) {
+    const alpha = state.preseasonAlphaIndex.get(String(player?.id || ""));
+    if (!alpha || Number(alpha.confidence || 0) < 0.08) return "";
+    const roles = [...(alpha.roleProbabilities || [])].sort((a, b) => Number(b.probability || 0) - Number(a.probability || 0));
+    const topRole = roles[0] || null;
+    const components = [...(alpha.components || [])].filter((row) => row.available).sort((a, b) => Math.abs(Number(b.contribution || 0)) - Math.abs(Number(a.contribution || 0))).slice(0, 2);
+    const direction = Number(alpha.alphaScore || 0) >= 0.2 ? "positive" : Number(alpha.alphaScore || 0) <= -0.2 ? "negative" : "neutral";
+    const market = alpha.market?.available ? alpha.market.label : "market history building";
+    const availability = alpha.injury?.available ? alpha.injury.trend : "no active trajectory";
+    const consensus = alpha.consensus?.available ? `${alpha.consensus.sources || 0} source${Number(alpha.consensus.sources || 0) === 1 ? "" : "s"} · ${pct(alpha.consensus.agreement || 0, 0)} agreement` : "not enough independent structural reports";
+    return `<section class="preseason-alpha-card ${direction}" data-preseason-alpha="${esc(player.id)}"><div class="preseason-alpha-head"><div><span>PRESEASON INTELLIGENCE</span><strong>${esc(topRole?.label || "Role still forming")} · ${topRole ? pct(topRole.probability, 0) : "—"}</strong></div><b>${pct(alpha.confidence || 0, 0)} confidence</b></div><div class="preseason-alpha-grid"><div><span>MARKET</span><strong>${esc(market)}</strong></div><div><span>REPORT CONSENSUS</span><strong>${esc(consensus)}</strong></div><div><span>AVAILABILITY</span><strong>${esc(availability)}</strong></div></div>${components.length ? `<p>${components.map((row) => `${esc(row.label)} ${Number(row.signal || 0) >= 0 ? "supports" : "pressures"} the role`).join(" · ")}</p>` : ""}<small>Structured role evidence only. Generic camp hype is heavily suppressed. This currently changes uncertainty and the shadow draft challenger, not the qualified projection mean or draft order.</small></section>`;
+  }
+
+  function preseasonAlphaMarkup(player) {
+    const alpha = state.preseasonAlphaIndex.get(String(player?.id || ""));
+    if (!alpha || Number(alpha.confidence || 0) < 0.08) return "";
+    const roles = [...(alpha.roleProbabilities || [])].sort((a, b) => Number(b.probability || 0) - Number(a.probability || 0));
+    const topRole = roles[0] || null;
+    const components = [...(alpha.components || [])].filter((row) => row.available).sort((a, b) => Math.abs(Number(b.contribution || 0)) - Math.abs(Number(a.contribution || 0))).slice(0, 2);
+    const direction = Number(alpha.alphaScore || 0) >= 0.2 ? "positive" : Number(alpha.alphaScore || 0) <= -0.2 ? "negative" : "neutral";
+    const market = alpha.market?.available ? alpha.market.label : "market history building";
+    const availability = alpha.injury?.available ? alpha.injury.trend : "no active trajectory";
+    const consensus = alpha.consensus?.available ? `${alpha.consensus.sources || 0} source${Number(alpha.consensus.sources || 0) === 1 ? "" : "s"} · ${pct(alpha.consensus.agreement || 0, 0)} agreement` : "not enough independent structural reports";
+    return `<section class="preseason-alpha-card ${direction}" data-preseason-alpha="${esc(player.id)}"><div class="preseason-alpha-head"><div><span>PRESEASON INTELLIGENCE</span><strong>${esc(topRole?.label || "Role still forming")} · ${topRole ? pct(topRole.probability, 0) : "—"}</strong></div><b>${pct(alpha.confidence || 0, 0)} confidence</b></div><div class="preseason-alpha-grid"><div><span>MARKET</span><strong>${esc(market)}</strong></div><div><span>REPORT CONSENSUS</span><strong>${esc(consensus)}</strong></div><div><span>AVAILABILITY</span><strong>${esc(availability)}</strong></div></div>${components.length ? `<p>${components.map((row) => `${esc(row.label)} ${Number(row.signal || 0) >= 0 ? "supports" : "pressures"} the role`).join(" · ")}</p>` : ""}<small>Structured role evidence only. Generic camp hype is heavily suppressed. This currently changes uncertainty and the shadow draft challenger, not the qualified projection mean or draft order.</small></section>`;
+  }
+
   function renderPlayerResult(forecast, simulationSummary) {
     const summary = simulationSummary || forecast.distribution;
     const drivers = forecast.drivers.length ? forecast.drivers : [{ label: "baseline projection", impact: 0 }];
@@ -1472,6 +1502,7 @@
     $("#player-result").innerHTML = `
       <div class="friendly-verdict"><div><span class="pos-pill pos-${esc(String(forecast.player.position || '').toLowerCase())}">${esc(forecast.player.position)}</span>${forecast.player.rookie ? '<span class="rookie-pill">ROOKIE</span>' : ''}<h2>${esc(forecast.player.name)}</h2><p>${esc(forecast.player.team)} · Week ${forecast.week}</p></div><strong>${esc(verdict)}</strong></div>
       ${playCallerLine}
+      ${preseasonAlphaMarkup(forecast.player)}
       ${specialTeamsContextMarkup(forecast.player, forecast.week)}
       <div class="metric-grid friendly-metrics">
         <div class="metric"><span>PROJECTED POINTS</span><strong>${num(summary.mean)}</strong></div>
@@ -3208,17 +3239,18 @@
     $("#engine-version").textContent = engine.VERSION.replace("oracle-browser-", "v");
     $("#worker-status").textContent = "Web Worker online";
     try {
-      const [response, coachResponse, healthResponse, rookieResponse, campResponse, profileResponse, specialTeamsResponse, footballContextResponse] = await Promise.all([
+      const [response, coachResponse, healthResponse, rookieResponse, campResponse, preseasonAlphaResponse, profileResponse, specialTeamsResponse, footballContextResponse] = await Promise.all([
         fetch("./data/players-lite.json"),
         fetch("./data/coaches-2026.json"),
         fetch("./data/health-calibration-2026.json"),
         fetch("./data/rookies-2026.json"),
         fetch("./data/camp-2026.json"),
+        fetch("./data/preseason-alpha-2026.json"),
         fetch("./data/analytics-runtime-profile.json"),
         fetch("./data/special-teams-2026.json"),
         fetch("./data/football-context-2026.json"),
       ]);
-      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !campResponse.ok || !profileResponse.ok || !specialTeamsResponse.ok || !footballContextResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
+      if (!response.ok || !coachResponse.ok || !healthResponse.ok || !rookieResponse.ok || !campResponse.ok || !preseasonAlphaResponse.ok || !profileResponse.ok || !specialTeamsResponse.ok || !footballContextResponse.ok) throw new Error("one or more qualified runtime artifacts failed to load");
       state.dataset = await response.json();
       state.analyticsProfile = await profileResponse.json();
       if (state.analyticsProfile?.mode !== "serve-frozen-qualified-analytics") throw new Error("qualified analytics profile is invalid");
@@ -3228,6 +3260,8 @@
       state.rookieIndex = rookieModel.indexArtifact(state.rookieArtifact);
       state.campArtifact = await campResponse.json();
       state.campIndex = new Map((state.campArtifact?.players || []).map((row) => [String(row.id), row]));
+      state.preseasonAlphaArtifact = await preseasonAlphaResponse.json();
+      state.preseasonAlphaIndex = new Map((state.preseasonAlphaArtifact?.players || []).map((row) => [String(row.id), row]));
       state.specialTeams = await specialTeamsResponse.json();
       state.footballContextArtifact = await footballContextResponse.json();
       const season = Number(state.dataset.meta?.season || 2026);
@@ -3316,7 +3350,7 @@
       if (requested === "league-draft") activatePanel("draft", { draftContext: "league" });
       else if (requested && $(`[data-panel-target="${CSS.escape(requested)}"]`)) activatePanel(requested);
       else activatePanel("overview");
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.38.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.39.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
     } catch (error) {
       $("#bootstrap-status").textContent = "Load failed";
       syncRuntimeReadouts();

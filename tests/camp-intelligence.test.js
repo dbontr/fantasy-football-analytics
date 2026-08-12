@@ -51,6 +51,14 @@ test("historical touch totals do not become future coach intent", () => {
   assert.equal(result.active, false);
   assert.equal(result.usageScore, 0);
 });
+test("availability classifier preserves direction for injury trajectory", () => {
+  const held = live.classifyAvailabilityText("held out and did not practice");
+  const returned = live.classifyAvailabilityText("returned to practice and was a full participant with no limitations");
+  assert.ok(held.score < 0);
+  assert.equal(held.active, true);
+  assert.ok(returned.score > 0);
+  assert.equal(returned.active, true);
+});
 test("Achane-style ESPN story becomes high-authority role intent, not literal touches", () => {
   const target = { id: "4429160", name: "De'Von Achane", team: "MIA", position: "RB" };
   const article = { id: "49582399", headline: "Jeff Hafley discusses De'Von Achane workload", published: "2026-08-11T14:27:25Z" };
@@ -73,7 +81,7 @@ test("camp evidence is advisory and cannot move the forecast mean", () => {
 });
 
 test("committed camp artifact stores compact advisory signals, not article bodies", () => {
-  assert.equal(artifact.meta.version, "camp-intelligence-2026.2");
+  assert.equal(artifact.meta.version, "camp-intelligence-2026.3");
   assert.ok(artifact.players.length >= 10);
   assert.ok(artifact.players.every((row) => row.modelEffect === "advisory-only"));
   assert.ok(Number(artifact.meta.searchedPlayers || 0) >= 20);

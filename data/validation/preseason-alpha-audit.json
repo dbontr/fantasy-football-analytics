@@ -1,0 +1,32 @@
+{
+  "version": "preseason-alpha-audit-2026.1",
+  "status": "prospective-shadow",
+  "purpose": "pre-registered serving lock for structural preseason information alpha",
+  "artifactVersion": "preseason-alpha-2026.1",
+  "coverage": {
+    "evaluatedPlayers": 332,
+    "players": 60,
+    "signaledPlayers": 17,
+    "starterUsagePlayers": 4,
+    "coachIntentPlayers": 4,
+    "consensusPlayers": 4,
+    "injuryTrajectoryPlayers": 36,
+    "marketReactionPlayers": 332
+  },
+  "gates": {
+    "timestampCorrectInputsRequired": true,
+    "genericHypeCannotPromote": true,
+    "servingMeanEffectAllowed": false,
+    "servingDraftOrderEffectAllowed": false,
+    "prospective2026ConfirmationRequired": true,
+    "historicalWalkForwardRequiredForBackfilledCandidate": true,
+    "promotionRequiresStableMultiSplitImprovement": true
+  },
+  "promotionRule": "No direct mean or qualified-draft-order effect until timestamp-correct replay/prospective evidence has stable sign and a positive uncertainty-aware lower bound versus the frozen champion.",
+  "achaneRegression": {
+    "alphaScore": 0.2166,
+    "confidence": 0.3949,
+    "coachDirectStories": 1,
+    "marketLabel": "mostly unpriced"
+  }
+}

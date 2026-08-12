@@ -20,6 +20,24 @@ function compactProjection(player) {
     market: player.market ? { ...player.market } : null,
   };
 }
+function compactPreseasonAlpha(row) {
+  return {
+    id: String(row.id), alphaScore: Number(row.alphaScore || 0), confidence: Number(row.confidence || 0),
+    candidateShift: Number(row.candidateShift || 0), roleProbabilities: row.roleProbabilities || [],
+    market: row.market ? { pricedFraction: row.market.pricedFraction, movement: row.market.movement, label: row.market.label } : null,
+    injury: row.injury ? { trend: row.injury.trend, latestState: row.injury.latestState } : null,
+    modelEffect: row.modelEffect || "uncertainty-and-shadow-only",
+  };
+}
+function compactPreseasonAlpha(row) {
+  return {
+    id: String(row.id), alphaScore: Number(row.alphaScore || 0), confidence: Number(row.confidence || 0),
+    candidateShift: Number(row.candidateShift || 0), roleProbabilities: row.roleProbabilities || [],
+    market: row.market ? { pricedFraction: row.market.pricedFraction, movement: row.market.movement, label: row.market.label } : null,
+    injury: row.injury ? { trend: row.injury.trend, latestState: row.injury.latestState } : null,
+    modelEffect: row.modelEffect || "uncertainty-and-shadow-only",
+  };
+}
 async function preseasonRows() {
   const boards = await Promise.allSettled(Array.from({ length: 5 }, (_, index) => sources.espnNflScoreboard(season, 1, index + 1)));
   const events = [];
@@ -45,6 +63,9 @@ async function main() {
   const base = JSON.parse(fs.readFileSync(path.join(root, "data", "players-lite.json"), "utf8"));
   const campBytes = fs.readFileSync(path.join(root, "data", "camp-2026.json"));
   const camp = JSON.parse(campBytes);
+  const alphaPath = path.join(root, "data", "preseason-alpha-2026.json");
+  const alphaBytes = fs.existsSync(alphaPath) ? fs.readFileSync(alphaPath) : Buffer.from("{}");
+  const preseasonAlpha = JSON.parse(alphaBytes.toString("utf8"));
   const [snapshot, news, adds, drops, preseason] = await Promise.all([
     sources.espnPprPlayerSnapshot(season), sources.espnNflNews(100),
     sources.loadSleeperTrending("add", 24, 100), sources.loadSleeperTrending("drop", 24, 100), preseasonRows(),
@@ -56,12 +77,18 @@ async function main() {
   }));
   const artifact = {
     meta: {
-      version: "forward-input-snapshot-2026.2", season, capturedAt,
+      version: "forward-input-snapshot-2026.3", season, capturedAt,
       purpose: "prospective pre-outcome input freeze for future validation; contains no regular-season realized labels",
       policy: "Record this snapshot before future outcomes. Do not retroactively edit it or use later results to change its inputs.",
     },
     projections: enriched.map(compactProjection),
     camp: { artifactVersion: camp.meta?.version || null, capturedAt: camp.meta?.capturedAt || null, sha256: sha(campBytes), players: camp.players || [] },
+    preseasonAlpha: {
+      artifactVersion: preseasonAlpha.meta?.version || null,
+      capturedAt: preseasonAlpha.meta?.capturedAt || null,
+      sha256: alphaBytes.length > 2 ? sha(alphaBytes) : null,
+      players: (preseasonAlpha.players || []).map(compactPreseasonAlpha),
+    },
     news: articles,
     sleeperTrending: {
       adds: (adds || []).map((row) => ({ playerId: String(row.player_id), count: Number(row.count || 0) })),
@@ -70,7 +97,7 @@ async function main() {
     preseason,
   };
   const relative = `${fileStamp(capturedAt)}_inputs.json`;
-  const bytes = Buffer.from(`${JSON.stringify(artifact, null, 2)}\n`);
+  const bytes = Buffer.from(`${JSON.stringify(artifact)}\n`);
   fs.writeFileSync(path.join(forwardDir, relative), bytes);
   const manifestPath = path.join(forwardDir, "manifest.json");
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : { version: "forward-manifest-2026.1", snapshots: [] };
@@ -78,7 +105,7 @@ async function main() {
     .filter((row, index, rows) => rows.findIndex((other) => other.file === row.file) === index)
     .sort((a, b) => String(a.capturedAt).localeCompare(String(b.capturedAt)));
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(`Captured ${artifact.projections.length} projections, ${artifact.camp.players.length} camp signals, ${artifact.preseason.length} preseason player-games.`);
+  console.log(`Captured ${artifact.projections.length} projections, ${artifact.camp.players.length} structural role signals, ${artifact.preseasonAlpha.players.length} preseason-alpha rows, ${artifact.preseason.length} preseason player-games.`);
   console.log(`Wrote data/forward/${relative}`);
 }
 
