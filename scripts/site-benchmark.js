@@ -78,11 +78,11 @@ async function sourceBoards(pool) {
     "FantasyPros ECR": archivedBoardScores(ecr.text, "rank-data", "Rank"),
   };
   const notes = {
-    "ESPN ADP": "ESPN · 2018 PPR historical ADP",
-    "Yahoo ADP": "Yahoo · archived Jun 26, 2018",
-    "CBS Sports ADP": "CBS · archived Aug 2, 2018",
-    "NFL.com ADP": "NFL.com · archived Aug 2, 2018",
-    "FantasyPros ECR": "FantasyPros consensus · archived Sep 6, 2018",
+    "ESPN ADP": "ESPN Â· 2018 PPR historical ADP",
+    "Yahoo ADP": "Yahoo Â· archived Jun 26, 2018",
+    "CBS Sports ADP": "CBS Â· archived Aug 2, 2018",
+    "NFL.com ADP": "NFL.com Â· archived Aug 2, 2018",
+    "FantasyPros ECR": "FantasyPros consensus Â· archived Sep 6, 2018",
   };
   const boards = Object.fromEntries(Object.entries(scoreSets).map(([name, scores]) => [name, { board: boardFromScores(pool, scores), matched: pool.filter((p) => scores.has(key(p.name,p.position))).length, note: notes[name] }]));
   boards._sources = {
@@ -98,8 +98,6 @@ async function main() {
   const built = await robust.buildPool(); const pool = built.pool;
   if (pool.length < 180) throw new Error(`Historical pool too small: ${pool.length}`);
   const sources = await sourceBoards(pool);
-  const marketScores = new Map(pool.map((player) => [key(player.name, player.position), Number(player.adp)]));
-  const baseBoard = boardFromScores(pool, marketScores);
   const policy = JSON.parse(fs.readFileSync(path.join(root,"data","validation","draft-robust-policy.json"),"utf8")).policy;
   const names = ["ESPN ADP", "Yahoo ADP", "CBS Sports ADP", "NFL.com ADP", "FantasyPros ECR"];
   const samples = Object.fromEntries(["SnapCount", ...names].map((name) => [name, []]));
@@ -107,8 +105,8 @@ async function main() {
     const settings = core.cloneSettings({ teams, rounds: 16, scoring: "ppr", draftPosition: slot });
     for (let seed = 0; seed < 8; seed += 1) {
       const roomSeed = `site-benchmark:${SEASON}:${teams}:${bucket}:${seed}`;
-      const context = draft.createRoomContext(pool, settings, baseBoard);
-      const common = { players: pool, settings, userTeamId: slot, opponentStrategy: "mixed", board: baseBoard, context, seed: roomSeed };
+      const context = draft.createRoomContext(pool, settings);
+      const common = { players: pool, settings, userTeamId: slot, opponentStrategy: "mixed", context, seed: roomSeed };
       samples.SnapCount.push(realized(draft.simulateDraft({ ...common, userStrategy: "oracle", oraclePolicy: policy }).userRoster, settings));
       for (const name of names) samples[name].push(realized(draft.simulateDraft({ ...common, userStrategy: "site-board", userBoard: sources[name].board }).userRoster, settings));
     }
@@ -116,13 +114,13 @@ async function main() {
   const rows = Object.entries(samples).map(([name, values]) => ({
     name, drafts: values.length, meanRealizedStarterPoints: Number(mean(values).toFixed(2)),
     winRateVsSnapCount: name === "SnapCount" ? null : Number(values.filter((value,index) => value > samples.SnapCount[index]).length / values.length),
-    sourceNote: name === "SnapCount" ? "SnapCount qualified draft policy" : sources[name].note,
+    sourceNote: name === "SnapCount" ? "Frozen SnapCount qualified base Â· shadow challenger excluded" : sources[name].note,
   })).sort((a,b) => b.meanRealizedStarterPoints - a.meanRealizedStarterPoints);
   const report = {
-    version: "site-benchmark-2026.2", season: SEASON,
-    methodology: "48 paired 10/12-team PPR drafts across early/middle/late slots; same CPU rooms and seeds; realized weekly optimal-starter points; only the user-side draft board changes.",
+    version: "site-benchmark-2026.4", season: SEASON,
+    methodology: "48 paired 10/12-team PPR drafts across early/middle/late slots; same CPU rooms and seeds; common SnapCount/CPU market uses native raw historical ADP; realized weekly optimal-starter points; only the platform user-side draft board changes.",
     disclaimer: "Retrospective descriptive benchmark. Platform snapshots use their available 2018 native draft-board formats and dates; this is not a qualification gate or future-performance guarantee.",
-    poolPlayers: pool.length, rows,
+    poolPlayers: pool.length, marketScale: { snapCountAndCpu: "native raw historical ADP", platformUser: "source-specific imported ordinal board" }, rows,
     sourceCoverage: Object.fromEntries(names.map((name) => [name, sources[name].matched])),
     sources: { historicalPool: built.sources, ...sources._sources },
   };

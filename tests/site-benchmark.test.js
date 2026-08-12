@@ -1,4 +1,6 @@
 "use strict";
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const report = require("../data/validation/site-benchmark-2018.json");
@@ -17,4 +19,11 @@ test("published benchmark uses recognizable historical platform boards", () => {
   assert.ok(report.sourceCoverage["CBS Sports ADP"] > 150);
   assert.ok(report.sourceCoverage["NFL.com ADP"] > 200);
   assert.ok(report.sourceCoverage["FantasyPros ECR"] > 250);
+});
+
+test("benchmark common room preserves qualified native ADP scale", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "scripts", "site-benchmark.js"), "utf8");
+  assert.match(source, /createRoomContext\(pool, settings\);/);
+  assert.doesNotMatch(source, /\bbaseBoard\b/);
+  assert.doesNotMatch(source, /\bmarketScores\b/);
 });
