@@ -69,3 +69,15 @@ if (typeof document !== "undefined" && !document.querySelector('script[data-snap
   script.dataset.snapcountPlayerPopout = "true";
   document.head.appendChild(script);
 }
+
+if (typeof document !== "undefined" && !document.querySelector('script[data-snapcount-draft-intelligence]')) {
+  const style = document.createElement("link");
+  style.rel = "stylesheet";
+  style.href = "./draft-intelligence.css";
+  style.dataset.snapcountDraftIntelligence = "true";
+  document.head.appendChild(style);
+  const script = document.createElement("script");
+  script.src = "./src/engine/draft-intelligence.js";
+  script.dataset.snapcountDraftIntelligence = "true";
+  document.head.appendChild(script);
+}
