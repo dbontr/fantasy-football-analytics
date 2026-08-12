@@ -1,5 +1,7 @@
 "use strict";
 
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const popout = require("../src/outlook-player-popout.js");
@@ -22,4 +24,17 @@ test("projectedAveragePpg falls back to projected season points over 17 games", 
 
 test("projectedAveragePpg returns null when no usable projection exists", () => {
   assert.equal(popout.projectedAveragePpg({ weeklyProjections: [0, 0, 0] }), null);
+});
+
+test("player popout stays wired to the existing Player Analysis surface and cache", () => {
+  const root = path.resolve(__dirname, "..");
+  const source = fs.readFileSync(path.join(root, "src", "outlook-player-popout.js"), "utf8");
+  const store = fs.readFileSync(path.join(root, "src", "storage", "browser-store.js"), "utf8");
+  const worker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
+  for (const token of ["player-analysis-popout", "data-player-analysis-popout", "AVG PROJECTED PPG", "#run-player", "#load-intelligence", "#player-result", "#player-intelligence"]) {
+    assert.ok(source.includes(token), `missing ${token}`);
+  }
+  assert.ok(store.includes("./src/outlook-player-popout.js"));
+  assert.ok(worker.includes("./src/outlook-player-popout.js"));
+  assert.ok(worker.includes("snapcount-browser-v1.34.0-player-popout"));
 });
