@@ -9,10 +9,13 @@ test("published benchmark uses recognizable historical platform boards", () => {
   assert.equal(report.season, 2018);
   assert.match(report.methodology, /paired/i);
   assert.match(report.disclaimer, /not a qualification gate/i);
+  assert.equal(report.marketScale?.snapCountAndCpu, "native raw historical ADP");
+  assert.equal(report.marketScale?.platformUser, "source-specific imported ordinal board");
   const names = new Set(report.rows.map((row) => row.name));
   for (const name of ["SnapCount", "ESPN ADP", "Yahoo ADP", "CBS Sports ADP", "NFL.com ADP", "FantasyPros ECR"]) assert.ok(names.has(name));
   for (const oldName of ["3-site consensus", "FantasyData ADP", "Fantasy Football Calculator", "MyFantasyLeague ADP"]) assert.equal(names.has(oldName), false);
   assert.ok(report.rows.every((row) => row.drafts === 48 && Number.isFinite(row.meanRealizedStarterPoints) && row.sourceNote));
+  assert.equal(report.rows[0].name, "SnapCount");
   assert.match(report.rows.find((row) => row.name === "SnapCount").sourceNote, /shadow challenger excluded/i);
   assert.ok(report.sourceCoverage["ESPN ADP"] > 300);
   assert.ok(report.sourceCoverage["Yahoo ADP"] > 150);

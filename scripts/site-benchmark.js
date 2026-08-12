@@ -78,11 +78,11 @@ async function sourceBoards(pool) {
     "FantasyPros ECR": archivedBoardScores(ecr.text, "rank-data", "Rank"),
   };
   const notes = {
-    "ESPN ADP": "ESPN Â· 2018 PPR historical ADP",
-    "Yahoo ADP": "Yahoo Â· archived Jun 26, 2018",
-    "CBS Sports ADP": "CBS Â· archived Aug 2, 2018",
-    "NFL.com ADP": "NFL.com Â· archived Aug 2, 2018",
-    "FantasyPros ECR": "FantasyPros consensus Â· archived Sep 6, 2018",
+    "ESPN ADP": "ESPN - 2018 PPR historical ADP",
+    "Yahoo ADP": "Yahoo - archived Jun 26, 2018",
+    "CBS Sports ADP": "CBS - archived Aug 2, 2018",
+    "NFL.com ADP": "NFL.com - archived Aug 2, 2018",
+    "FantasyPros ECR": "FantasyPros consensus - archived Sep 6, 2018",
   };
   const boards = Object.fromEntries(Object.entries(scoreSets).map(([name, scores]) => [name, { board: boardFromScores(pool, scores), matched: pool.filter((p) => scores.has(key(p.name,p.position))).length, note: notes[name] }]));
   boards._sources = {
@@ -114,7 +114,7 @@ async function main() {
   const rows = Object.entries(samples).map(([name, values]) => ({
     name, drafts: values.length, meanRealizedStarterPoints: Number(mean(values).toFixed(2)),
     winRateVsSnapCount: name === "SnapCount" ? null : Number(values.filter((value,index) => value > samples.SnapCount[index]).length / values.length),
-    sourceNote: name === "SnapCount" ? "Frozen SnapCount qualified base Â· shadow challenger excluded" : sources[name].note,
+    sourceNote: name === "SnapCount" ? "Frozen SnapCount qualified base - shadow challenger excluded" : sources[name].note,
   })).sort((a,b) => b.meanRealizedStarterPoints - a.meanRealizedStarterPoints);
   const report = {
     version: "site-benchmark-2026.4", season: SEASON,

@@ -414,8 +414,8 @@
         const value = Number(row.meanRealizedStarterPoints || 0); const width = Math.max(2, value / max * 100); const baseline = row.name !== "SnapCount";
         return `<div class="benchmark-row ${baseline ? "baseline" : "snapcount"}"><span class="benchmark-label"><b>${esc(row.name)}</b><small>${esc(row.sourceNote || "Historical draft board")}</small></span><div class="benchmark-track"><div class="benchmark-fill" style="width:${width.toFixed(1)}%"></div></div><strong class="benchmark-value">${Math.round(value).toLocaleString()} pts</strong></div>`;
       }).join("");
-      if ($("#benchmark-season-label")) $("#benchmark-season-label").textContent = `${report.season} frozen holdout · ${rows[0]?.drafts || 0} paired drafts`;
-      if ($("#home-benchmark-note")) $("#home-benchmark-note").textContent = `ESPN uses its historical 2018 PPR ADP. Yahoo, CBS, NFL.com, and FantasyPros use archived 2018 draft boards on the dates shown above. ${report.disclaimer}`;
+      if ($("#benchmark-season-label")) $("#benchmark-season-label").textContent = `${report.season} frozen benchmark · ${rows[0]?.drafts || 0} paired drafts`;
+      if ($("#home-benchmark-note")) $("#home-benchmark-note").textContent = `SnapCount and CPU rooms use the native raw 2018 ADP scale used by the qualified policy. ESPN uses its historical 2018 PPR ADP; Yahoo, CBS, NFL.com, and FantasyPros use archived 2018 draft boards on the dates shown above. ${report.disclaimer}`;
     } catch (error) {
       node.innerHTML = `<p class="fineprint">Benchmark evidence is unavailable in this build.</p>`;
       if ($("#home-benchmark-note")) $("#home-benchmark-note").textContent = error.message;
