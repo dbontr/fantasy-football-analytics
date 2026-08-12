@@ -4145,7 +4145,8 @@ tbody tr:hover td { background: #edf4fb !important; }
 }
 
 /* Personalized round-bracketed outlook board 2026.14 */
-#outlooks .outlook-toolbar { grid-template-columns: minmax(220px,1fr) 130px 170px 150px; align-items: end; }
+#outlooks .outlook-toolbar { grid-template-columns: minmax(220px,1fr) 130px 170px 150px; align-items: start; }
+#outlooks .outlook-toolbar > label { align-self: start; align-content: start; }
 #outlooks .outlook-toolbar label > small { display: block; margin-top: 5px; color: #718197; font-size: 9px; font-weight: 700; }
 #outlooks .outlook-toolbar select:disabled { opacity: 1; cursor: default; background: #f1f5fa; color: #37516f; }
 .outlook-round-guide { margin: -2px 0 12px; padding: 0 2px; color: #65768b; font-size: 10px; font-weight: 700; }
@@ -4186,7 +4187,7 @@ tbody tr:hover td { background: #edf4fb !important; }
 .outlook-pass-toggle:hover { border-color:#8fa2b7; color:#223e60; }
 .outlook-pass-toggle.active { border-color:#8d98a6; background:#dde2e8; color:#3f4d5d; }
 .outlook-pass-row > td { background:#f2f4f7 !important; }
-.outlook-pass-row .player-identity, .outlook-pass-row .rank-source-chip, .outlook-pass-row .outlook-adjusted-rank, .outlook-pass-row .outlook-change { opacity:.52; }
+.outlook-pass-row .player-identity, .outlook-pass-row .rank-source-chip, .outlook-pass-row .outlook-adjusted-rank, .outlook-pass-row .outlook-value-signal, .outlook-pass-row .outlook-change { opacity:.52; }
 .outlook-pass-row .player-identity-copy > strong { color:#7c8795; }
 .outlook-pass-badge { display:inline-flex; margin-top:5px; padding:3px 6px; border:1px solid #aeb8c4; border-radius:999px; background:#e4e8ed; color:#536171; font-size:8px; font-weight:900; letter-spacing:.08em; }
 #outlooks .outlook-control-cell > div { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
@@ -4197,3 +4198,21 @@ tbody tr:hover td { background: #edf4fb !important; }
 .big-board-row.is-pass .board-rank,
 .big-board-row.is-pass .board-score { opacity:.48; }
 .big-board-row.is-pass .player-identity-copy > strong { color:#778391; }
+
+/* Outlook market value signal 2026.16 */
+.outlook-value-signal { display:inline-flex; align-items:center; justify-content:center; min-width:88px; padding:4px 7px; border:1px solid currentColor; border-radius:999px; background:#fff; font-size:8px; font-weight:900; letter-spacing:.02em; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.outlook-value-signal.undervalued { color:#0b6240; }
+.outlook-value-signal.overvalued { color:#8c302d; }
+.outlook-value-signal.fair { color:#69798b; border-color:#aab6c3; }
+.outlook-value-signal.unknown { color:#8793a1; border-color:#c4ccd5; }
+@media (max-width:680px) { #outlooks .outlook-table { min-width:960px; } }
+
+/* Eight-column Outlook board sizing */
+#outlooks .outlook-table th:nth-child(1) { width: 7%; }
+#outlooks .outlook-table th:nth-child(2) { width: 19%; }
+#outlooks .outlook-table th:nth-child(3) { width: 8%; }
+#outlooks .outlook-table th:nth-child(4) { width: 10%; }
+#outlooks .outlook-table th:nth-child(5) { width: 9%; }
+#outlooks .outlook-table th:nth-child(6) { width: 10%; }
+#outlooks .outlook-table th:nth-child(7) { width: 8%; }
+#outlooks .outlook-table th:nth-child(8) { width: 29%; }

@@ -327,6 +327,17 @@
     return `<span class="outlook-change ${delta > 0 ? "up" : "down"}">${delta > 0 ? "↑" : "↓"} ${Math.abs(delta)}</span>`;
   }
 
+  function outlookMarketValueSignal(espnRank, adjustedRank, teams) {
+    const market = Number(espnRank);
+    const truth = Number(adjustedRank);
+    const threshold = Math.max(2, Math.round(Number(teams || 12) * 0.18));
+    if (!Number.isFinite(market) || !Number.isFinite(truth)) return { key: "unknown", label: "—", edge: 0, threshold };
+    const edge = Math.round(market - truth);
+    if (edge >= threshold) return { key: "undervalued", label: `Undervalued +${edge}`, edge, threshold };
+    if (edge <= -threshold) return { key: "overvalued", label: `Overvalued ${edge}`, edge, threshold };
+    return { key: "fair", label: `Fair ${edge > 0 ? "+" : ""}${edge}`, edge, threshold };
+  }
+
   function renderPlayerOutlooks() {
     const table = $("#outlook-table");
     if (!table || !state.players.length) return;
@@ -351,7 +362,7 @@
       const round = Math.ceil(row.personalRank / teams);
       const roundStart = (round - 1) * teams + 1;
       const roundEnd = round * teams;
-      const separator = round !== previousRound ? `<tr class="outlook-round-row"><td colspan="7"><span>ROUND ${round}</span><small>Picks ${roundStart}–${roundEnd}</small></td></tr>` : "";
+      const separator = round !== previousRound ? `<tr class="outlook-round-row"><td colspan="8"><span>ROUND ${round}</span><small>Picks ${roundStart}–${roundEnd}</small></td></tr>` : "";
       previousRound = round;
       const basis = row.passed ? "PASS — excluded from your personalized draft recommendations."
         : !outlook.reviewed ? "No personal view yet — My Board matches SnapCount."
@@ -359,7 +370,8 @@
             : ranks.alreadyReflected ? `Already reflected — SnapCount #${ranks.snapOverall} is already at least as ${outlook.direction > 0 ? "bullish" : "bearish"} as your view.`
               : `ESPN #${ranks.espnOverall} → your view about #${Math.round(ranks.targetOverall)} · SnapCount #${ranks.snapOverall} · My Board #${row.personalRank}.`;
       const adjustedLabel = state.outlookRoundLock && row.rawPersonalRank !== row.personalRank ? `#${row.rawPersonalRank}<small>free sort</small>` : `#${row.rawPersonalRank}`;
-      return `${separator}<tr class="${row.passed ? "outlook-pass-row" : ""}" data-outlook-tone="${esc(outlook.tone)}" data-personal-rank="${row.personalRank}" data-free-rank="${row.rawPersonalRank}" data-espn-rank="${ranks.espnOverall}" data-snap-rank="${ranks.snapOverall}" data-board-change="${row.boardChange}" data-player-passed="${row.passed ? "true" : "false"}"><td class="board-rank-cell"><strong>${row.personalRank}</strong><small>R${round}</small></td><td class="player-cell player-cell-visual">${playerIdentityMarkup(row)}${row.passed ? '<span class="outlook-pass-badge">PASS</span>' : ""}</td><td><span class="rank-source-chip espn">ESPN #${Math.round(ranks.espnOverall)}</span></td><td><span class="rank-source-chip snap">SNAP #${Math.round(ranks.snapOverall)}</span></td><td><span class="outlook-adjusted-rank">${adjustedLabel}</span></td><td>${outlookChangeMarkup(row.boardChange)}</td><td class="outlook-control-cell"><div><select class="outlook-select ${esc(outlook.tone)}" data-player-outlook="${esc(row.id)}" aria-label="Outlook for ${esc(row.name)}">${options}</select><button type="button" class="outlook-pass-toggle ${row.passed ? "active" : ""}" data-player-pass="${esc(row.id)}" aria-pressed="${row.passed ? "true" : "false"}">${row.passed ? "Passed" : "Pass"}</button><span class="outlook-chip ${esc(outlook.tone)}">${esc(outlook.reviewed ? outlook.label : "No opinion yet")}</span></div><small class="outlook-basis">${esc(basis)}</small></td></tr>`;
+      const valueSignal = outlookMarketValueSignal(ranks.espnOverall, row.rawPersonalRank, teams);
+      return `${separator}<tr class="${row.passed ? "outlook-pass-row" : ""}" data-outlook-tone="${esc(outlook.tone)}" data-personal-rank="${row.personalRank}" data-free-rank="${row.rawPersonalRank}" data-espn-rank="${ranks.espnOverall}" data-snap-rank="${ranks.snapOverall}" data-value-signal="${valueSignal.key}" data-value-edge="${valueSignal.edge}" data-value-threshold="${valueSignal.threshold}" data-board-change="${row.boardChange}" data-player-passed="${row.passed ? "true" : "false"}"><td class="board-rank-cell"><strong>${row.personalRank}</strong><small>R${round}</small></td><td class="player-cell player-cell-visual">${playerIdentityMarkup(row)}${row.passed ? '<span class="outlook-pass-badge">PASS</span>' : ""}</td><td><span class="rank-source-chip espn">ESPN #${Math.round(ranks.espnOverall)}</span></td><td><span class="rank-source-chip snap">SNAP #${Math.round(ranks.snapOverall)}</span></td><td><span class="outlook-adjusted-rank">${adjustedLabel}</span></td><td><span class="outlook-value-signal ${valueSignal.key}" title="ESPN #${Math.round(ranks.espnOverall)} vs adjusted #${row.rawPersonalRank}">${esc(valueSignal.label)}</span></td><td>${outlookChangeMarkup(row.boardChange)}</td><td class="outlook-control-cell"><div><select class="outlook-select ${esc(outlook.tone)}" data-player-outlook="${esc(row.id)}" aria-label="Outlook for ${esc(row.name)}">${options}</select><button type="button" class="outlook-pass-toggle ${row.passed ? "active" : ""}" data-player-pass="${esc(row.id)}" aria-pressed="${row.passed ? "true" : "false"}">${row.passed ? "Passed" : "Pass"}</button><span class="outlook-chip ${esc(outlook.tone)}">${esc(outlook.reviewed ? outlook.label : "No opinion yet")}</span></div><small class="outlook-basis">${esc(basis)}</small></td></tr>`;
     }).join("");
     $$('[data-player-outlook]').forEach((select) => { select.value = playerOutlook(select.dataset.playerOutlook).key; select.addEventListener("change", () => savePlayerOutlook(select.dataset.playerOutlook, select.value).catch((error) => status(error.message, "error"))); });
     $$('[data-player-pass]').forEach((button) => button.addEventListener("click", () => savePlayerPass(button.dataset.playerPass, !playerPassed(button.dataset.playerPass)).catch((error) => status(error.message, "error"))));
@@ -3344,7 +3356,7 @@
       if (requested === "league-draft") activatePanel("draft", { draftContext: "league" });
       else if (requested && $(`[data-panel-target="${CSS.escape(requested)}"]`)) activatePanel(requested);
       else activatePanel("overview");
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.32.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.33.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
     } catch (error) {
       $("#bootstrap-status").textContent = "Load failed";
       syncRuntimeReadouts();
