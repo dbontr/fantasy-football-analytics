@@ -1,10 +1,11 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.34.0-player-popout";
+const CACHE = "snapcount-browser-v1.35.0-draft-intelligence";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
+  "./draft-intelligence.css",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./snapcount-mark.svg",
@@ -26,6 +27,7 @@ const STATIC_ASSETS = [
   "./src/engine/live-intelligence.js",
   "./src/engine/calibration.js",
   "./src/engine/draft-sim.js",
+  "./src/engine/draft-intelligence.js",
   "./src/data/sources.js",
   "./src/data/espn-fantasy.js",
   "./src/storage/browser-store.js",
