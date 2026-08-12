@@ -88,30 +88,28 @@ test("decision mix exposes every signal family and caps rank movement", () => {
   }
 });
 
-test("Draft Decision Mix stays wired after the qualified base and before personal views", () => {
+test("Draft Decision Mix loads from the browser store and patches qualified recommendations", () => {
   const fs = require("node:fs");
   const path = require("node:path");
   const root = path.resolve(__dirname, "..");
-  const app = fs.readFileSync(path.join(root, "src", "app.js"), "utf8");
-  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const source = fs.readFileSync(path.join(root, "src", "engine", "draft-intelligence.js"), "utf8");
+  const store = fs.readFileSync(path.join(root, "src", "storage", "browser-store.js"), "utf8");
   const worker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-  assert.ok(app.includes("applyPlayerOutlookOverlay(applyDraftDecisionMix(initialQualified, settings, false)"));
-  assert.ok(app.includes("applyPlayerOutlookOverlay(applyDraftDecisionMix(refinedQualified, settings, true)"));
-  assert.ok(app.includes("A+ QUALIFIED BASE · LIVE DECISION MIX"));
-  assert.ok(html.includes("./src/engine/draft-intelligence.js"));
-  assert.ok(html.includes("./draft-intelligence.css"));
+  assert.ok(source.includes("patchedQualify"));
+  assert.ok(source.includes("bounded-experimental-decision-overlay"));
+  assert.ok(source.includes("historically qualified draft policy stays the anchor"));
+  assert.ok(store.includes("./src/engine/draft-intelligence.js"));
+  assert.ok(store.includes("./draft-intelligence.css"));
   assert.ok(worker.includes("snapcount-browser-v1.35.0-draft-intelligence"));
   assert.ok(worker.includes("./src/engine/draft-intelligence.js"));
   assert.ok(worker.includes("./draft-intelligence.css"));
 });
 
-test("My Outlooks presents round-relative personal targets instead of abstract sentiment labels", () => {
-  const fs = require("node:fs");
-  const path = require("node:path");
-  const app = fs.readFileSync(path.resolve(__dirname, "..", "src", "app.js"), "utf8");
-  for (const label of ["Much higher · ~1¼ rounds", "Moderately higher · ~½ round", "Slightly higher · ~¼ round", "Same as market", "Much lower · ~1¼ rounds"]) {
-    assert.ok(app.includes(label), `missing ${label}`);
-  }
-  assert.ok(app.includes("residualPicks"));
-  assert.ok(app.includes("alreadyReflected"));
+test("My Outlooks exposes ESPN-relative draft targets instead of abstract sentiment labels", () => {
+  assert.equal(intelligence.PERSONAL_VIEW_LABELS["very-positive"], "Much higher · ~1¼ rounds");
+  assert.equal(intelligence.PERSONAL_VIEW_LABELS.positive, "Higher · ~¾ round");
+  assert.equal(intelligence.PERSONAL_VIEW_LABELS["somewhat-positive"], "Moderately higher · ~⅓ round");
+  assert.equal(intelligence.PERSONAL_VIEW_LABELS["slightly-positive"], "Slightly higher · ~⅙ round");
+  assert.equal(intelligence.PERSONAL_VIEW_LABELS.neutral, "Same as ESPN");
+  assert.equal(intelligence.PERSONAL_VIEW_LABELS["very-negative"], "Much lower · ~1¼ rounds");
 });
