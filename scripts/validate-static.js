@@ -71,11 +71,15 @@ if (footballArtifact.meta?.version !== "snapcount-football-context-2026.1" || Ob
 const footballAudit = JSON.parse(fs.readFileSync(path.join(root, "data", "validation", "football-context-audit.json"), "utf8"));
 if (footballAudit.status !== "prospective-only-not-serving" || footballAudit.preRegisteredAdmission?.restrictions?.productionMeanChangedNow !== false) throw new Error("Football-context successor serving lock drift");
 const campArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "camp-2026.json"), "utf8"));
-if (campArtifact.meta?.version !== "camp-intelligence-2026.2" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10 || Number(campArtifact.meta?.searchedPlayers || 0) < 20) throw new Error("Role intelligence artifact is incomplete");
+if (campArtifact.meta?.version !== "camp-intelligence-2026.3" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10 || Number(campArtifact.meta?.searchedPlayers || 0) < 20) throw new Error("Role intelligence artifact is incomplete");
 if (campArtifact.players.some((row) => row.modelEffect !== "advisory-only")) throw new Error("Camp intelligence must remain advisory-only");
 if (campArtifact.players.some((row) => row.usageHyperbole && row.observations?.some((item) => item.literalVolume === true))) throw new Error("Role intelligence must never convert workload rhetoric into literal volume");
 const campText = JSON.stringify(campArtifact);
 if (campText.includes("<p") || campText.includes("rawText")) throw new Error("Camp artifact must not persist raw article bodies");
+const preseasonAlphaArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "preseason-alpha-2026.json"), "utf8"));
+if (preseasonAlphaArtifact.meta?.version !== "preseason-alpha-2026.1" || Number(preseasonAlphaArtifact.meta?.evaluatedPlayers || 0) < 250 || !Array.isArray(preseasonAlphaArtifact.players) || preseasonAlphaArtifact.players.length < 20) throw new Error("Preseason alpha artifact is incomplete");
+if (preseasonAlphaArtifact.meta?.servingMeanEffect !== false || preseasonAlphaArtifact.meta?.servingDraftOrderEffect !== false) throw new Error("Preseason alpha serving lock drift");
+if (preseasonAlphaArtifact.players.some((row) => row.modelEffect !== "uncertainty-and-shadow-only" || Math.abs(Number(row.candidateShift || 0)) > 2.5001)) throw new Error("Preseason alpha effect bounds drift");
 const rookieArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "rookies-2026.json"), "utf8"));
 if (!Array.isArray(rookieArtifact.players) || rookieArtifact.players.length < 50) throw new Error("Rookie artifact is incomplete");
 if (Number(rookieArtifact.meta?.historicalRookieCount || 0) < 1500) throw new Error("Rookie historical cohort support is incomplete");

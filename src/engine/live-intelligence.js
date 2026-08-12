@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createLiveIntelligence() {
   "use strict";
 
-  const VERSION = "oracle-live-intelligence-2026.3";
+  const VERSION = "oracle-live-intelligence-2026.4";
   function finite(value, fallback = 0) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
@@ -30,6 +30,15 @@
     { key: "usage.committee", score: -0.68, weight: 0.86, phrases: ["committee backfield", "running back committee", "split carries", "split the carries", "timeshare", "rotate the backs", "share the workload"] },
   ]);
   const SOURCE_AUTHORITY = Object.freeze({ "head-coach": 1, "play-caller": 1, "offensive-coordinator": 0.94, "position-coach": 0.8, "general-manager": 0.72, player: 0.54, reporter: 0.48, analyst: 0.25, unknown: 0.34 });
+  const AVAILABILITY_RULES = Object.freeze([
+    { key: "availability.full", state: "full", score: 1, phrases: ["full participant", "full practice", "practiced fully", "no limitations", "fully cleared", "full-go", "full go"] },
+    { key: "availability.returned", state: "returned", score: 0.55, phrases: ["returned to practice", "back at practice", "returned to team drills", "activated from pup", "removed from pup", "cleared to practice"] },
+    { key: "availability.ramping", state: "ramping", score: 0.15, phrases: ["individual drills", "ramping up", "worked on the side", "limited team drills", "managed reps"] },
+    { key: "availability.limited", state: "limited", score: -0.3, phrases: ["limited participant", "limited in practice", "practice limitation", "on a pitch count"] },
+    { key: "availability.held_out", state: "held-out", score: -0.68, phrases: ["held out", "did not practice", "not practicing", "missed practice", "sidelined"] },
+    { key: "availability.exited", state: "exited", score: -0.86, phrases: ["left practice", "exited practice", "aggravated", "re-injured", "reinjured", "pulled up"] },
+    { key: "availability.reserve", state: "reserve", score: -1, phrases: ["physically unable to perform", "pup list", "nfi list", "non-football injury list", "injured reserve"] },
+  ]);
 
   function numericStat(value) {
     const text = String(value ?? "0");
@@ -212,6 +221,28 @@
     const roleIntent = usageScore >= 0.2 ? "expand" : usageScore <= -0.2 ? "reduce" : "neutral";
     return { active: true, usageScore, roleIntent, confidence, sourceAuthority: authority, sourceRole, hyperbole, literalVolume: false, matches, modelEffect: "role-state-only" };
   }
+
+  function classifyAvailabilityText(input) {
+    const text = cleanText(input).toLowerCase();
+    const empty = { active: false, state: "unknown", score: 0, confidence: 0, matches: [], modelEffect: "availability-trajectory-only" };
+    if (!text) return empty;
+    const matches = [];
+    for (const rule of AVAILABILITY_RULES) {
+      const phrase = rule.phrases.find((candidate) => text.includes(candidate) && !phraseNegated(text, candidate));
+      if (phrase) matches.push({ key: rule.key, state: rule.state, score: rule.score, phrase });
+    }
+    if (!matches.length) return empty;
+    const strongest = [...matches].sort((a, b) => Math.abs(b.score) - Math.abs(a.score))[0];
+    const score = clamp(matches.reduce((sum, row) => sum + row.score, 0) / matches.length, -1, 1);
+    return {
+      active: true,
+      state: strongest.state,
+      score,
+      confidence: clamp(0.42 + Math.min(0.28, matches.length * 0.08), 0.42, 0.7),
+      matches,
+      modelEffect: "availability-trajectory-only",
+    };
+  }
   function extractNewsPulse(news, players = []) {
     const playerByEspnId = new Map((players || []).map((player) => [String(player.id), player]));
     return (news?.articles || []).map((article) => {
@@ -224,6 +255,7 @@
         description: String(article.description || ""),
         camp: classifyCampText(`${article.headline || ""} ${article.description || ""}`),
         usageIntent: classifyUsageIntentText(`${article.headline || ""} ${article.description || ""}`, { sourceRole: "reporter", directQuote: String(`${article.headline || ""} ${article.description || ""}`).includes(String.fromCharCode(34)) }),
+        availability: classifyAvailabilityText(`${article.headline || ""} ${article.description || ""}`),
         published: article.published || article.lastModified || null,
         url: article.links?.web?.href || null,
         premium: Boolean(article.premium),
@@ -241,7 +273,8 @@
       const applies = article.playerIds?.length ? article.playerIds.includes(String(player?.id || "")) : article.teams?.includes(String(player?.team || ""));
       const campActive = Boolean(article.camp?.active && article.camp.matches?.length);
       const usageActive = Boolean(article.usageIntent?.active && article.usageIntent.matches?.length);
-      if (!applies || (!campActive && !usageActive)) return false;
+      const availabilityActive = Boolean(article.availability?.active && article.availability.matches?.length);
+      if (!applies || (!campActive && !usageActive && !availabilityActive)) return false;
       const published = Date.parse(article.published || "");
       return !Number.isFinite(published) || asOf - published <= maxAgeDays * 86400000;
     });
@@ -252,7 +285,8 @@
       const freshness = Math.exp((-Math.LN2 * ageDays) / 5);
       const campStructural = article.camp?.matches?.some((match) => match.family === "role");
       const usageStructural = Boolean(article.usageIntent?.active);
-      const structural = campStructural || usageStructural ? 1 : 0.6;
+      const availabilityStructural = Boolean(article.availability?.active);
+      const structural = campStructural || usageStructural || availabilityStructural ? 1 : 0.6;
       const authority = usageStructural ? Math.max(0.5, finite(article.usageIntent.confidence, 0.5)) : 1;
       return { article, weight: Math.max(0.05, freshness * structural * authority) };
     });
@@ -272,14 +306,18 @@
     const usageScore = rows.reduce((sum, row) => sum + finite(row.article.usageIntent?.usageScore) * row.weight, 0) / total;
     const usageConfidence = rows.reduce((sum, row) => sum + finite(row.article.usageIntent?.confidence) * row.weight, 0) / total;
     const performanceScore = rows.reduce((sum, row) => sum + finite(row.article.camp?.performanceScore) * row.weight, 0) / total;
-    const availabilityRisk = rows.reduce((sum, row) => sum + finite(row.article.camp?.availabilityRisk) * row.weight, 0) / total;
+    const availabilityRisk = rows.reduce((sum, row) => {
+      const campRisk = finite(row.article.camp?.availabilityRisk);
+      const trajectoryRisk = row.article.availability?.active ? clamp(-finite(row.article.availability.score), 0, 1) : 0;
+      return sum + Math.max(campRisk, trajectoryRisk) * row.weight;
+    }, 0) / total;
     const conflict = clamp(rows.reduce((sum, row) => sum + Math.abs(row.article.camp.score - score) * row.weight, 0) / Math.max(0.25, total), 0, 1);
     const confidence = clamp((0.14 + Math.min(0.34, total * 0.11)) * (1 - conflict * 0.45), 0.08, 0.55);
     const direction = score >= 0.18 ? "up" : score <= -0.18 ? "down" : conflict >= 0.3 ? "mixed" : "neutral";
     return {
       available: true, direction, score: clamp(score, -1, 1), roleScore: clamp(roleScore, -1, 1), usageScore: clamp(usageScore, -1, 1), usageConfidence: clamp(usageConfidence, 0, 0.9), performanceScore: clamp(performanceScore, -1, 1),
       availabilityRisk: clamp(availabilityRisk, 0, 1), confidence, conflict, articles: relevant.length, modelEffect: "advisory-only",
-      evidenceKeys: [...new Set(relevant.flatMap((article) => [...(article.camp?.matches || []), ...(article.usageIntent?.matches || [])].map((match) => match.key)))],
+      evidenceKeys: [...new Set(relevant.flatMap((article) => [...(article.camp?.matches || []), ...(article.usageIntent?.matches || []), ...(article.availability?.matches || [])].map((match) => match.key)))],
       usageHyperbole: relevant.some((article) => article.usageIntent?.hyperbole === true),
       sources: [...new Set(relevant.map(() => "ESPN headline/description role-usage metadata"))],
     };
@@ -295,6 +333,7 @@
   return {
     VERSION,
     campEvidence,
+    classifyAvailabilityText,
     classifyCampText,
     classifyUsageIntentText,
     extractNewsPulse,

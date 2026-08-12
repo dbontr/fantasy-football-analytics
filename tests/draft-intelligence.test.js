@@ -79,6 +79,7 @@ test("shadow decision mix exposes every signal family without changing the quali
     players, state, settings: settings(), teamId: 1,
     snapRankById: { "1": 2, "2": 1, "3": 4, "4": 5, "5": 3, "6": 6 },
     footballContextById: { "1": { correction: 1.2, topDriver: "team volume" } },
+    preseasonAlphaById: { "1": { alphaScore: .45, confidence: .4, candidateShift: .7, market: { pricedFraction: .1 }, roleProbabilities: [{ key: "expanded", probability: .5 }] } },
   });
   assert.equal(result.length, rows.length);
   assert.deepEqual(result.map((row) => row.id), rows.map((row) => row.id));
@@ -89,9 +90,11 @@ test("shadow decision mix exposes every signal family without changing the quali
     assert.ok(Number.isFinite(row.shadowDecisionRank));
     assert.equal(row.returnChance, rows[index].returnChance);
     assert.ok(Number.isFinite(row.shadowReturnChance));
-    assert.deepEqual(new Set(row.decisionComponents.map((component) => component.key)), new Set(["counterfactual", "room-hazard", "espn-residual", "availability", "format", "portfolio", "football-context"]));
+    assert.deepEqual(new Set(row.decisionComponents.map((component) => component.key)), new Set(["counterfactual", "room-hazard", "espn-residual", "availability", "format", "portfolio", "preseason-alpha", "football-context"]));
     assert.equal(row.decisionMixStatus, "shadow-only-pending-validation");
   }
+  assert.equal(result[0].preseasonAlphaScore, .45);
+  assert.equal(result[0].appliedDecisionShift, 0);
 });
 
 test("Draft Decision Mix loads from the browser store and patches qualified recommendations", () => {
@@ -107,7 +110,9 @@ test("Draft Decision Mix loads from the browser store and patches qualified reco
   assert.ok(source.includes("shadow challenger"));
   assert.ok(store.includes("./src/engine/draft-intelligence.js"));
   assert.ok(store.includes("./draft-intelligence.css"));
-  assert.ok(worker.includes("snapcount-browser-v1.38.0-outlook-notes"));
+  assert.ok(worker.includes("snapcount-browser-v1.39.0-preseason-alpha"));
+  assert.ok(worker.includes("./src/engine/preseason-alpha.js"));
+  assert.ok(worker.includes("./data/preseason-alpha-2026.json"));
   assert.ok(worker.includes("./src/engine/draft-intelligence.js"));
   assert.ok(worker.includes("./draft-intelligence.css"));
   assert.ok(worker.includes("./data/validation/draft-decision-mix-audit.json"));

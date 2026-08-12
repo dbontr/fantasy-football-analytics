@@ -1,5 +1,5 @@
 {
-  "version": "snapcount-interaction-coverage-2026.4",
+  "version": "snapcount-interaction-coverage-2026.5",
   "principle": "Measure football interactions first; only a separately validated family may change the serving mean.",
   "families": {
     "target_share_and_targets": {
@@ -50,6 +50,10 @@
       "status": "uncertainty-only",
       "scope": "training-camp/news evidence plus direct coach/play-caller usage intent changes role uncertainty and shadow decision context; never the serving mean directly"
     },
+    "preseason_information_alpha": {
+      "status": "uncertainty-and-shadow-only",
+      "scope": "first-team role state, starter-unit preseason usage, source-weighted coach/playcaller intent, independent structural-report consensus, availability trajectory, player-specific sensitivity, and market-reaction residual; generic hype cannot promote and qualified mean/order remain locked pending prospective validation"
+    },
     "qb_target_ecosystem": {
       "status": "context-only",
       "scope": "primary QB plus team target/snap pecking order"
@@ -92,7 +96,7 @@
     },
     "draft_decision_intelligence": {
       "status": "shadow-decision-challenger",
-      "scope": "counterfactual starter value, manager-specific pick survival, ESPN disagreement, availability, QB-format scarcity, roster correlation, and shadow football context are measured but cannot reorder the qualified draft policy after an adverse 2019 ablation; prospective 2026 validation remains required for promotion"
+      "scope": "counterfactual starter value, manager-specific pick survival, ESPN disagreement, availability, QB-format scarcity, roster correlation, structured preseason information alpha, and shadow football context are measured but cannot reorder the qualified draft policy; prospective 2026 validation remains required for promotion"
     }
   }
 }

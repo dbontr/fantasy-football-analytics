@@ -28,10 +28,26 @@ function wordNumber(value) {
   return Number.isFinite(Number(value)) ? Number(value) : words[String(value || "").toLowerCase()] ?? null;
 }
 function observationFacts(text) {
-  const firstTeam = /\bfirst[- ]team\b/i.test(text);
-  const snap = text.match(/\b(\d{1,3})\s+snaps?\b/i);
-  const caught = text.match(/\bcaught\s+(?:only\s+)?(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+of\s+(?:his\s+)?(\d+)\s+(?:passes|targets)\b/i);
-  return { firstTeamSnaps: firstTeam && snap ? Number(snap[1]) : null, catches: caught ? wordNumber(caught[1]) : null, targets: caught ? Number(caught[2]) : null };
+  const value = String(text || "");
+  const firstTeam = /\b(?:first[- ]team|first unit|with the ones|starting offense|starter reps)\b/i.test(value);
+  const snap = value.match(/\b(\d{1,3})\s+(?:first[- ]team\s+)?snaps?\b/i);
+  const routes = value.match(/\b(\d{1,3})\s+(?:first[- ]team\s+)?routes?\b/i);
+  const carries = value.match(/\b(\d{1,2})\s+(?:first[- ]team\s+)?carries\b/i);
+  const targetCount = value.match(/\b(\d{1,2})\s+(?:first[- ]team\s+)?targets\b/i);
+  const caught = value.match(/\bcaught\s+(?:only\s+)?(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+of\s+(?:his\s+)?(\d+)\s+(?:passes|targets)\b/i);
+  return {
+    firstTeamSnaps: firstTeam && snap ? Number(snap[1]) : null,
+    firstTeamRoutes: firstTeam && routes ? Number(routes[1]) : null,
+    firstTeamCarries: firstTeam && carries ? Number(carries[1]) : null,
+    firstTeamTargets: firstTeam && targetCount ? Number(targetCount[1]) : null,
+    starterUnit: firstTeam,
+    openingDrive: /\b(?:opening drive|first drive|opening series)\b/i.test(value),
+    twoMinute: /\b(?:two-minute|2-minute|two minute)\b/i.test(value),
+    thirdDown: /\bthird[- ]down\b/i.test(value),
+    redZone: /\b(?:red[- ]zone|goal[- ]line|inside the 20)\b/i.test(value),
+    catches: caught ? wordNumber(caught[1]) : null,
+    targets: caught ? Number(caught[2]) : null,
+  };
 }
 function storyBlocks(story) {
   return [...String(story || "").matchAll(/<(p|li)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((match) => ({
@@ -66,7 +82,7 @@ function resultArticle(row) {
   };
 }
 function usageCandidateHeadline(value) {
-  return /(workload|touch(?:es| the ball)|carr(?:y|ies)|target|reps|role|featured|feature|focal|centerpiece|workhorse|bell.?cow|committee|pecking order|lead back|starter|starting|build(?:ing)? around|building block|good shape|more involved|usage|get .*ball|feed)/i.test(String(value || ""));
+  return /(workload|touch(?:es| the ball)|carr(?:y|ies)|target|reps|role|featured|feature|focal|centerpiece|workhorse|bell.?cow|committee|pecking order|lead back|starter|starting|first[- ]team|first unit|two[- ]minute|third[- ]down|red[- ]zone|goal[- ]line|opening drive|build(?:ing)? around|building block|more involved|usage|get .*ball|feed|practice|limited|held out|sidelined|returned|cleared|pup|injur|depth chart)/i.test(String(value || ""));
 }
 function sourceRoleFor(player, value) {
   const staff = coaches[String(player?.team || "").toUpperCase()] || {};
@@ -120,13 +136,20 @@ function campObservation(article, block) {
   const player = players.get(block.athleteIds[0]);
   if (!player || !SKILL.has(String(player.position))) return null;
   const camp = live.classifyCampText(`training camp practice ${block.text}`);
+  const availability = live.classifyAvailabilityText(block.text);
   const facts = observationFacts(block.text);
-  if (!camp.matches.length && !Number.isFinite(facts.firstTeamSnaps) && !Number.isFinite(facts.catches)) return null;
+  if (!camp.matches.length && !availability.active && !facts.starterUnit && !Number.isFinite(facts.catches)) return null;
   return { player, observation: {
     storyId: String(article.id || ""), published: article.published || article.lastModified || null,
     score: camp.score, roleScore: camp.roleScore, performanceScore: camp.performanceScore,
-    availabilityRisk: camp.availabilityRisk, usageScore: 0, usageConfidence: 0,
-    usageSourceRole: null, usageHyperbole: false, evidenceKeys: camp.matches.map((match) => match.key), ...facts,
+    availabilityRisk: Math.max(camp.availabilityRisk, Math.max(0, -Number(availability.score || 0))),
+    availabilityScore: availability.active ? availability.score : null,
+    availabilityState: availability.active ? availability.state : null,
+    usageScore: 0, usageConfidence: 0,
+    usageSourceRole: "reporter", sourceRole: "reporter", sourceKey: `ESPN:${article.id || "camp"}`,
+    usageHyperbole: false,
+    evidenceKeys: unique([...camp.matches.map((match) => match.key), ...availability.matches.map((match) => match.key)]),
+    ...facts,
   } };
 }
 function usageObservation(player, article, detail) {
@@ -140,13 +163,26 @@ function usageObservation(player, article, detail) {
     sourceRole,
     directQuote: sourceRole !== "reporter" && /["“”]/.test(evidenceText),
   });
-  if (!usage.active || !usage.matches.length) return null;
+  const availability = live.classifyAvailabilityText(evidenceText);
+  const camp = live.classifyCampText(`preseason ${evidenceText}`);
+  const structuralMatches = camp.matches.filter((match) => match.family === "role");
+  const facts = observationFacts(evidenceText);
+  if (!usage.active && !availability.active && !structuralMatches.length && !facts.starterUnit && !facts.openingDrive) return null;
+  const roleNumerator = (usage.active ? usage.usageScore * Math.max(0.35, usage.confidence) : 0) + (structuralMatches.length ? camp.roleScore * 0.7 : 0);
+  const roleDenominator = (usage.active ? Math.max(0.35, usage.confidence) : 0) + (structuralMatches.length ? 0.7 : 0);
+  const roleScore = roleDenominator ? roleNumerator / roleDenominator : 0;
+  const sourceKey = stripHtml(detail?.byline || detail?.author || `${sourceRole}:${article.id || detail?.id || "story"}`);
   return {
     storyId: String(article.id || detail?.id || ""), published: detail?.published || article.published || article.date || null,
-    score: usage.usageScore, roleScore: usage.usageScore, performanceScore: 0, availabilityRisk: 0,
-    usageScore: usage.usageScore, usageConfidence: usage.confidence, usageSourceRole: usage.sourceRole,
-    usageHyperbole: usage.hyperbole, literalVolume: usage.literalVolume, evidenceKeys: usage.matches.map((match) => match.key),
-    firstTeamSnaps: null, catches: null, targets: null,
+    score: roleScore, roleScore, performanceScore: 0,
+    availabilityRisk: availability.active ? Math.max(0, -availability.score) : 0,
+    availabilityScore: availability.active ? availability.score : null,
+    availabilityState: availability.active ? availability.state : null,
+    usageScore: usage.active ? usage.usageScore : 0, usageConfidence: usage.active ? usage.confidence : 0,
+    usageSourceRole: sourceRole, sourceRole, sourceKey: `ESPN:${sourceKey}`,
+    usageHyperbole: usage.hyperbole === true, literalVolume: usage.literalVolume === true,
+    evidenceKeys: unique([...usage.matches.map((match) => match.key), ...structuralMatches.map((match) => match.key), ...availability.matches.map((match) => match.key)]),
+    ...facts,
   };
 }
 function recentEnough(value, capturedAt) {
@@ -159,7 +195,7 @@ function summarizePlayer(row, capturedAt) {
   const weighted = row.observations.map((observation) => {
     const published = Date.parse(observation.published || "");
     const ageDays = Number.isFinite(published) ? Math.max(0, now - published) / 86400000 : 7;
-    const structural = observation.evidenceKeys.some((key) => key.startsWith("role.") || key.startsWith("usage.")) ? 1 : 0.65;
+    const structural = observation.evidenceKeys.some((key) => key.startsWith("role.") || key.startsWith("usage.") || key.startsWith("availability.")) || observation.starterUnit ? 1 : 0.55;
     const authority = Number.isFinite(Number(observation.usageConfidence)) && observation.usageConfidence > 0
       ? 0.75 + Number(observation.usageConfidence) * 0.5 : 1;
     return { observation, weight: Math.max(0.05, Math.exp((-Math.LN2 * ageDays) / 7) * structural * authority) };
@@ -169,14 +205,30 @@ function summarizePlayer(row, capturedAt) {
   const score = avg("score");
   const conflict = Math.min(1, total ? weighted.reduce((sum, item) => sum + Math.abs(item.observation.score - score) * item.weight, 0) / total : 0);
   const confidence = Math.min(0.68, Math.max(0.08, (0.16 + Math.min(0.42, total * 0.1)) * (1 - conflict * 0.45)));
+  const availabilityTimeline = row.observations
+    .filter((item) => item.availabilityScore !== null && item.availabilityScore !== undefined && Number.isFinite(Number(item.availabilityScore)))
+    .map((item) => ({ storyId: item.storyId, published: item.published, state: item.availabilityState, score: Number(item.availabilityScore) }))
+    .sort((a, b) => String(a.published || "").localeCompare(String(b.published || "")));
+  const structuralObservationCount = row.observations.filter((item) => item.evidenceKeys.some((key) => key.startsWith("role.") || key.startsWith("usage.") || key.startsWith("availability.")) || item.starterUnit).length;
   return { ...row, available: true, score, roleScore: avg("roleScore"), usageScore: avg("usageScore"),
     usageConfidence: avg("usageConfidence"), performanceScore: avg("performanceScore"),
-    availabilityRisk: Math.max(...row.observations.map((item) => Number(item.availabilityRisk || 0)), 0),
+    availabilityRisk: Math.max(...row.observations.map((item) => Number(item.availabilityRisk || 0)), 0), availabilityTimeline,
     conflict, confidence, direction: score >= 0.18 ? "up" : score <= -0.18 ? "down" : conflict >= 0.3 ? "mixed" : "neutral",
-    evidenceKeys: unique(row.observations.flatMap((item) => item.evidenceKeys)),
+    evidenceKeys: unique(row.observations.flatMap((item) => item.evidenceKeys)), structuralObservationCount,
     usageSourceRoles: unique(row.observations.map((item) => item.usageSourceRole).filter(Boolean)),
+    sourceKeys: unique(row.observations.map((item) => item.sourceKey).filter(Boolean)),
+    reportStoryCount: unique(row.observations.map((item) => item.storyId).filter(Boolean)).length,
     usageHyperbole: row.observations.some((item) => item.usageHyperbole === true),
     reportedFirstTeamSnaps: Math.max(...row.observations.map((item) => Number(item.firstTeamSnaps || 0)), 0) || null,
+    reportedFirstTeamRoutes: Math.max(...row.observations.map((item) => Number(item.firstTeamRoutes || 0)), 0) || null,
+    reportedFirstTeamCarries: Math.max(...row.observations.map((item) => Number(item.firstTeamCarries || 0)), 0) || null,
+    reportedFirstTeamTargets: Math.max(...row.observations.map((item) => Number(item.firstTeamTargets || 0)), 0) || null,
+    firstTeamMentions: row.observations.filter((item) => item.starterUnit).length,
+    starterUnitMentions: row.observations.filter((item) => item.starterUnit || item.openingDrive).length,
+    openingDriveMentions: row.observations.filter((item) => item.openingDrive).length,
+    twoMinuteMentions: row.observations.filter((item) => item.twoMinute).length,
+    thirdDownMentions: row.observations.filter((item) => item.thirdDown).length,
+    redZoneMentions: row.observations.filter((item) => item.redZone).length,
     modelEffect: "advisory-only" };
 }
 function rankedSearchPlayers() {
@@ -279,9 +331,9 @@ async function main() {
   const rows = [...playerSignals.values()].map((row) => summarizePlayer(row, capturedAt)).sort((a, b) => a.name.localeCompare(b.name));
   const artifact = {
     meta: {
-      version: "camp-intelligence-2026.2", season: 2026, capturedAt,
-      source: "ESPN public NFL news plus player-specific ESPN search; offline-derived camp and coach-usage role observations",
-      policy: "Derived signals only. Raw article bodies are never persisted. Coach/play-caller usage intent is role-state/uncertainty and shadow-decision evidence only until prospective validation admits a serving effect.",
+      version: "camp-intelligence-2026.3", season: 2026, capturedAt,
+      source: "ESPN public NFL news plus player-specific ESPN search; offline-derived first-team role, coach-usage, injury-trajectory, and structural preseason observations",
+      policy: "Derived signals only. Raw article bodies are never persisted. Structural role, coach/play-caller intent, first-unit usage, and availability trajectory are uncertainty/shadow evidence until prospective validation admits a serving effect.",
       stories: stories.length, generalCampStories,
       searchedPlayers: usage.searchedPlayers, playerSearches: usage.searches,
       usageCandidateStories: usage.candidateStories, usageObservations: usage.observations,

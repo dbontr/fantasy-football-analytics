@@ -95,8 +95,9 @@ async function main() {
     context: window.OracleContext?.VERSION || null,
     runtime: window.OracleBrowserEngine?.VERSION || null,
     liveIntelligence: window.OracleLiveIntelligence?.VERSION || null,
+    preseasonAlpha: window.SnapCountPreseasonAlpha?.VERSION || null,
   })`);
-  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.8-future-win" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1" || modelState.footballContext !== "snapcount-football-context-engine-2026.2" || modelState.liveIntelligence !== "oracle-live-intelligence-2026.3") throw new Error("Current empirical runtime/context/mean/live-intelligence bundle did not install");
+  if (modelState.correlation !== "snapcount-correlation-2026.1" || modelState.runtime !== "oracle-browser-2026.8-future-win" || modelState.context !== "oracle-context-browser-2026.4" || modelState.meanCalibration !== "snapcount-mean-calibration-2026.1" || modelState.footballContext !== "snapcount-football-context-engine-2026.3" || modelState.liveIntelligence !== "oracle-live-intelligence-2026.4" || modelState.preseasonAlpha !== "snapcount-preseason-alpha-2026.1") throw new Error("Current empirical runtime/context/mean/live-intelligence bundle did not install");
   if (modelState.calibration !== "snapcount-calibration-2026.1" || modelState.calibrationInstalled !== modelState.calibration) throw new Error("Empirical uncertainty calibration did not install");
   const profileState = await evaluate(`fetch('./data/analytics-runtime-profile.json').then((response) => response.json()).then((profile) => ({ mode: profile.mode, grades: profile.grades || {}, startSit: profile.startSit?.policy, draft: profile.draft?.policy, objective: profile.decisionObjective?.primary, objectiveStatus: profile.decisionObjective?.status, waiverHorizon: profile.waivers?.horizonWeeks, waiverDecay: profile.waivers?.horizonDecay, footballContextStatus: profile.context?.footballContextStatus }))`);
   const gradeDrift = Object.entries(profileState.grades).some(([surface, grade]) => grade !== (surface === "provenance" ? "A" : "A+"));
@@ -288,6 +289,12 @@ async function main() {
     targetEcosystem: document.querySelector('#player-intelligence .target-ecosystem-strip')?.textContent || ''
   }))()`);
   if (!veteran.text.includes("OUR READ") || !veteran.text.includes("RECENT FORM") || !veteran.gameLog || !veteran.targetEcosystem.includes('PASSING ECOSYSTEM') || !veteran.targetEcosystem.includes('QB')) throw new Error(`Friendly player intelligence/interaction context failed: ${JSON.stringify(veteran)}`);
+
+  const achaneSelected = await evaluate(`(() => { const search=document.querySelector('#player-search'); search.value='Achane'; search.dispatchEvent(new Event('input',{bubbles:true})); const select=document.querySelector('#player-select'); const option=[...select.options].find(row=>row.textContent.includes("De'Von Achane")); if(!option)return false; select.value=option.value; select.dispatchEvent(new Event('change',{bubbles:true})); document.querySelector('#run-player').click(); return true; })()`);
+  if (!achaneSelected) throw new Error('Could not select Achane for preseason intelligence QA');
+  await waitFor(`Boolean(document.querySelector('#player-result .preseason-alpha-card'))`, 20000);
+  const preseasonAlphaState = await evaluate(`Promise.all([fetch('./data/preseason-alpha-2026.json').then(r=>r.json()), Promise.resolve(document.querySelector('#player-result .preseason-alpha-card')?.textContent||'')]).then(([artifact,text])=>{const a=artifact.players?.find(row=>row.name==="De'Von Achane");return {version:artifact.meta?.version,meanEffect:artifact.meta?.servingMeanEffect,draftEffect:artifact.meta?.servingDraftOrderEffect,alpha:a?.alphaScore,confidence:a?.confidence,direct:a?.coachIntent?.directStories||0,market:a?.market?.label||'',text,visibleCamp:/\\bCAMP\\b/.test(text)};})`);
+  if (preseasonAlphaState.version !== 'preseason-alpha-2026.1' || preseasonAlphaState.meanEffect !== false || preseasonAlphaState.draftEffect !== false || preseasonAlphaState.alpha <= .15 || preseasonAlphaState.direct < 1 || !preseasonAlphaState.text.includes('PRESEASON INTELLIGENCE') || preseasonAlphaState.visibleCamp) throw new Error(`Structured preseason alpha failed: ${JSON.stringify(preseasonAlphaState)}`);
 
   await evaluate(`document.querySelector('#sync-live-intelligence').click(); true`);
   await waitFor(`!document.querySelector('#live-intelligence-status')?.textContent.includes('Syncing')`, 75000);

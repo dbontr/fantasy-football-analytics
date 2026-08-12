@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.38.0-outlook-notes";
+const CACHE = "snapcount-browser-v1.39.0-preseason-alpha";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const STATIC_ASSETS = [
   "./src/engine/context.js",
   "./src/engine/intelligence.js",
   "./src/engine/live-intelligence.js",
+  "./src/engine/preseason-alpha.js",
   "./src/engine/calibration.js",
   "./src/engine/draft-sim.js",
   "./src/engine/draft-intelligence.js",
@@ -40,6 +41,7 @@ const STATIC_ASSETS = [
   "./data/health-calibration-2026.json",
   "./data/rookies-2026.json",
   "./data/camp-2026.json",
+  "./data/preseason-alpha-2026.json",
   "./data/validation/site-benchmark-2018.json",
   "./data/validation/draft-decision-mix-audit.json",
 ];

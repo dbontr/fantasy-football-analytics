@@ -55,7 +55,7 @@ The UI uses one dark-navy sidebar, a lightweight utility header, and a single sh
 - Rookie-specific 2026 intelligence for 74 fantasy-relevant rookies: 2016-2025 draft-capital cohorts, age, structured draft grade/rank, position-relative combine context, live depth chart, preseason usage, week-progressive development priors, and explicitly wider uncertainty when NFL evidence is sparse.
 - Rookie cohorts include non-producing developmental/UDFAs rather than conditioning on players who logged stats; drafted buckets shrink toward a drafted-player baseline to reduce survivorship and population-mix bias.
 - SnapCount draft recommendations can use a small capped rookie-upside/tail term, while simulated market opponents remain driven by the selected market/value/need strategy rather than the SnapCount rookie model.
-- Preseason/camp intelligence separates actual preseason boxscore opportunity, team-position opportunity share, reporter-observed first-team reps when explicitly stated, role changes, performance reports, availability, live ESPN ADP/ownership metadata, and Sleeper add/drop momentum. Camp text is classified conservatively and remains advisory-only; it cannot change the frozen projection mean or qualified Draft ranking until prospective validation admits an effect.
+- Structured preseason information alpha separates actual preseason opportunity, first-team/starter-unit role evidence, coach/play-caller workload intent, independent structural-report consensus, availability trajectory, and market reaction. Player-specific sensitivity makes uncertain rookies/role battles more responsive than established stars, generic camp hype has no standalone effect, and already-priced market moves are shrunk. The resulting role probabilities feed uncertainty and the shadow Draft challenger only; they cannot change the frozen projection mean or qualified Draft ranking until timestamp-correct prospective/walk-forward validation admits an effect.
 - Conservative teammate-absence redistribution estimates vacated target/carry opportunity without treating it as guaranteed usage.
 - Evidence-backed player outlook generated locally from forecasts, game logs, and available structured Sleeper injury/practice/depth data; no copied editorial blurbs or article bodies.
 - Shared history-aware decision evidence now feeds lineup optimization, waiver add/drop search, bilateral trades, and league/title simulation.
@@ -113,8 +113,9 @@ The bootstrap is intentionally explicit about provenance instead of pretending e
 - `data/coaches-2026.json`: 32-team Bayesian-shrunk coaching priors; staff provenance/methodology and verification date are recorded in the artifact metadata.
 - `data/intelligence/xfp_weekly_2025.csv.gz`: 153 KB compact ffopportunity expected-fantasy-points artifact (CC BY-SA 4.0), loaded only with player/decision intelligence.
 - `data/rookies-2026.json`: ~47 KB offline rookie artifact covering 74 players. It is reproducibly built from nflverse player/combine/stat data plus ESPN's public structured 2026 draft metadata; the build uses 1,868 historical rookie records and ships only compact priors/current-player metadata.
-- `data/camp-2026.json`: compact current training-camp signal artifact derived offline from ESPN public camp reports. Raw article bodies are not persisted; only player attribution, role/performance/availability classifications, explicit reported first-team snap counts when extractable, confidence/conflict, and source hashes remain. Every row is `advisory-only`.
-- `data/forward/`: append-only prospective 2026 input freezes. Snapshots preserve the live ESPN PPR baseline and market metadata, camp signals, public-news classifications, Sleeper movement, and preseason usage before future regular-season outcomes are attached.
+- `data/camp-2026.json`: compact current structural-role artifact derived offline from ESPN public camp/news/search results. Raw article bodies are not persisted; only player attribution, coach/play-caller usage intent, role/performance/availability classifications, first-team/starter-unit facts when explicitly stated, confidence/conflict, and compact source identifiers remain. Every row is advisory-only.
+- `data/preseason-alpha-2026.json`: compact structured preseason-alpha artifact combining role state, starter-unit usage, source-weighted coach intent, structural-report consensus, injury trajectory, player sensitivity, and frozen market reaction. It is explicitly `uncertainty-and-shadow-only` and cannot alter the qualified mean or Draft order.
+- `data/forward/`: append-only prospective 2026 input freezes. Snapshots preserve the live ESPN PPR baseline and market metadata, structural role signals, preseason-alpha state, public-news classifications, Sleeper movement, and preseason usage before future regular-season outcomes are attached.
 - Live runtime allowlist: Sleeper public read-only API, nflverse GitHub releases, ESPN public keyless NFL web JSON, ESPN Fantasy league reads, and NOAA/NWS. ESPN terms apply to ESPN-sourced metadata.
 
 The runtime source policy rejects arbitrary origins, credential-bearing URLs, and secret-like query parameters. No paid fallback exists. ESPN Fantasy is the sole adapter allowed to opt into `credentials: include`, and only after the user chooses the browser-session fallback. Those credentials are managed by the browser and sent directly to ESPN; SnapCount never receives or stores their values.
@@ -131,7 +132,9 @@ npm.cmd run verify:future-win   # verify frozen neutral 2025 future-win diagnost
 npm.cmd run audit:forecast:refit # research-only legacy refit; must not silently replace serving coefficients
 npm.cmd run refresh:ppr         # refresh committed PPR + derived Standard fallback
 npm.cmd run refresh:rookies     # manual reproducible rookie-artifact refresh
-npm.cmd run refresh:camp        # refresh compact advisory camp intelligence
+npm.cmd run refresh:camp        # refresh compact structural role / usage intelligence
+npm.cmd run refresh:preseason-alpha # rebuild structured preseason-alpha artifact
+npm.cmd run refresh:draft-week  # PPR + role/news + preseason alpha + prospective freeze
 npm.cmd run capture:forward     # append a prospective 2026 input snapshot
 npm.cmd run serve
 ```

@@ -12,6 +12,12 @@
       "capturedAt": "2026-08-10T15:46:08.543Z",
       "sha256": "49f4391802f38cf59225b1a21b78a927e8644c760ec10b5386a91b9d6b57ae99",
       "realizedOutcomesAttached": false
+    },
+    {
+      "file": "20260812T213718Z_inputs.json",
+      "capturedAt": "2026-08-12T21:37:18.449Z",
+      "sha256": "3e8a9effb50bb9ab65345a12f212230c6e45d1c9dcc338ee18719a1e93be229f",
+      "realizedOutcomesAttached": false
     }
   ]
 }

@@ -8,16 +8,19 @@
   const footballContext = typeof module !== "undefined" && module.exports
     ? require("./football-context.js")
     : root.SnapCountFootballContext;
-  const api = factory(core, correlation, footballContext);
+  const preseasonAlpha = typeof module !== "undefined" && module.exports
+    ? require("./preseason-alpha.js")
+    : root.SnapCountPreseasonAlpha;
+  const api = factory(core, correlation, footballContext, preseasonAlpha);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else {
     root.SnapCountDraftIntelligence = api;
     api.installBrowser(root);
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftIntelligence(core, correlation, footballContext) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftIntelligence(core, correlation, footballContext, preseasonAlpha) {
   "use strict";
 
-  const VERSION = "snapcount-draft-intelligence-2026.2";
+  const VERSION = "snapcount-draft-intelligence-2026.3";
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -210,6 +213,7 @@
     const teamId = Number(options.teamId || settings.draftPosition || 1);
     const roster = rosterPlayers(state, teamId, playerMap);
     const contextById = options.footballContextById || {};
+    const preseasonAlphaById = options.preseasonAlphaById || {};
     const snapRankById = options.snapRankById || {};
     const baselineWeekly = core.optimizeWeeklyLineup ? Array.from({ length: 17 }, (_, index) => core.optimizeWeeklyLineup(roster, settings, index + 1).total) : null;
     const prepared = rows.map((raw, index) => {
@@ -227,6 +231,9 @@
       const availability = availabilitySignal(player);
       const portfolio = portfolioSignal(player, roster);
       const football = footballContextSignal(player, contextById[String(player.id)] || {});
+      const preseason = preseasonAlphaById[String(player.id)] || null;
+      const preseasonShift = preseason ? clamp(finite(preseason.candidateShift), -1.8, 1.8) : 0;
+      const preseasonLabel = preseasonShift > 0.15 ? "preseason role edge" : preseasonShift < -0.15 ? "preseason role risk" : "preseason role neutral";
       const components = [
         { key: "counterfactual", label: "counterfactual roster value", shift: counterfactualSignal(raw, starterDelta, medianDelta) },
         { key: "room-hazard", label: "room-specific survival", shift: hazard.signal },
@@ -234,6 +241,7 @@
         { key: "availability", label: "season availability", shift: availability.signal },
         { key: "format", label: player.position === "QB" ? "QB format scarcity" : "format fit", shift: formatScarcity(player, settings, roster) },
         { key: "portfolio", label: portfolio.label, shift: portfolio.signal },
+        { key: "preseason-alpha", label: preseasonLabel, shift: preseasonShift },
         { key: "football-context", label: football.topDriver, shift: football.signal },
       ];
       const rawShift = components.reduce((sum, component) => sum + finite(component.shift), 0);
@@ -252,6 +260,10 @@
         marketResidualEdge: Number(residual.edge.toFixed(1)),
         availabilityAdjustedGames: Number(availability.projectedGames.toFixed(1)),
         counterfactualStarterPoints: Number(starterDelta.toFixed(1)),
+        preseasonAlphaScore: preseason ? Number(finite(preseason.alphaScore).toFixed(4)) : 0,
+        preseasonAlphaConfidence: preseason ? Number(finite(preseason.confidence).toFixed(4)) : 0,
+        preseasonMarketPricedFraction: preseason ? Number(finite(preseason.market?.pricedFraction).toFixed(4)) : 0,
+        preseasonRoleProbabilities: preseason?.roleProbabilities || [],
         decisionComponents: components.sort((a, b) => Math.abs(b.shift) - Math.abs(a.shift)),
         decisionMixVersion: VERSION,
         decisionMixStatus: "shadow-only-pending-validation",
@@ -274,6 +286,7 @@
     artifact: null,
     schedule: null,
     campById: new Map(),
+    preseasonAlphaById: new Map(),
     lastRowsById: new Map(),
     loading: null,
     observer: null,
@@ -293,10 +306,12 @@
       root.fetch("./data/football-context-2026.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
       root.fetch("./data/players-lite.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
       root.fetch("./data/camp-2026.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
-    ]).then(([artifact, players, camp]) => {
+      root.fetch("./data/preseason-alpha-2026.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
+    ]).then(([artifact, players, camp, preseasonArtifact]) => {
       browserState.artifact = artifact;
       browserState.schedule = players?.schedule || null;
       browserState.campById = new Map((camp?.players || []).map((row) => [String(row.id), row]));
+      browserState.preseasonAlphaById = new Map((preseasonArtifact?.players || []).map((row) => [String(row.id), row]));
       return browserState;
     });
     return browserState.loading;
@@ -332,6 +347,8 @@
     const evidence = averageEvidence(weekly);
     const camp = browserState.campById.get(String(player?.id));
     if (camp && footballContext.campRoleEvidence) Object.assign(evidence, footballContext.campRoleEvidence(camp));
+    const preseason = browserState.preseasonAlphaById.get(String(player?.id));
+    if (preseason && footballContext.preseasonAlphaEvidence) Object.assign(evidence, footballContext.preseasonAlphaEvidence(preseason));
     const mean = Math.max(0, finite(player?.weeklyProjection, finite(player?.projectedPoints) / 17));
     const shadow = footballContext.shadowDrivers(player, { mean }, evidence) || {};
     const role = footballContext.roleUncertaintyAdjustment(evidence) || {};
@@ -362,6 +379,7 @@
       availability: "availability",
       format: "QB format",
       portfolio: component?.label || "portfolio fit",
+      "preseason-alpha": component?.shift >= 0 ? "preseason role edge" : "preseason role risk",
       "football-context": component?.label || "football context",
     };
     return labels[component?.key] || component?.label || "decision signal";
@@ -446,7 +464,7 @@
       const note = document.createElement("p");
       note.className = "fineprint draft-decision-mix-note";
       note.dataset.decisionMixNote = "true";
-      note.textContent = "The historically qualified draft policy controls the order. Counterfactual value, room survival, ESPN disagreement, availability, format scarcity, roster correlation, and football context are being measured as a shadow challenger and cannot move picks until they clear the historical and prospective validation gates.";
+      note.textContent = "The historically qualified draft policy controls the order. Counterfactual value, room survival, ESPN disagreement, availability, format scarcity, roster correlation, structured preseason role intelligence, and football context are being measured as a shadow challenger and cannot move picks until they clear the historical and prospective validation gates.";
       strategy.appendChild(note);
     }
     const meta = document.getElementById("draft-meta");
@@ -488,6 +506,7 @@
           teamId,
           snapRankById: snapRankMap(players, settings, teamId),
           footballContextById: contextById,
+          preseasonAlphaById: Object.fromEntries(browserState.preseasonAlphaById),
           refined: false,
         });
         browserState.lastRowsById = new Map(mixed.map((row) => [String(row.id), row]));
