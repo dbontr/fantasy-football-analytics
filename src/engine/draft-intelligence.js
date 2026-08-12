@@ -5,10 +5,16 @@
   const correlation = typeof module !== "undefined" && module.exports
     ? require("./correlation.js")
     : root.SnapCountCorrelation;
-  const api = factory(core, correlation);
+  const footballContext = typeof module !== "undefined" && module.exports
+    ? require("./football-context.js")
+    : root.SnapCountFootballContext;
+  const api = factory(core, correlation, footballContext);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else root.SnapCountDraftIntelligence = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftIntelligence(core, correlation) {
+  else {
+    root.SnapCountDraftIntelligence = api;
+    api.installBrowser(root);
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function createDraftIntelligence(core, correlation, footballContext) {
   "use strict";
 
   const VERSION = "snapcount-draft-intelligence-2026.1";
@@ -255,6 +261,244 @@
       .map((row, index) => ({ ...row, decisionRank: index + 1 }));
   }
 
+  const browserState = {
+    artifact: null,
+    schedule: null,
+    campById: new Map(),
+    lastRowsById: new Map(),
+    loading: null,
+    observer: null,
+  };
+
+  const PERSONAL_VIEW_LABELS = Object.freeze({
+    unknown: "No view",
+    "very-positive": "Much higher · ~1¼ rounds",
+    positive: "Higher · ~¾ round",
+    "somewhat-positive": "Moderately higher · ~⅓ round",
+    "slightly-positive": "Slightly higher · ~⅙ round",
+    neutral: "Same as ESPN",
+    "slightly-negative": "Slightly lower · ~⅙ round",
+    "somewhat-negative": "Moderately lower · ~⅓ round",
+    negative: "Lower · ~¾ round",
+    "very-negative": "Much lower · ~1¼ rounds",
+  });
+
+  function preloadBrowserContext(root) {
+    if (browserState.loading || !root?.fetch) return browserState.loading;
+    browserState.loading = Promise.all([
+      root.fetch("./data/football-context-2026.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
+      root.fetch("./data/players-lite.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
+      root.fetch("./data/camp-2026.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).catch(() => null),
+    ]).then(([artifact, players, camp]) => {
+      browserState.artifact = artifact;
+      browserState.schedule = players?.schedule || null;
+      browserState.campById = new Map((camp?.players || []).map((row) => [String(row.id), row]));
+      return browserState;
+    });
+    return browserState.loading;
+  }
+
+  function averageEvidence(rows) {
+    const buckets = new Map();
+    for (const evidence of rows) {
+      for (const [key, row] of Object.entries(evidence || {})) {
+        if (!row || row.available === false || !Number.isFinite(Number(row.value))) continue;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(row);
+      }
+    }
+    const output = {};
+    for (const [key, values] of buckets.entries()) {
+      const first = values[0];
+      output[key] = {
+        ...first,
+        value: values.reduce((sum, row) => sum + finite(row.value), 0) / values.length,
+        confidence: values.reduce((sum, row) => sum + finite(row.confidence, 0.5), 0) / values.length,
+        source: `${first.source || "football context"} · season-averaged for Draft`,
+      };
+    }
+    return output;
+  }
+
+  function seasonFootballContext(player) {
+    if (!footballContext || !browserState.artifact) return {};
+    const weekly = Array.from({ length: 17 }, (_, index) => footballContext.contextEvidence(
+      player, browserState.artifact, browserState.schedule || {}, index + 1,
+    ));
+    const evidence = averageEvidence(weekly);
+    const camp = browserState.campById.get(String(player?.id));
+    if (camp && footballContext.campRoleEvidence) Object.assign(evidence, footballContext.campRoleEvidence(camp));
+    const mean = Math.max(0, finite(player?.weeklyProjection, finite(player?.projectedPoints) / 17));
+    const shadow = footballContext.shadowDrivers(player, { mean }, evidence) || {};
+    const role = footballContext.roleUncertaintyAdjustment(evidence) || {};
+    const top = [...(shadow.drivers || [])].sort((a, b) => Math.abs(finite(b.impact)) - Math.abs(finite(a.impact)))[0];
+    return {
+      correction: finite(shadow.correction),
+      roleDelta: finite(role.roleDelta),
+      availabilityDelta: finite(role.availabilityDelta),
+      topDriver: top?.label || "season football context",
+    };
+  }
+
+  function snapRankMap(players, settings, teamId) {
+    try {
+      const empty = core.createDraftState(settings);
+      const board = core.recommendPlayers(players, empty, settings, teamId, Math.max(players.length, 700));
+      return Object.fromEntries(board.map((row, index) => [String(row.id), index + 1]));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function shortDecisionLabel(component) {
+    const labels = {
+      counterfactual: "roster value",
+      "room-hazard": "room survival",
+      "espn-residual": component?.shift >= 0 ? "ESPN value gap" : "ESPN price risk",
+      availability: "availability",
+      format: "QB format",
+      portfolio: component?.label || "portfolio fit",
+      "football-context": component?.label || "football context",
+    };
+    return labels[component?.key] || component?.label || "decision signal";
+  }
+
+  function decoratePersonalViews(document) {
+    const outlook = document.getElementById("outlooks");
+    if (!outlook) return;
+    const heading = outlook.querySelector(".section-heading p:last-child");
+    const headingText = "Tell SnapCount roughly where you would draft a player versus ESPN. We only apply the part of that view SnapCount does not already agree with.";
+    if (heading && heading.textContent !== headingText) heading.textContent = headingText;
+    const explainer = outlook.querySelector(".outlook-explainer");
+    if (explainer) {
+      const strong = explainer.querySelector("strong");
+      const span = explainer.querySelector("span");
+      const small = explainer.querySelector("small");
+      const strongText = "Think in draft position, not abstract sentiment.";
+      const spanText = "Choose roughly how much higher or lower than ESPN you would take the player. SnapCount converts that into a target rank, compares it with its own board, and only applies the disagreement that remains.";
+      const smallHtml = "<b>No view</b> = leave SnapCount alone. <b>Same as ESPN</b> = you intentionally agree with the market. <b>Pass</b> = keep the player visible but never recommend drafting him.";
+      if (strong && strong.textContent !== strongText) strong.textContent = strongText;
+      if (span && span.textContent !== spanText) span.textContent = spanText;
+      if (small && small.innerHTML !== smallHtml) small.innerHTML = smallHtml;
+    }
+    const header = outlook.querySelector("thead th:last-child");
+    if (header && /outlook/i.test(header.textContent)) header.textContent = "My view";
+    outlook.querySelectorAll("[data-player-outlook]").forEach((select) => {
+      [...select.options].forEach((option) => {
+        if (PERSONAL_VIEW_LABELS[option.value] && option.textContent !== PERSONAL_VIEW_LABELS[option.value]) option.textContent = PERSONAL_VIEW_LABELS[option.value];
+      });
+      select.setAttribute("aria-label", select.getAttribute("aria-label")?.replace(/Outlook/i, "Draft view") || "Personal draft view");
+    });
+    outlook.querySelectorAll(".outlook-chip").forEach((chip) => {
+      for (const [key, label] of Object.entries(PERSONAL_VIEW_LABELS)) {
+        if (chip.classList.contains(key) && chip.textContent !== label) chip.textContent = label;
+      }
+    });
+    document.querySelectorAll('[data-jump="outlooks"] small').forEach((node) => {
+      const text = "Set where you would draft players versus ESPN.";
+      if (node.textContent !== text) node.textContent = text;
+    });
+  }
+
+  function decorateDraft(document) {
+    const table = document.getElementById("draft-table");
+    if (!table) return;
+    table.querySelectorAll("tr").forEach((tr) => {
+      const button = tr.querySelector("[data-draft-player]");
+      const row = button ? browserState.lastRowsById.get(String(button.dataset.draftPlayer)) : null;
+      if (!row) return;
+      tr.dataset.decisionShift = Number(row.decisionShift || 0).toFixed(2);
+      tr.dataset.baseQualifiedRank = String(row.baseQualifiedRank || "");
+      const signals = tr.querySelector(".draft-signal-row");
+      if (signals) {
+        const desired = (row.decisionComponents || []).filter((component) => Math.abs(finite(component.shift)) >= 0.55).slice(0, 2)
+          .map((component) => ({
+            text: shortDecisionLabel(component),
+            tone: finite(component.shift) >= 0 ? "up" : "down",
+            title: `${component.label}: ${finite(component.shift) >= 0 ? "+" : ""}${finite(component.shift).toFixed(2)} decision spots`,
+          }));
+        const existing = [...signals.querySelectorAll(".draft-signal.decision")];
+        const matches = existing.length === desired.length && existing.every((node, index) => node.textContent === desired[index].text && node.classList.contains(desired[index].tone) && node.title === desired[index].title);
+        if (!matches) {
+          existing.forEach((node) => node.remove());
+          desired.forEach((item) => {
+            const chip = document.createElement("span");
+            chip.className = `draft-signal decision ${item.tone}`;
+            chip.textContent = item.text;
+            chip.title = item.title;
+            signals.appendChild(chip);
+          });
+        }
+      }
+    });
+    const firstButton = table.querySelector("tr [data-draft-player]");
+    const top = firstButton ? browserState.lastRowsById.get(String(firstButton.dataset.draftPlayer)) : null;
+    const metrics = document.querySelector("#draft-strategy-body .draft-strategy-metrics");
+    if (top && metrics && !metrics.querySelector("[data-decision-mix-metric]")) {
+      const metric = document.createElement("div");
+      metric.dataset.decisionMixMetric = "true";
+      metric.innerHTML = `<span>Decision mix</span><strong>${finite(top.decisionShift) >= 0 ? "+" : ""}${finite(top.decisionShift).toFixed(1)}</strong>`;
+      metrics.appendChild(metric);
+    }
+    const strategy = document.querySelector("#draft-strategy-body .draft-strategy-context");
+    if (strategy && !strategy.querySelector("[data-decision-mix-note]")) {
+      const note = document.createElement("p");
+      note.className = "fineprint draft-decision-mix-note";
+      note.dataset.decisionMixNote = "true";
+      note.textContent = "The historically qualified draft policy stays the anchor. A bounded live mix breaks close calls using marginal starter value, room-specific survival, ESPN disagreement, availability, format scarcity, roster correlation, and measured football context.";
+      strategy.appendChild(note);
+    }
+    const meta = document.getElementById("draft-meta");
+    if (meta) {
+      const nextMeta = meta.textContent
+        .replace("A+ QUALIFIED PPR", "A+ QUALIFIED BASE · LIVE MIX")
+        .replace("CUSTOM FORMAT · TRANSFER POLICY", "TRANSFER BASE · LIVE MIX");
+      if (nextMeta !== meta.textContent) meta.textContent = nextMeta;
+    }
+  }
+
+  function decorateBrowser(document) {
+    decoratePersonalViews(document);
+    decorateDraft(document);
+  }
+
+  function installBrowser(root) {
+    if (!root?.document || root.document.documentElement.dataset.draftIntelligenceInstalled === "true") return;
+    root.document.documentElement.dataset.draftIntelligenceInstalled = "true";
+    preloadBrowserContext(root);
+    const installPatch = () => {
+      const draftSim = root.OracleDraftSim;
+      if (!draftSim?.qualifyRecommendations || draftSim.__snapCountDecisionMixInstalled) return false;
+      const original = draftSim.qualifyRecommendations;
+      draftSim.qualifyRecommendations = function patchedQualify(rows, players, state, settings, teamId, board, policyOptions, limit) {
+        const qualified = original.call(this, rows, players, state, settings, teamId, board, policyOptions, limit);
+        const contextById = Object.fromEntries(qualified.map((row) => [String(row.id), seasonFootballContext(row)]));
+        const mixed = applyDecisionMix(qualified, {
+          players,
+          state,
+          settings,
+          teamId,
+          snapRankById: snapRankMap(players, settings, teamId),
+          footballContextById: contextById,
+          refined: false,
+        });
+        browserState.lastRowsById = new Map(mixed.map((row) => [String(row.id), row]));
+        root.queueMicrotask(() => decorateBrowser(root.document));
+        return mixed;
+      };
+      draftSim.__snapCountDecisionMixInstalled = VERSION;
+      return true;
+    };
+    installPatch();
+    root.setTimeout(installPatch, 0);
+    root.setTimeout(installPatch, 250);
+    decorateBrowser(root.document);
+    browserState.observer = new root.MutationObserver(() => {
+      root.queueMicrotask(() => decorateBrowser(root.document));
+    });
+    browserState.observer.observe(root.document.body, { childList: true, subtree: true });
+  }
+
   return {
     VERSION,
     applyDecisionMix,
@@ -264,5 +508,7 @@
     managerSpecificSurvival,
     marketResidualSignal,
     portfolioSignal,
+    installBrowser,
+    PERSONAL_VIEW_LABELS,
   };
 });
