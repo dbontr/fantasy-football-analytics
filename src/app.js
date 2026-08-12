@@ -127,15 +127,18 @@
   }
 
   const PLAYER_OUTLOOKS = {
-    unknown: { label: "Unknown", direction: 0, strength: 0, reviewed: false, tone: "unknown", windowRounds: 0, maxRoundMove: 0 },
-    "super-positive": { label: "Super positive", direction: 1, strength: 3, reviewed: true, tone: "super-positive", windowRounds: 1.25, maxRoundMove: 1 },
-    positive: { label: "Positive", direction: 1, strength: 2, reviewed: true, tone: "positive", windowRounds: 0.9, maxRoundMove: 0.7 },
-    "somewhat-positive": { label: "Somewhat positive", direction: 1, strength: 1, reviewed: true, tone: "somewhat-positive", windowRounds: 0.6, maxRoundMove: 0.35 },
-    neutral: { label: "Neutral", direction: 0, strength: 0, reviewed: true, tone: "neutral", windowRounds: 0, maxRoundMove: 0 },
-    "somewhat-negative": { label: "Somewhat negative", direction: -1, strength: 1, reviewed: true, tone: "somewhat-negative", windowRounds: 0.6, maxRoundMove: 0.35 },
-    negative: { label: "Negative", direction: -1, strength: 2, reviewed: true, tone: "negative", windowRounds: 0.9, maxRoundMove: 0.7 },
-    "super-negative": { label: "Super negative", direction: -1, strength: 3, reviewed: true, tone: "super-negative", windowRounds: 1.25, maxRoundMove: 1 },
+    unknown: { label: "Unknown", direction: 0, strength: 0, reviewed: false, tone: "unknown", targetRoundMove: 0, trust: 0, maxRoundMove: 0, windowRounds: 0 },
+    "very-positive": { label: "Very positive", direction: 1, strength: 4, reviewed: true, tone: "very-positive", targetRoundMove: 1.25, trust: 0.55, maxRoundMove: 0.7, windowRounds: 1.4 },
+    positive: { label: "Positive", direction: 1, strength: 3, reviewed: true, tone: "positive", targetRoundMove: 0.75, trust: 0.45, maxRoundMove: 0.4, windowRounds: 1.1 },
+    "somewhat-positive": { label: "Somewhat positive", direction: 1, strength: 2, reviewed: true, tone: "somewhat-positive", targetRoundMove: 0.35, trust: 0.35, maxRoundMove: 0.2, windowRounds: 0.8 },
+    "slightly-positive": { label: "Slightly positive", direction: 1, strength: 1, reviewed: true, tone: "slightly-positive", targetRoundMove: 0.15, trust: 0.25, maxRoundMove: 0.1, windowRounds: 0.55 },
+    neutral: { label: "Neutral", direction: 0, strength: 0, reviewed: true, tone: "neutral", targetRoundMove: 0, trust: 0, maxRoundMove: 0, windowRounds: 0 },
+    "slightly-negative": { label: "Slightly negative", direction: -1, strength: 1, reviewed: true, tone: "slightly-negative", targetRoundMove: 0.15, trust: 0.25, maxRoundMove: 0.1, windowRounds: 0.55 },
+    "somewhat-negative": { label: "Somewhat negative", direction: -1, strength: 2, reviewed: true, tone: "somewhat-negative", targetRoundMove: 0.35, trust: 0.35, maxRoundMove: 0.2, windowRounds: 0.8 },
+    negative: { label: "Negative", direction: -1, strength: 3, reviewed: true, tone: "negative", targetRoundMove: 0.75, trust: 0.45, maxRoundMove: 0.4, windowRounds: 1.1 },
+    "very-negative": { label: "Very negative", direction: -1, strength: 4, reviewed: true, tone: "very-negative", targetRoundMove: 1.25, trust: 0.55, maxRoundMove: 0.7, windowRounds: 1.4 },
   };
+  const OUTLOOK_ALIASES = Object.freeze({ "super-high": "very-positive", "super-positive": "very-positive", "super-negative": "very-negative" });
 
   const ESPN_TEAM_LOGO_SLUGS = Object.freeze({ ARI: "ari", ATL: "atl", BAL: "bal", BUF: "buf", CAR: "car", CHI: "chi", CIN: "cin", CLE: "cle", DAL: "dal", DEN: "den", DET: "det", GB: "gb", HOU: "hou", IND: "ind", JAX: "jax", KC: "kc", LV: "lv", LAC: "lac", LAR: "lar", MIA: "mia", MIN: "min", NE: "ne", NO: "no", NYG: "nyg", NYJ: "nyj", PHI: "phi", PIT: "pit", SEA: "sea", SF: "sf", TB: "tb", TEN: "ten", WAS: "wsh", WSH: "wsh" });
 
@@ -162,8 +165,33 @@
 
   function playerOutlook(playerId) {
     const stored = state.playerOutlooks?.[String(playerId)] || "unknown";
-    const key = stored === "super-high" ? "super-positive" : stored;
+    const key = OUTLOOK_ALIASES[stored] || stored;
     return { key, ...(PLAYER_OUTLOOKS[key] || PLAYER_OUTLOOKS.unknown) };
+  }
+
+  function outlookTeamCount() {
+    if (hasEspnMyLeagueAccess()) return Math.round(clamp(Number(currentLeagueSettings()?.teams || 12), 4, 20));
+    return Math.round(clamp(Number($("#outlook-teams")?.value || 12), 4, 20));
+  }
+
+  function outlookBoardSettings() {
+    const settings = currentDraftSettings();
+    settings.teams = outlookTeamCount();
+    return settings;
+  }
+
+  function syncOutlookTeamControl() {
+    const select = $("#outlook-teams");
+    if (!select) return;
+    const synced = hasEspnMyLeagueAccess();
+    const teams = outlookTeamCount();
+    if (![...select.options].some((option) => Number(option.value) === teams)) select.add(new Option(String(teams), String(teams)));
+    select.value = String(teams);
+    select.disabled = synced;
+    const source = $("#outlook-team-source");
+    if (source) source.textContent = synced ? `${teams}-team league · synced` : `${teams}-team board · manual`;
+    const guide = $("#outlook-round-guide");
+    if (guide) guide.textContent = `${teams} teams · Round 1 = picks 1–${teams} · Round 2 = picks ${teams + 1}–${teams * 2}`;
   }
 
   async function savePlayerOutlook(playerId, key) {
@@ -177,116 +205,130 @@
   }
 
   function espnOverallRank(player) {
-    const candidates = [player?.market?.consensusPprRank, player?.market?.averageDraftPosition, player?.pprRank, player?.adp];
+    // ESPN ADP is an overall market number; consensus averageRank may be positional.
+    const candidates = [player?.market?.averageDraftPosition, player?.adp, player?.pprRank, player?.market?.consensusPprRank];
     const value = candidates.map(Number).find((rank) => Number.isFinite(rank) && rank > 0);
     return value ?? 9999;
   }
 
-  function buildOutlookRankContext(settings = currentDraftSettings()) {
+  function buildOutlookRankContext(settings = outlookBoardSettings()) {
+    const espnOverall = [...state.players].sort((a, b) => espnOverallRank(a) - espnOverallRank(b) || String(a.name).localeCompare(String(b.name)));
+    const espnOverallRankMap = new Map(espnOverall.map((player, index) => [String(player.id), index + 1]));
     const espnPositionRank = new Map();
-    const espnPoolSize = new Map();
     const positions = [...new Set(state.players.map((player) => player.position).filter(Boolean))];
     for (const position of positions) {
-      const pool = state.players.filter((player) => player.position === position)
-        .sort((a, b) => espnOverallRank(a) - espnOverallRank(b) || (a.pprRank || 9999) - (b.pprRank || 9999));
-      espnPoolSize.set(position, pool.length);
+      const pool = espnOverall.filter((player) => player.position === position);
       pool.forEach((player, index) => espnPositionRank.set(String(player.id), index + 1));
     }
     const modelBoard = oracleDraftBoard(settings);
     const modelOverallRank = new Map(modelBoard.map((player, index) => [String(player.id), index + 1]));
     const modelPositionRank = new Map();
-    const modelByPosition = new Map();
     for (const position of positions) {
-      const pool = modelBoard.filter((player) => player.position === position);
-      modelByPosition.set(position, pool);
-      pool.forEach((player, index) => modelPositionRank.set(String(player.id), index + 1));
+      modelBoard.filter((player) => player.position === position).forEach((player, index) => modelPositionRank.set(String(player.id), index + 1));
     }
-    return { espnPositionRank, espnPoolSize, modelOverallRank, modelPositionRank, modelByPosition };
-  }
-
-  function outlookTargetPositionRank(outlook, espnPositionRank, poolSize) {
-    if (!outlook.reviewed || outlook.direction === 0 || !Number.isFinite(espnPositionRank)) return espnPositionRank;
-    const factor = [0, 0.7, 1.15, 1.7][Math.max(0, Math.min(3, Number(outlook.strength || 0)))] || 0;
-    const delta = Math.max(Number(outlook.strength || 0), Math.round(Math.sqrt(Math.max(1, espnPositionRank)) * factor));
-    return Math.round(clamp(espnPositionRank - outlook.direction * delta, 1, Math.max(1, poolSize || espnPositionRank)));
+    return { espnOverallRankMap, espnPositionRank, modelBoard, modelOverallRank, modelPositionRank, maxRank: modelBoard.length, teams: Math.max(4, Math.min(20, Number(settings?.teams || 12))) };
   }
 
   function outlookResidualContext(player, outlook, rankContext) {
     const id = String(player?.id || "");
-    const position = player?.position || "";
+    const espnOverall = Number(rankContext.espnOverallRankMap.get(id));
+    const snapOverall = Number(rankContext.modelOverallRank.get(id));
     const espnPositionRank = Number(rankContext.espnPositionRank.get(id));
     const snapPositionRank = Number(rankContext.modelPositionRank.get(id));
-    const snapOverallRank = Number(rankContext.modelOverallRank.get(id));
-    const poolSize = Number(rankContext.espnPoolSize.get(position) || 1);
-    const targetPositionRank = outlookTargetPositionRank(outlook, espnPositionRank, poolSize);
-    const targetRow = rankContext.modelByPosition.get(position)?.[Math.max(0, Number(targetPositionRank || 1) - 1)];
-    const targetOverallRank = targetRow ? Number(rankContext.modelOverallRank.get(String(targetRow.id))) : snapOverallRank;
-    const rawMove = Number.isFinite(snapOverallRank) && Number.isFinite(targetOverallRank) ? snapOverallRank - targetOverallRank : 0;
-    const residualMove = outlook.direction > 0 ? Math.max(0, rawMove) : outlook.direction < 0 ? Math.min(0, rawMove) : 0;
-    const alreadyReflected = Boolean(outlook.reviewed && outlook.direction !== 0 && Math.abs(residualMove) < 0.5);
-    return { espnPositionRank, snapPositionRank, snapOverallRank, targetPositionRank, residualMove, alreadyReflected };
+    const targetDelta = rankContext.teams * Number(outlook.targetRoundMove || 0);
+    const targetOverall = outlook.reviewed && outlook.direction !== 0 && Number.isFinite(espnOverall)
+      ? clamp(espnOverall - outlook.direction * targetDelta, 1, rankContext.maxRank)
+      : espnOverall;
+    const rawResidual = Number.isFinite(targetOverall) && Number.isFinite(snapOverall) ? targetOverall - snapOverall : 0;
+    const residualPicks = outlook.direction > 0 ? Math.min(0, rawResidual) : outlook.direction < 0 ? Math.max(0, rawResidual) : 0;
+    const maxBoardMove = rankContext.teams * Number(outlook.maxRoundMove || 0);
+    const boardDelta = clamp(residualPicks * Number(outlook.trust || 0), -maxBoardMove, maxBoardMove);
+    const alreadyReflected = Boolean(outlook.reviewed && outlook.direction !== 0 && Math.abs(residualPicks) < 0.75);
+    return { espnOverall, snapOverall, espnPositionRank, snapPositionRank, targetOverall, residualPicks, boardDelta, alreadyReflected };
+  }
+
+  function buildPersonalizedOutlookBoard(settings = outlookBoardSettings()) {
+    const rankContext = buildOutlookRankContext(settings);
+    return rankContext.modelBoard.map((player) => {
+      const outlook = playerOutlook(player.id);
+      const residual = outlookResidualContext(player, outlook, rankContext);
+      const personalizedScore = residual.snapOverall + residual.boardDelta;
+      return { ...player, outlook, residual, personalizedScore };
+    }).sort((a, b) => a.personalizedScore - b.personalizedScore || a.residual.snapOverall - b.residual.snapOverall)
+      .map((row, index) => ({ ...row, personalRank: index + 1, boardChange: row.residual.snapOverall - (index + 1) }));
   }
 
   function applyPlayerOutlookOverlay(rows = [], settings = {}, limit = rows.length) {
     const teams = Math.max(4, Math.min(20, Number(settings?.teams || 12)));
     const currentPick = Math.max(1, Number(state.draftState?.picks?.length || 0) + 1);
-    const rankContext = buildOutlookRankContext(settings);
+    const rankContext = buildOutlookRankContext({ ...settings, teams });
     return rows.map((row, index) => {
       const outlook = playerOutlook(row.id);
       const qualifiedRank = index + 1;
       const residual = outlookResidualContext(row, outlook, rankContext);
-      const marketRank = Number(row.market?.averageDraftPosition ?? row.marketRank ?? row.adp ?? row.pprRank);
+      const marketRank = residual.espnOverall;
       const windowPicks = Math.max(1, teams * Number(outlook.windowRounds || 0));
       const distanceToMarket = Number.isFinite(marketRank) ? Math.max(0, marketRank - currentPick) : 0;
-      const readiness = outlook.reviewed && outlook.direction !== 0 && windowPicks > 0
-        ? clamp(1 - distanceToMarket / windowPicks, 0, 1) : 0;
+      const readiness = outlook.reviewed && outlook.direction !== 0 && windowPicks > 0 ? clamp(1 - distanceToMarket / windowPicks, 0, 1) : 0;
       const returnChance = Number.isFinite(Number(row.returnChance)) ? Number(row.returnChance) : 0.5;
       const urgency = 0.82 + (1 - clamp(returnChance, 0, 1)) * 0.18;
       const maxMovePicks = teams * Number(outlook.maxRoundMove || 0);
-      const uncappedMove = residual.residualMove * readiness * urgency;
-      const outlookMovePicks = clamp(uncappedMove, -maxMovePicks, maxMovePicks);
+      const outlookMovePicks = clamp(-residual.residualPicks * Number(outlook.trust || 0) * readiness * urgency, -maxMovePicks, maxMovePicks);
       const personalizedOrder = qualifiedRank - outlookMovePicks;
-      const outlookTimingLabel = !outlook.reviewed || outlook.direction === 0
-        ? "No draft nudge"
-        : residual.alreadyReflected
-          ? "Already reflected by SnapCount"
-          : readiness < 0.08
-            ? "Saved — waiting for market range"
-            : Math.abs(outlookMovePicks) < 0.1
-              ? "Model and outlook nearly agree"
+      const outlookTimingLabel = !outlook.reviewed || outlook.direction === 0 ? "No draft nudge"
+        : residual.alreadyReflected ? "Already reflected by SnapCount"
+          : readiness < 0.08 ? "Saved — waiting for market range"
+            : Math.abs(outlookMovePicks) < 0.1 ? "Model and outlook nearly agree"
               : readiness < 0.55 ? "Residual view starting to matter" : "Residual view active";
-      const basis = Number.isFinite(residual.espnPositionRank) && Number.isFinite(residual.snapPositionRank)
-        ? `ESPN ${row.position}${residual.espnPositionRank} → your target about ${row.position}${residual.targetPositionRank}; SnapCount ${row.position}${residual.snapPositionRank}` : "ESPN comparison unavailable";
-      return { ...row, qualifiedRank, personalOutlook: outlook.key, outlookLabel: outlook.label, outlookReviewed: outlook.reviewed, outlookAdjustment: Number(outlookMovePicks.toFixed(2)), outlookReadiness: Number(readiness.toFixed(3)), outlookTimingLabel, outlookBasisLabel: basis, espnPositionRank: residual.espnPositionRank, snapPositionRank: residual.snapPositionRank, outlookTargetPositionRank: residual.targetPositionRank, personalizedOrder };
+      const basis = Number.isFinite(residual.espnOverall) && Number.isFinite(residual.snapOverall)
+        ? `ESPN #${Math.round(residual.espnOverall)} → your view about #${Math.round(residual.targetOverall)}; SnapCount #${Math.round(residual.snapOverall)}` : "ESPN comparison unavailable";
+      return { ...row, qualifiedRank, personalOutlook: outlook.key, outlookLabel: outlook.label, outlookReviewed: outlook.reviewed,
+        outlookAdjustment: Number(outlookMovePicks.toFixed(2)), outlookReadiness: Number(readiness.toFixed(3)), outlookTimingLabel,
+        outlookBasisLabel: basis, espnOverallRank: residual.espnOverall, snapOverallRank: residual.snapOverall,
+        espnPositionRank: residual.espnPositionRank, snapPositionRank: residual.snapPositionRank,
+        outlookTargetOverallRank: residual.targetOverall, personalizedOrder };
     }).sort((a, b) => a.personalizedOrder - b.personalizedOrder || a.qualifiedRank - b.qualifiedRank)
       .map((row, index) => ({ ...row, personalRank: index + 1 })).slice(0, Math.max(1, Number(limit || rows.length)));
+  }
+
+  function outlookChangeMarkup(change) {
+    const delta = Math.round(Number(change || 0));
+    if (!delta) return '<span class="outlook-change unchanged">—</span>';
+    return `<span class="outlook-change ${delta > 0 ? "up" : "down"}">${delta > 0 ? "↑" : "↓"} ${Math.abs(delta)}</span>`;
   }
 
   function renderPlayerOutlooks() {
     const table = $("#outlook-table");
     if (!table || !state.players.length) return;
+    syncOutlookTeamControl();
+    const settings = outlookBoardSettings();
+    const teams = outlookTeamCount();
     const query = $("#outlook-search")?.value || "";
     const position = $("#outlook-position")?.value || "ALL";
     const filter = $("#outlook-filter")?.value || "all";
-    let rows = rankedPlayers().filter((player) => (position === "ALL" || player.position === position) && playerMatchesSearch(player, query));
-    if (filter === "rated") rows = rows.filter((player) => playerOutlook(player.id).reviewed);
-    if (filter === "unknown") rows = rows.filter((player) => !playerOutlook(player.id).reviewed);
-    rows = rows.slice(0, 160);
+    let rows = buildPersonalizedOutlookBoard(settings).filter((row) => (position === "ALL" || row.position === position) && playerMatchesSearch(row, query));
+    if (filter === "rated") rows = rows.filter((row) => row.outlook.reviewed);
+    if (filter === "unknown") rows = rows.filter((row) => !row.outlook.reviewed);
+    rows = rows.slice(0, 180);
     const options = Object.entries(PLAYER_OUTLOOKS).map(([key, row]) => `<option value="${key}">${esc(row.label)}</option>`).join("");
-    const rankContext = buildOutlookRankContext(currentDraftSettings());
-    table.innerHTML = rows.map((player, index) => {
-      const outlook = playerOutlook(player.id);
-      const ranks = outlookResidualContext(player, outlook, rankContext);
-      const espnRank = Number.isFinite(ranks.espnPositionRank) ? `${player.position}${ranks.espnPositionRank}` : "—";
-      const snapRank = Number.isFinite(ranks.snapPositionRank) ? `${player.position}${ranks.snapPositionRank}` : "—";
-      const basis = !outlook.reviewed ? "No personal view yet."
-        : outlook.direction === 0 ? `Reviewed neutral · ESPN ${espnRank} · SnapCount ${snapRank}`
-          : `${player.position}${ranks.espnPositionRank} ESPN → about ${player.position}${ranks.targetPositionRank} by your view · SnapCount ${snapRank}${ranks.alreadyReflected ? " · already reflected" : ""}`;
-      return `<tr data-outlook-tone="${esc(outlook.tone)}"><td class="board-rank-cell">${index + 1}</td><td class="player-cell player-cell-visual">${playerIdentityMarkup(player)}</td><td><span class="rank-source-chip espn">ESPN ${esc(espnRank)}</span></td><td><span class="rank-source-chip snap">SNAP ${esc(snapRank)}</span></td><td class="outlook-control-cell"><div><select class="outlook-select ${esc(outlook.tone)}" data-player-outlook="${esc(player.id)}" aria-label="Outlook for ${esc(player.name)}">${options}</select><span class="outlook-chip ${esc(outlook.tone)}">${esc(outlook.reviewed ? outlook.label : "No opinion yet")}</span></div><small class="outlook-basis">${esc(basis)}</small></td></tr>`;
+    let previousRound = null;
+    table.innerHTML = rows.map((row) => {
+      const outlook = row.outlook;
+      const ranks = row.residual;
+      const round = Math.ceil(row.personalRank / teams);
+      const roundStart = (round - 1) * teams + 1;
+      const roundEnd = round * teams;
+      const separator = round !== previousRound ? `<tr class="outlook-round-row"><td colspan="6"><span>ROUND ${round}</span><small>Picks ${roundStart}–${roundEnd}</small></td></tr>` : "";
+      previousRound = round;
+      const basis = !outlook.reviewed ? "No personal view yet — My Board matches SnapCount."
+        : outlook.direction === 0 ? `Reviewed neutral · no personal adjustment from SnapCount #${ranks.snapOverall}.`
+          : ranks.alreadyReflected ? `Already reflected — SnapCount #${ranks.snapOverall} is already at least as ${outlook.direction > 0 ? "bullish" : "bearish"} as your view.`
+            : `ESPN #${ranks.espnOverall} → your view about #${Math.round(ranks.targetOverall)} · SnapCount #${ranks.snapOverall} · My Board #${row.personalRank}.`;
+      return `${separator}<tr data-outlook-tone="${esc(outlook.tone)}" data-personal-rank="${row.personalRank}" data-snap-rank="${ranks.snapOverall}" data-board-change="${row.boardChange}"><td class="board-rank-cell"><strong>${row.personalRank}</strong><small>R${round}</small></td><td class="player-cell player-cell-visual">${playerIdentityMarkup(row)}</td><td><span class="rank-source-chip espn">ESPN #${Math.round(ranks.espnOverall)}</span></td><td><span class="rank-source-chip snap">SNAP #${Math.round(ranks.snapOverall)}</span></td><td>${outlookChangeMarkup(row.boardChange)}</td><td class="outlook-control-cell"><div><select class="outlook-select ${esc(outlook.tone)}" data-player-outlook="${esc(row.id)}" aria-label="Outlook for ${esc(row.name)}">${options}</select><span class="outlook-chip ${esc(outlook.tone)}">${esc(outlook.reviewed ? outlook.label : "No opinion yet")}</span></div><small class="outlook-basis">${esc(basis)}</small></td></tr>`;
     }).join("");
     $$('[data-player-outlook]').forEach((select) => { select.value = playerOutlook(select.dataset.playerOutlook).key; select.addEventListener("change", () => savePlayerOutlook(select.dataset.playerOutlook, select.value).catch((error) => status(error.message, "error"))); });
     const rated = Object.keys(state.playerOutlooks || {}).length;
-    $("#outlook-count").textContent = `${rows.length} shown · ${rated} rated`;
+    $("#outlook-count").textContent = `${rows.length} shown · ${rated} rated · ${teams}-team rounds`;
   }
 
   function historyKey(player, season = Number($("#history-season")?.value || 2025)) {
@@ -3098,7 +3140,7 @@
     $("#espn-league-input").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); connectEspnLeague().catch(() => {}); } });
     $("#player-search").addEventListener("input", () => { const rows = fillPlayerPicker("#player-select", $("#player-search").value); if (rows[0]) { $("#player-select").value = String(rows[0].id); renderNewsPulse(); } });
     ["#rankings-search", "#rankings-position", "#rankings-view", "#rankings-week"].forEach((selector) => $(selector)?.addEventListener(selector === "#rankings-search" ? "input" : "change", renderPublicRankings));
-    ["#outlook-search", "#outlook-position", "#outlook-filter"].forEach((selector) => $(selector)?.addEventListener(selector === "#outlook-search" ? "input" : "change", renderPlayerOutlooks));
+    ["#outlook-search", "#outlook-position", "#outlook-filter", "#outlook-teams"].forEach((selector) => $(selector)?.addEventListener(selector === "#outlook-search" ? "input" : "change", renderPlayerOutlooks));
     $("#roster-search").addEventListener("input", () => fillPlayerPicker("#roster-add", $("#roster-search").value));
     $("#trade-actor-team")?.addEventListener("change", () => {
       state.tradeActorTeamId = $("#trade-actor-team").value || connectedUserTeamId();
@@ -3216,7 +3258,7 @@
       state.ledger = new evidenceApi.EvidenceLedger(Array.isArray(savedLedger) ? savedLedger : []);
       state.rosterIds = Array.isArray(savedRoster) ? savedRoster.map(String).filter((id) => playerById(id)) : [];
       state.playerOutlooks = savedPlayerOutlooks && typeof savedPlayerOutlooks === "object" && !Array.isArray(savedPlayerOutlooks) ? savedPlayerOutlooks : {};
-      const migratedOutlooks = Object.fromEntries(Object.entries(state.playerOutlooks).map(([id, value]) => [id, value === "super-high" ? "super-positive" : value]));
+      const migratedOutlooks = Object.fromEntries(Object.entries(state.playerOutlooks).map(([id, value]) => [id, OUTLOOK_ALIASES[value] || value]));
       const outlookMigrationChanged = Object.keys(migratedOutlooks).some((id) => migratedOutlooks[id] !== state.playerOutlooks[id]);
       state.playerOutlooks = migratedOutlooks;
       if (outlookMigrationChanged) await store.set("player-outlooks", state.playerOutlooks);
