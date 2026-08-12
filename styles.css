@@ -4216,3 +4216,30 @@ tbody tr:hover td { background: #edf4fb !important; }
 #outlooks .outlook-table th:nth-child(6) { width: 10%; }
 #outlooks .outlook-table th:nth-child(7) { width: 8%; }
 #outlooks .outlook-table th:nth-child(8) { width: 29%; }
+
+/* Outlook notes-only board 2026.17 */
+#outlooks .outlook-toolbar { grid-template-columns:minmax(210px,1fr) 110px 150px 150px 145px; align-items:start; }
+.outlook-divider-toggle { display:inline-flex; align-items:flex-start; gap:9px; margin:10px 0 8px; padding:0 2px; cursor:pointer; color:#294f79; }
+.outlook-divider-toggle input { width:17px; height:17px; min-height:0!important; margin:1px 0 0; accent-color:#1268d7; }
+.outlook-divider-toggle span { display:grid; gap:2px; }
+.outlook-divider-toggle strong { font-size:10px; }
+.outlook-divider-toggle small { color:#718197; font-size:9px; }
+#outlooks .outlook-table { width:100%; min-width:0; table-layout:fixed; }
+#outlooks .outlook-table th:nth-child(1) { width:10%; }
+#outlooks .outlook-table th:nth-child(2) { width:30%; }
+#outlooks .outlook-table th:nth-child(3) { width:13%; }
+#outlooks .outlook-table th:nth-child(4) { width:14%; }
+#outlooks .outlook-table th:nth-child(5) { width:33%; }
+#outlooks .outlook-control-cell { min-width:0; }
+#outlooks .outlook-control-cell .outlook-select { width:100%; min-width:0; max-width:190px; }
+#outlooks .board-rank-cell strong { color:#0e56a5; font-size:15px; }
+.outlook-chip.love,.outlook-select.love { background:#d7f0e2; color:#07583a; border-color:#80bc9b; }
+.outlook-chip.like,.outlook-select.like { background:#edf7f1; color:#356d52; border-color:#c8e2d3; }
+.outlook-chip.neutral,.outlook-select.neutral { background:#eef1f4; color:#566371; border-color:#d4dbe2; }
+.outlook-chip.concerned,.outlook-select.concerned { background:#fff5df; color:#825917; border-color:#e8cd94; }
+.outlook-chip.fade,.outlook-select.fade { background:#f7e2e0; color:#8a302a; border-color:#d99c97; }
+.outlook-value-signal.value { color:#0b6240; border-color:#91c4aa; background:#f2faf5; }
+.outlook-value-signal.early { color:#8a4b24; border-color:#dfb99e; background:#fff8f2; }
+.outlook-value-signal.close { color:#66788b; border-color:#b8c3ce; background:#f7f9fb; }
+@media (max-width:1080px) { #outlooks .outlook-toolbar { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:680px) { #outlooks .outlook-toolbar { grid-template-columns:1fr; } #outlooks .outlook-table { min-width:720px; } }

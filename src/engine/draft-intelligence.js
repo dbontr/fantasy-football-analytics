@@ -280,16 +280,11 @@
   };
 
   const PERSONAL_VIEW_LABELS = Object.freeze({
-    unknown: "No view",
-    "very-positive": "Much higher · ~1¼ rounds",
-    positive: "Higher · ~¾ round",
-    "somewhat-positive": "Moderately higher · ~⅓ round",
-    "slightly-positive": "Slightly higher · ~⅙ round",
-    neutral: "Same as ESPN",
-    "slightly-negative": "Slightly lower · ~⅙ round",
-    "somewhat-negative": "Moderately lower · ~⅓ round",
-    negative: "Lower · ~¾ round",
-    "very-negative": "Much lower · ~1¼ rounds",
+    love: "Love",
+    like: "Like",
+    neutral: "Neutral",
+    concerned: "Concerned",
+    fade: "Fade",
   });
 
   function preloadBrowserContext(root) {
@@ -376,35 +371,30 @@
     const outlook = document.getElementById("outlooks");
     if (!outlook) return;
     const heading = outlook.querySelector(".section-heading p:last-child");
-    const headingText = "Tell SnapCount roughly where you would draft a player versus ESPN. We only apply the part of that view SnapCount does not already agree with.";
+    const headingText = "SnapCount rank is the board. Your outlooks are private notes only, so they never change projections, rankings, or draft recommendations.";
     if (heading && heading.textContent !== headingText) heading.textContent = headingText;
     const explainer = outlook.querySelector(".outlook-explainer");
     if (explainer) {
       const strong = explainer.querySelector("strong");
       const span = explainer.querySelector("span");
       const small = explainer.querySelector("small");
-      const strongText = "Think in draft position, not abstract sentiment.";
-      const spanText = "Choose roughly how much higher or lower than ESPN you would take the player. SnapCount converts that into a target rank, compares it with its own board, and only applies the disagreement that remains.";
-      const smallHtml = "<b>No view</b> = leave SnapCount alone. <b>Same as ESPN</b> = you intentionally agree with the market. <b>Pass</b> = keep the player visible but never recommend drafting him.";
+      const strongText = "Trust the model; keep your notes beside it.";
+      const spanText = "Love, Like, Neutral, Concerned, and Fade are notes only. They never move a player or change draft recommendations.";
+      const smallHtml = "<b>No note</b> leaves the player unannotated. <b>ESPN gap</b> compares ESPN rank with SnapCount rank, independent of your note.";
       if (strong && strong.textContent !== strongText) strong.textContent = strongText;
       if (span && span.textContent !== spanText) span.textContent = spanText;
       if (small && small.innerHTML !== smallHtml) small.innerHTML = smallHtml;
     }
     const header = outlook.querySelector("thead th:last-child");
-    if (header && /outlook/i.test(header.textContent)) header.textContent = "My view";
+    if (header && header.textContent !== "Outlook note") header.textContent = "Outlook note";
     outlook.querySelectorAll("[data-player-outlook]").forEach((select) => {
       [...select.options].forEach((option) => {
         if (PERSONAL_VIEW_LABELS[option.value] && option.textContent !== PERSONAL_VIEW_LABELS[option.value]) option.textContent = PERSONAL_VIEW_LABELS[option.value];
       });
-      select.setAttribute("aria-label", select.getAttribute("aria-label")?.replace(/Outlook/i, "Draft view") || "Personal draft view");
-    });
-    outlook.querySelectorAll(".outlook-chip").forEach((chip) => {
-      for (const [key, label] of Object.entries(PERSONAL_VIEW_LABELS)) {
-        if (chip.classList.contains(key) && chip.textContent !== label) chip.textContent = label;
-      }
+      select.setAttribute("aria-label", select.getAttribute("aria-label") || "Personal outlook note");
     });
     document.querySelectorAll('[data-jump="outlooks"] small').forEach((node) => {
-      const text = "Set where you would draft players versus ESPN.";
+      const text = "Save private player notes without changing SnapCount rank.";
       if (node.textContent !== text) node.textContent = text;
     });
   }
