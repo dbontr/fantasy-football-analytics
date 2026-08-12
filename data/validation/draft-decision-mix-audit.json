@@ -1,0 +1,79 @@
+{
+  "version": "draft-decision-mix-audit-2026.1",
+  "status": "shadow-only-pending-validation",
+  "purpose": "early paired-room rejection screen for the additive Draft Decision Mix; no coefficient fitting from the frozen 2018 site benchmark",
+  "screenSeason": 2019,
+  "screenDesign": {
+    "formats": ["10-team PPR", "12-team PPR"],
+    "slots": ["early", "middle", "late"],
+    "outcome": "realized weekly optimal-starter points",
+    "champion": "frozen qualified draft policy",
+    "footballContext": "excluded because 2026 context cannot be replayed into 2019",
+    "note": "This is a development-season rejection screen, not independent validation or a new qualification gate."
+  },
+  "components": {
+    "counterfactualCurrentBundle": {
+      "pairedDrafts": 6,
+      "championMean": 2257.64,
+      "challengerMean": 2196.66,
+      "meanEdge": -60.98,
+      "winRate": 0.1667,
+      "tieRate": 0.1667
+    },
+    "simplifiedVona": {
+      "pairedDrafts": 12,
+      "championMean": 2240.413,
+      "challengerMean": 2205.413,
+      "meanEdge": -35.0,
+      "winRate": 0.5,
+      "tieRate": 0.0833
+    },
+    "espnResidualReinforcement": {
+      "pairedDrafts": 12,
+      "championMean": 2240.413,
+      "challengerMean": 2226.042,
+      "meanEdge": -14.372,
+      "winRate": 0.5,
+      "tieRate": 0.0
+    },
+    "blendedReturnHazard": {
+      "pairedDrafts": 6,
+      "championMean": 2257.64,
+      "challengerMean": 2257.64,
+      "meanEdge": 0.0,
+      "tieRate": 1.0
+    },
+    "simpleStarterValue": {
+      "pairedDrafts": 12,
+      "meanEdge": 0.0,
+      "tieRate": 1.0
+    },
+    "managerSpecificSurvival": {
+      "pairedDrafts": 12,
+      "meanEdge": 0.0,
+      "tieRate": 1.0
+    },
+    "portfolioCorrelation": {
+      "pairedDrafts": 12,
+      "meanEdge": 0.0,
+      "tieRate": 1.0
+    }
+  },
+  "gates": {
+    "historicalScreenPass": false,
+    "activeReorderingAllowed": false,
+    "prospective2026Required": true
+  },
+  "servingDecision": {
+    "qualifiedOrder": "unchanged",
+    "qualifiedReturnChance": "unchanged",
+    "shadowComponents": "retained for explanation and prospective logging",
+    "personalOutlooks": "remain a separate user-preference overlay"
+  },
+  "benchmarkRelationship": {
+    "siteBenchmark2018": "frozen qualified base only",
+    "headlinePoints": 2270.7,
+    "shadowMixIncluded": false,
+    "reason": "The published 2018 score must not be post-hoc changed by a challenger that failed the first development-season ablation."
+  }
+}

@@ -67,7 +67,7 @@ test("availability signal penalizes high injury risk", () => {
   assert.ok(safe.projectedGames > risky.projectedGames);
 });
 
-test("decision mix exposes every signal family and caps rank movement", () => {
+test("shadow decision mix exposes every signal family without changing the qualified order", () => {
   const players = [
     player("1", "RB", 10, 320, "DET"), player("2", "WR", 12, 305, "LAR"),
     player("3", "QB", 18, 360, "BUF"), player("4", "TE", 24, 250, "LV"),
@@ -81,10 +81,16 @@ test("decision mix exposes every signal family and caps rank movement", () => {
     footballContextById: { "1": { correction: 1.2, topDriver: "team volume" } },
   });
   assert.equal(result.length, rows.length);
-  for (const row of result) {
+  assert.deepEqual(result.map((row) => row.id), rows.map((row) => row.id));
+  for (const [index, row] of result.entries()) {
     assert.ok(Math.abs(row.decisionShift) <= row.decisionMixCap + 1e-9);
+    assert.equal(row.appliedDecisionShift, 0);
+    assert.equal(row.decisionRank, index + 1);
+    assert.ok(Number.isFinite(row.shadowDecisionRank));
+    assert.equal(row.returnChance, rows[index].returnChance);
+    assert.ok(Number.isFinite(row.shadowReturnChance));
     assert.deepEqual(new Set(row.decisionComponents.map((component) => component.key)), new Set(["counterfactual", "room-hazard", "espn-residual", "availability", "format", "portfolio", "football-context"]));
-    assert.equal(row.decisionMixStatus, "bounded-experimental-decision-overlay");
+    assert.equal(row.decisionMixStatus, "shadow-only-pending-validation");
   }
 });
 
@@ -95,14 +101,21 @@ test("Draft Decision Mix loads from the browser store and patches qualified reco
   const source = fs.readFileSync(path.join(root, "src", "engine", "draft-intelligence.js"), "utf8");
   const store = fs.readFileSync(path.join(root, "src", "storage", "browser-store.js"), "utf8");
   const worker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
+  const audit = JSON.parse(fs.readFileSync(path.join(root, "data", "validation", "draft-decision-mix-audit.json"), "utf8"));
   assert.ok(source.includes("patchedQualify"));
-  assert.ok(source.includes("bounded-experimental-decision-overlay"));
-  assert.ok(source.includes("historically qualified draft policy stays the anchor"));
+  assert.ok(source.includes("shadow-only-pending-validation"));
+  assert.ok(source.includes("shadow challenger"));
   assert.ok(store.includes("./src/engine/draft-intelligence.js"));
   assert.ok(store.includes("./draft-intelligence.css"));
-  assert.ok(worker.includes("snapcount-browser-v1.35.0-draft-intelligence"));
+  assert.ok(worker.includes("snapcount-browser-v1.36.0-shadow-draft-intelligence"));
   assert.ok(worker.includes("./src/engine/draft-intelligence.js"));
   assert.ok(worker.includes("./draft-intelligence.css"));
+  assert.ok(worker.includes("./data/validation/draft-decision-mix-audit.json"));
+  assert.ok(source.includes("frozen qualified base; shadow draft intelligence"));
+  assert.equal(audit.gates.historicalScreenPass, false);
+  assert.equal(audit.gates.activeReorderingAllowed, false);
+  assert.ok(audit.components.counterfactualCurrentBundle.meanEdge < 0);
+  assert.ok(audit.components.espnResidualReinforcement.meanEdge < 0);
 });
 
 test("My Outlooks exposes ESPN-relative draft targets instead of abstract sentiment labels", () => {

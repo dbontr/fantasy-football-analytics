@@ -17,7 +17,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createDraftIntelligence(core, correlation, footballContext) {
   "use strict";
 
-  const VERSION = "snapcount-draft-intelligence-2026.1";
+  const VERSION = "snapcount-draft-intelligence-2026.2";
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -111,11 +111,11 @@
     return { survival: clamp(survival, 0, 1), nextPick, managers };
   }
 
-  function projectedStarterDelta(player, roster, settings) {
+  function projectedStarterDelta(player, roster, settings, baselineWeekly = null) {
     if (!core.optimizeWeeklyLineup) return finite(player?.projectedPoints);
     let total = 0;
     for (let week = 1; week <= 17; week += 1) {
-      const before = core.optimizeWeeklyLineup(roster, settings, week).total;
+      const before = Array.isArray(baselineWeekly) ? finite(baselineWeekly[week - 1]) : core.optimizeWeeklyLineup(roster, settings, week).total;
       const after = core.optimizeWeeklyLineup([...roster, player], settings, week).total;
       total += Math.max(0, finite(after) - finite(before));
     }
@@ -211,9 +211,10 @@
     const roster = rosterPlayers(state, teamId, playerMap);
     const contextById = options.footballContextById || {};
     const snapRankById = options.snapRankById || {};
+    const baselineWeekly = core.optimizeWeeklyLineup ? Array.from({ length: 17 }, (_, index) => core.optimizeWeeklyLineup(roster, settings, index + 1).total) : null;
     const prepared = rows.map((raw, index) => {
       const player = normalizedPlayer(raw);
-      const starterDelta = projectedStarterDelta(player, roster, settings);
+      const starterDelta = projectedStarterDelta(player, roster, settings, baselineWeekly);
       return { raw, player, baseRank: index + 1, starterDelta };
     });
     const medianDelta = median(prepared.map((row) => row.starterDelta));
@@ -242,9 +243,10 @@
         baseQualifiedRank: baseRank,
         decisionOrder: baseRank - decisionShift,
         decisionShift: Number(decisionShift.toFixed(2)),
+        appliedDecisionShift: 0,
         decisionMixCap: Number(rankCap.toFixed(2)),
         returnChanceBase: finite(raw.returnChance, 0.5),
-        returnChance: Number(hazard.returnChance.toFixed(4)),
+        shadowReturnChance: Number(hazard.returnChance.toFixed(4)),
         managerSurvival: Number(manager.survival.toFixed(4)),
         nextTeamPick: raw.nextTeamPick || manager.nextPick,
         marketResidualEdge: Number(residual.edge.toFixed(1)),
@@ -252,13 +254,20 @@
         counterfactualStarterPoints: Number(starterDelta.toFixed(1)),
         decisionComponents: components.sort((a, b) => Math.abs(b.shift) - Math.abs(a.shift)),
         decisionMixVersion: VERSION,
-        decisionMixStatus: "bounded-experimental-decision-overlay",
+        decisionMixStatus: "shadow-only-pending-validation",
       };
     });
 
-    return scored
-      .sort((left, right) => left.decisionOrder - right.decisionOrder || left.baseQualifiedRank - right.baseQualifiedRank)
-      .map((row, index) => ({ ...row, decisionRank: index + 1 }));
+    const shadowRankById = new Map(
+      [...scored]
+        .sort((left, right) => left.decisionOrder - right.decisionOrder || left.baseQualifiedRank - right.baseQualifiedRank)
+        .map((row, index) => [String(row.id), index + 1]),
+    );
+    return scored.map((row, index) => ({
+      ...row,
+      decisionRank: index + 1,
+      shadowDecisionRank: shadowRankById.get(String(row.id)) || index + 1,
+    }));
   }
 
   const browserState = {
@@ -407,15 +416,17 @@
       const button = tr.querySelector("[data-draft-player]");
       const row = button ? browserState.lastRowsById.get(String(button.dataset.draftPlayer)) : null;
       if (!row) return;
-      tr.dataset.decisionShift = Number(row.decisionShift || 0).toFixed(2);
+      tr.dataset.decisionShift = Number(row.appliedDecisionShift || 0).toFixed(2);
+      tr.dataset.shadowDecisionShift = Number(row.decisionShift || 0).toFixed(2);
+      tr.dataset.shadowDecisionRank = String(row.shadowDecisionRank || row.baseQualifiedRank || "");
       tr.dataset.baseQualifiedRank = String(row.baseQualifiedRank || "");
       const signals = tr.querySelector(".draft-signal-row");
       if (signals) {
         const desired = (row.decisionComponents || []).filter((component) => Math.abs(finite(component.shift)) >= 0.55).slice(0, 2)
           .map((component) => ({
-            text: shortDecisionLabel(component),
+            text: `shadow · ${shortDecisionLabel(component)}`,
             tone: finite(component.shift) >= 0 ? "up" : "down",
-            title: `${component.label}: ${finite(component.shift) >= 0 ? "+" : ""}${finite(component.shift).toFixed(2)} decision spots`,
+            title: `Shadow only — ${component.label}: ${finite(component.shift) >= 0 ? "+" : ""}${finite(component.shift).toFixed(2)} candidate spots; not applied to the qualified order`,
           }));
         const existing = [...signals.querySelectorAll(".draft-signal.decision")];
         const matches = existing.length === desired.length && existing.every((node, index) => node.textContent === desired[index].text && node.classList.contains(desired[index].tone) && node.title === desired[index].title);
@@ -423,7 +434,7 @@
           existing.forEach((node) => node.remove());
           desired.forEach((item) => {
             const chip = document.createElement("span");
-            chip.className = `draft-signal decision ${item.tone}`;
+            chip.className = `draft-signal decision shadow ${item.tone}`;
             chip.textContent = item.text;
             chip.title = item.title;
             signals.appendChild(chip);
@@ -437,7 +448,7 @@
     if (top && metrics && !metrics.querySelector("[data-decision-mix-metric]")) {
       const metric = document.createElement("div");
       metric.dataset.decisionMixMetric = "true";
-      metric.innerHTML = `<span>Decision mix</span><strong>${finite(top.decisionShift) >= 0 ? "+" : ""}${finite(top.decisionShift).toFixed(1)}</strong>`;
+      metric.innerHTML = `<span>Shadow mix</span><strong>${finite(top.decisionShift) >= 0 ? "+" : ""}${finite(top.decisionShift).toFixed(1)} <small>not applied</small></strong>`;
       metrics.appendChild(metric);
     }
     const strategy = document.querySelector("#draft-strategy-body .draft-strategy-context");
@@ -445,21 +456,28 @@
       const note = document.createElement("p");
       note.className = "fineprint draft-decision-mix-note";
       note.dataset.decisionMixNote = "true";
-      note.textContent = "The historically qualified draft policy stays the anchor. A bounded live mix breaks close calls using marginal starter value, room-specific survival, ESPN disagreement, availability, format scarcity, roster correlation, and measured football context.";
+      note.textContent = "The historically qualified draft policy controls the order. Counterfactual value, room survival, ESPN disagreement, availability, format scarcity, roster correlation, and football context are being measured as a shadow challenger and cannot move picks until they clear the historical and prospective validation gates.";
       strategy.appendChild(note);
     }
     const meta = document.getElementById("draft-meta");
     if (meta) {
       const nextMeta = meta.textContent
-        .replace("A+ QUALIFIED PPR", "A+ QUALIFIED BASE · LIVE MIX")
-        .replace("CUSTOM FORMAT · TRANSFER POLICY", "TRANSFER BASE · LIVE MIX");
+        .replace("A+ QUALIFIED PPR", "A+ QUALIFIED BASE · SHADOW")
+        .replace("CUSTOM FORMAT · TRANSFER POLICY", "TRANSFER BASE · SHADOW");
       if (nextMeta !== meta.textContent) meta.textContent = nextMeta;
     }
+  }
+
+  function decorateBenchmark(document) {
+    const note = document.getElementById("home-benchmark-note");
+    if (!note || note.textContent.includes("frozen qualified base")) return;
+    note.textContent = `${note.textContent} The SnapCount score is the frozen qualified base; shadow draft intelligence is deliberately excluded until it clears replay and prospective validation.`;
   }
 
   function decorateBrowser(document) {
     decoratePersonalViews(document);
     decorateDraft(document);
+    decorateBenchmark(document);
   }
 
   function installBrowser(root) {

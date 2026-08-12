@@ -1,7 +1,9 @@
-/* Bounded live draft decision mix */
+/* Shadow draft-decision intelligence + personal-view affordances */
 .draft-signal.decision { background:#fff; border-color:#9fb0c2; color:#38536f; letter-spacing:0; text-transform:none; }
-.draft-signal.decision.up { border-color:#5f8f78; color:#0b6240; }
-.draft-signal.decision.down { border-color:#a77b77; color:#8c302d; }
+.draft-signal.decision.shadow,
+.draft-signal.decision.shadow.up,
+.draft-signal.decision.shadow.down { background:#f7f9fc; border-color:#b7c4d1; border-style:dashed; color:#566b80; }
+[data-decision-mix-metric] strong small { font-size:.62em; font-weight:700; color:#6d7f91; white-space:nowrap; }
 #outlooks .outlook-select { min-width:190px; }
 #outlooks .outlook-basis { max-width:360px; }
 @media (max-width:680px) { #outlooks .outlook-select { min-width:180px; } }
