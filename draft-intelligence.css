@@ -1,0 +1,7 @@
+/* Bounded live draft decision mix */
+.draft-signal.decision { background:#fff; border-color:#9fb0c2; color:#38536f; letter-spacing:0; text-transform:none; }
+.draft-signal.decision.up { border-color:#5f8f78; color:#0b6240; }
+.draft-signal.decision.down { border-color:#a77b77; color:#8c302d; }
+#outlooks .outlook-select { min-width:190px; }
+#outlooks .outlook-basis { max-width:360px; }
+@media (max-width:680px) { #outlooks .outlook-select { min-width:180px; } }
