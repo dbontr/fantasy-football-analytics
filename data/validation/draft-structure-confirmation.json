@@ -1,0 +1,493 @@
+{
+  "version": "draft-structure-confirmation-2026.1",
+  "generatedAt": "2026-08-12T22:14:07.867Z",
+  "purpose": "fixed-candidate new-room-seed confirmation on consumed 2019-2025 outcomes; no candidate search",
+  "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "consumedHoldoutExcluded": 2018,
+  "seedNamespace": "structure-confirm-v1",
+  "seedsPerSegment": 8,
+  "candidate": {
+    "market": 0.6,
+    "value": 0.18,
+    "need": 0.65,
+    "injury": 7,
+    "rookie": 0,
+    "maxQB": 2,
+    "maxTE": 2,
+    "maxK": 1,
+    "maxDST": 1,
+    "secondQbRound": 11,
+    "secondTeRound": 10,
+    "kickerRound": 13,
+    "dstRound": 14
+  },
+  "champion": {
+    "market": 0.6,
+    "value": 0.18,
+    "need": 0.65,
+    "injury": 7,
+    "rookie": 0,
+    "maxQB": 2,
+    "maxTE": 2,
+    "maxK": 1,
+    "maxDST": 1,
+    "secondQbRound": 10,
+    "secondTeRound": 10,
+    "kickerRound": 14,
+    "dstRound": 13
+  },
+  "aggregate": {
+    "n": 336,
+    "candidateMean": 2142.060119047619,
+    "championMean": 2129.283630952379,
+    "championDelta": 12.776488095238083,
+    "pairedWinRate": 0.3958333333333333,
+    "candidateControls": {
+      "espn-market": {
+        "edge": 345.9397023809523,
+        "winRate": 0.9047619047619048
+      },
+      "balanced": {
+        "edge": 68.59952380952379,
+        "winRate": 0.6160714285714286
+      },
+      "value": {
+        "edge": 336.1544047619048,
+        "winRate": 0.9077380952380952
+      },
+      "need-heavy": {
+        "edge": 26.365059523809474,
+        "winRate": 0.5357142857142857
+      },
+      "zero-rb": {
+        "edge": 105.43529761904772,
+        "winRate": 0.6934523809523809
+      }
+    },
+    "championControls": {
+      "espn-market": {
+        "edge": 333.16321428571416,
+        "winRate": 0.8928571428571429
+      },
+      "balanced": {
+        "edge": 55.823035714285666,
+        "winRate": 0.6101190476190477
+      },
+      "value": {
+        "edge": 323.37791666666686,
+        "winRate": 0.8928571428571429
+      },
+      "need-heavy": {
+        "edge": 13.588571428571408,
+        "winRate": 0.5267857142857143
+      },
+      "zero-rb": {
+        "edge": 92.65880952380952,
+        "winRate": 0.6934523809523809
+      }
+    }
+  },
+  "seasons": {
+    "2019": {
+      "n": 48,
+      "candidateMean": 2181.915833333333,
+      "championMean": 2171.7374999999997,
+      "championDelta": 10.178333333333313,
+      "pairedWinRate": 0.4791666666666667,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 430.9091666666666,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "edge": 69.22666666666663,
+          "winRate": 0.6666666666666666
+        },
+        "value": {
+          "edge": 183.91500000000005,
+          "winRate": 0.7291666666666666
+        },
+        "need-heavy": {
+          "edge": 45.197916666666565,
+          "winRate": 0.5416666666666666
+        },
+        "zero-rb": {
+          "edge": 48.66041666666655,
+          "winRate": 0.6041666666666666
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 420.7308333333333,
+          "winRate": 1
+        },
+        "balanced": {
+          "edge": 59.048333333333325,
+          "winRate": 0.6875
+        },
+        "value": {
+          "edge": 173.73666666666665,
+          "winRate": 0.7083333333333334
+        },
+        "need-heavy": {
+          "edge": 35.01958333333325,
+          "winRate": 0.6041666666666666
+        },
+        "zero-rb": {
+          "edge": 38.482083333333236,
+          "winRate": 0.6458333333333334
+        }
+      }
+    },
+    "2020": {
+      "n": 48,
+      "candidateMean": 2179.2670833333336,
+      "championMean": 2184.408333333334,
+      "championDelta": -5.141249999999995,
+      "pairedWinRate": 0.3125,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 492.3362499999998,
+          "winRate": 1
+        },
+        "balanced": {
+          "edge": 119.84666666666664,
+          "winRate": 0.6875
+        },
+        "value": {
+          "edge": 286.9645833333333,
+          "winRate": 0.9166666666666666
+        },
+        "need-heavy": {
+          "edge": 56.2099999999999,
+          "winRate": 0.6666666666666666
+        },
+        "zero-rb": {
+          "edge": 123.51208333333322,
+          "winRate": 0.75
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 497.47749999999974,
+          "winRate": 1
+        },
+        "balanced": {
+          "edge": 124.9879166666666,
+          "winRate": 0.75
+        },
+        "value": {
+          "edge": 292.10583333333335,
+          "winRate": 0.9375
+        },
+        "need-heavy": {
+          "edge": 61.3512499999999,
+          "winRate": 0.7083333333333334
+        },
+        "zero-rb": {
+          "edge": 128.65333333333322,
+          "winRate": 0.7708333333333334
+        }
+      }
+    },
+    "2021": {
+      "n": 48,
+      "candidateMean": 2061.481666666666,
+      "championMean": 2037.75875,
+      "championDelta": 23.72291666666673,
+      "pairedWinRate": 0.4583333333333333,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 347.9562499999999,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "edge": 67.28624999999995,
+          "winRate": 0.5625
+        },
+        "value": {
+          "edge": 274.57000000000005,
+          "winRate": 0.9166666666666666
+        },
+        "need-heavy": {
+          "edge": 15.56916666666666,
+          "winRate": 0.5
+        },
+        "zero-rb": {
+          "edge": 85.84708333333332,
+          "winRate": 0.7291666666666666
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 324.2333333333333,
+          "winRate": 0.9375
+        },
+        "balanced": {
+          "edge": 43.56333333333322,
+          "winRate": 0.5416666666666666
+        },
+        "value": {
+          "edge": 250.8470833333333,
+          "winRate": 0.875
+        },
+        "need-heavy": {
+          "edge": -8.153750000000068,
+          "winRate": 0.375
+        },
+        "zero-rb": {
+          "edge": 62.12416666666663,
+          "winRate": 0.6666666666666666
+        }
+      }
+    },
+    "2022": {
+      "n": 48,
+      "candidateMean": 2097.2895833333337,
+      "championMean": 2053.945,
+      "championDelta": 43.34458333333324,
+      "pairedWinRate": 0.5416666666666666,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 242.09708333333325,
+          "winRate": 0.875
+        },
+        "balanced": {
+          "edge": 68.94958333333325,
+          "winRate": 0.6666666666666666
+        },
+        "value": {
+          "edge": 236.1283333333333,
+          "winRate": 0.875
+        },
+        "need-heavy": {
+          "edge": 25.264583333333267,
+          "winRate": 0.5625
+        },
+        "zero-rb": {
+          "edge": 45.009166666666566,
+          "winRate": 0.5625
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 198.75250000000005,
+          "winRate": 0.7916666666666666
+        },
+        "balanced": {
+          "edge": 25.605000000000032,
+          "winRate": 0.5416666666666666
+        },
+        "value": {
+          "edge": 192.78375000000008,
+          "winRate": 0.8125
+        },
+        "need-heavy": {
+          "edge": -18.07999999999996,
+          "winRate": 0.4375
+        },
+        "zero-rb": {
+          "edge": 1.66458333333334,
+          "winRate": 0.5
+        }
+      }
+    },
+    "2023": {
+      "n": 48,
+      "candidateMean": 2121.73875,
+      "championMean": 2095.5879166666664,
+      "championDelta": 26.15083333333339,
+      "pairedWinRate": 0.3125,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 66.68624999999999,
+          "winRate": 0.6458333333333334
+        },
+        "balanced": {
+          "edge": -1.5158333333332952,
+          "winRate": 0.4583333333333333
+        },
+        "value": {
+          "edge": 696.8775,
+          "winRate": 1
+        },
+        "need-heavy": {
+          "edge": 42.23208333333337,
+          "winRate": 0.625
+        },
+        "zero-rb": {
+          "edge": 145.8645833333334,
+          "winRate": 0.7291666666666666
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 40.5354166666666,
+          "winRate": 0.5833333333333334
+        },
+        "balanced": {
+          "edge": -27.666666666666686,
+          "winRate": 0.4375
+        },
+        "value": {
+          "edge": 670.7266666666666,
+          "winRate": 1
+        },
+        "need-heavy": {
+          "edge": 16.081249999999983,
+          "winRate": 0.5833333333333334
+        },
+        "zero-rb": {
+          "edge": 119.71374999999999,
+          "winRate": 0.7083333333333334
+        }
+      }
+    },
+    "2024": {
+      "n": 48,
+      "candidateMean": 2141.1987499999996,
+      "championMean": 2141.7183333333332,
+      "championDelta": -0.5195833333333297,
+      "pairedWinRate": 0.375,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 313.3020833333334,
+          "winRate": 0.9375
+        },
+        "balanced": {
+          "edge": 64.00541666666665,
+          "winRate": 0.6041666666666666
+        },
+        "value": {
+          "edge": 354.91375,
+          "winRate": 0.9791666666666666
+        },
+        "need-heavy": {
+          "edge": -15.620000000000019,
+          "winRate": 0.3958333333333333
+        },
+        "zero-rb": {
+          "edge": 102.36583333333328,
+          "winRate": 0.6458333333333334
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 313.8216666666668,
+          "winRate": 0.9375
+        },
+        "balanced": {
+          "edge": 64.52499999999996,
+          "winRate": 0.6458333333333334
+        },
+        "value": {
+          "edge": 355.4333333333334,
+          "winRate": 0.9583333333333334
+        },
+        "need-heavy": {
+          "edge": -15.100416666666689,
+          "winRate": 0.4791666666666667
+        },
+        "zero-rb": {
+          "edge": 102.88541666666659,
+          "winRate": 0.7291666666666666
+        }
+      }
+    },
+    "2025": {
+      "n": 48,
+      "candidateMean": 2211.5291666666667,
+      "championMean": 2219.8295833333336,
+      "championDelta": -8.300416666666692,
+      "pairedWinRate": 0.2916666666666667,
+      "candidateControls": {
+        "espn-market": {
+          "edge": 528.2908333333335,
+          "winRate": 0.9583333333333334
+        },
+        "balanced": {
+          "edge": 92.39791666666679,
+          "winRate": 0.6666666666666666
+        },
+        "value": {
+          "edge": 319.71166666666664,
+          "winRate": 0.9375
+        },
+        "need-heavy": {
+          "edge": 15.701666666666716,
+          "winRate": 0.4583333333333333
+        },
+        "zero-rb": {
+          "edge": 186.78791666666677,
+          "winRate": 0.8333333333333334
+        }
+      },
+      "championControls": {
+        "espn-market": {
+          "edge": 536.5912500000001,
+          "winRate": 1
+        },
+        "balanced": {
+          "edge": 100.69833333333345,
+          "winRate": 0.6666666666666666
+        },
+        "value": {
+          "edge": 328.01208333333346,
+          "winRate": 0.9583333333333334
+        },
+        "need-heavy": {
+          "edge": 24.002083333333413,
+          "winRate": 0.5
+        },
+        "zero-rb": {
+          "edge": 195.0883333333335,
+          "winRate": 0.8333333333333334
+        }
+      }
+    }
+  },
+  "positiveSeasons": 4,
+  "leaveOneOut": [
+    {
+      "heldOut": 2019,
+      "meanDelta": 13.20951388888889
+    },
+    {
+      "heldOut": 2020,
+      "meanDelta": 15.762777777777776
+    },
+    {
+      "heldOut": 2021,
+      "meanDelta": 10.952083333333322
+    },
+    {
+      "heldOut": 2022,
+      "meanDelta": 7.68180555555557
+    },
+    {
+      "heldOut": 2023,
+      "meanDelta": 10.547430555555545
+    },
+    {
+      "heldOut": 2024,
+      "meanDelta": 14.9925
+    },
+    {
+      "heldOut": 2025,
+      "meanDelta": 16.28930555555556
+    }
+  ],
+  "championQualified": true,
+  "candidateQualified": true,
+  "passed": false,
+  "interpretation": "Fixed structural challenger failed the preregistered confirmation and must remain rejected/non-serving.",
+  "servingEligible": false
+}

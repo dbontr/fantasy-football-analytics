@@ -6,7 +6,7 @@ The shadow challenger measures seven families: counterfactual projected starter 
 
 The candidate movement remains capped at 0.35 league rounds (2.5 to 5 picks depending on league size), but the applied model movement is currently zero. The original qualified return probability is also preserved; the manager-specific return estimate is stored only as shadow evidence.
 
-An initial 2019 paired-room ablation rejected the additive bundle for live reordering: the current counterfactual/VONA bundle and ESPN-residual reinforcement were materially adverse, while several other families did not change picks at their standalone scale. The frozen 2,271-point 2018 site benchmark therefore remains the honest serving score rather than being post-hoc retuned.
+An initial 2019 paired-room ablation rejected the additive bundle for live reordering: the current counterfactual/VONA bundle and ESPN-residual reinforcement were materially adverse, while several other families did not change picks at their standalone scale. That shadow bundle remains non-serving. The previously published 2,271-point 2018 site benchmark was later superseded by 2,317 after a benchmark-only runtime-parity correction restored the native raw-ADP scale used by the qualified policy; no serving coefficient changed and the shadow challenger remains excluded.
 
 No new football-context family is promoted into the serving projection mean by this feature. 2026 remains the prospective validation target for any permanent promotion.
 
