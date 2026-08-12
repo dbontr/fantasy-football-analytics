@@ -18,6 +18,7 @@ const required = [
   "src/engine/rookies.js",
   "src/engine/correlation.js",
   "src/engine/mean-calibration.js",
+  "src/engine/football-context.js",
   "src/engine/evidence.js",
   "src/engine/context.js",
   "src/engine/intelligence.js",
@@ -27,6 +28,8 @@ const required = [
   "data/players-lite.json",
   "data/analytics-runtime-profile.json",
   "data/coaches-2026.json",
+  "data/football-context-2026.json",
+  "data/validation/football-context-audit.json",
   "data/health-calibration-2026.json",
   "data/rookies-2026.json",
   "data/camp-2026.json",
@@ -63,6 +66,10 @@ if (runtimeProfile.players?.prospectiveSuccessor?.status !== "prospective-only-n
 if (runtimeProfile.decisionObjective?.primary !== "maximize-future-head-to-head-wins" || runtimeProfile.decisionObjective?.status !== "prospective-overlay") throw new Error("Runtime future-win objective drift");
 if (runtimeProfile.decisionObjective?.canPromoteQualifiedTradeReject !== false || runtimeProfile.decisionObjective?.draftPolicyChanged !== false) throw new Error("Runtime future-win safety guard drift");
 if (runtimeProfile.decisionObjective?.retrospectiveDiagnostic?.verdict !== "noninferior-no-observed-switches" || runtimeProfile.decisionObjective?.retrospectiveDiagnostic?.changedDecisions !== 0 || runtimeProfile.decisionObjective?.retrospectiveDiagnostic?.incrementalEdgeDemonstrated !== false) throw new Error("Runtime future-win historical interpretation drift");
+const footballArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "football-context-2026.json"), "utf8"));
+if (footballArtifact.meta?.version !== "snapcount-football-context-2026.1" || Object.keys(footballArtifact.teams || {}).length !== 32 || Object.keys(footballArtifact.defenses || {}).length !== 32) throw new Error("Football-context artifact is incomplete");
+const footballAudit = JSON.parse(fs.readFileSync(path.join(root, "data", "validation", "football-context-audit.json"), "utf8"));
+if (footballAudit.status !== "prospective-only-not-serving" || footballAudit.preRegisteredAdmission?.restrictions?.productionMeanChangedNow !== false) throw new Error("Football-context successor serving lock drift");
 const campArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "camp-2026.json"), "utf8"));
 if (campArtifact.meta?.version !== "camp-intelligence-2026.1" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10) throw new Error("Camp intelligence artifact is incomplete");
 if (campArtifact.players.some((row) => row.modelEffect !== "advisory-only")) throw new Error("Camp intelligence must remain advisory-only");

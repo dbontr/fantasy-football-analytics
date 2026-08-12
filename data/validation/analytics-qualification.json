@@ -1,6 +1,6 @@
 {
   "version": "snapcount-analytics-qualification-2026.8",
-  "qualifiedAt": "2026-08-10T18:23:07.443Z",
+  "qualifiedAt": "2026-08-12T00:35:26.114Z",
   "architecture": "offline-qualification-live-serving",
   "dataset": {
     "file": "historical-ppr-2020-2025.json.gz",
@@ -18,7 +18,7 @@
     "forecast-audit-report.json": "90491983b274da02e6a91bf887e0145921ca5f1a30329aea41a16e732156ee4a",
     "uncertainty-audit-report.json": "a0f0a4fd4a2977c0de255ab1bcf9e75a9ff9ef2e5af42eac0ff63c5f375cfa13",
     "decision-audit-report.json": "24309fa3a3638f7cc72ed8e062f602087b0fbdac00f8bb4875bf97199e3f7177",
-    "waiver-audit-report.json": "364e49efedc25c0aa1569e9567afd4fa0ebddee0b19114c6566a2f6076cac388",
+    "waiver-audit-report.json": "3a44912c6b003e6e104053e20a67c3006d5f125689afd2e0242edd6c1165f27f",
     "trade-audit-report.json": "d1ae9aac889078b3ed6841990f54d972db497952d363fb3014146d15f6e5046b",
     "season-audit-report.json": "092968e1dfafd41ccf1ad937814231d4ffbf3788d6a352402f177679bcb28e5e",
     "draft-segmented-policy.json": "e5e8a2d48d0e2c9f9a78f5888567b9f1ca27eda77af0b09d6447fb7f198d1ef3",
@@ -30,7 +30,8 @@
     "forecast-provenance-audit.json": "bfbae5e6b69397d9ee88952fbc3c6555efb62b510daea03272ef655be9d72b8f",
     "forecast-overfit-audit.json": "39b444ff716489239a0a71c6134d22d3658159ced0e8212269b32bc6c947fe39",
     "forecast-successor-candidate.json": "051e790059354d7e8bc7384ca38aea0481ba8e65a4d62233c3d222219d908704",
-    "future-win-audit.json": "0f5fa23cedb062787cf47cf9ef56e776f8aa8767958cce58d7fdca3e66b948c5"
+    "future-win-audit.json": "0f5fa23cedb062787cf47cf9ef56e776f8aa8767958cce58d7fdca3e66b948c5",
+    "football-context-audit.json": "97ad9ddacd660f4e70492454a90ae8936a0e2e71d5f43ab9bb0a9750016be387"
   },
   "grades": {
     "forecastMean": "A+",
@@ -350,24 +351,60 @@
       "opportunities": 168,
       "claims": 168,
       "claimRate": 1,
-      "meanGainPerOpportunity": 39.079642857142844,
-      "meanGainPerClaim": 39.079642857142844,
+      "meanGainPerOpportunity": 61.021190476190476,
+      "meanGainPerClaim": 61.021190476190476,
       "meanNaiveGain": 22.18416666666666,
-      "meanEdgeVsNaive": 16.895476190476177,
-      "positiveClaimRate": 0.9821428571428571,
-      "beatNaiveRate": 0.6785714285714286
+      "meanEdgeVsNaive": 38.83702380952383,
+      "positiveClaimRate": 1,
+      "beatNaiveRate": 0.8333333333333334
     },
     "waiver2025": {
       "threshold": 0.25,
       "opportunities": 168,
       "claims": 168,
       "claimRate": 1,
-      "meanGainPerOpportunity": 45.456785714285736,
-      "meanGainPerClaim": 45.456785714285736,
+      "meanGainPerOpportunity": 57.501428571428605,
+      "meanGainPerClaim": 57.501428571428605,
       "meanNaiveGain": 35.63976190476194,
-      "meanEdgeVsNaive": 9.817023809523805,
-      "positiveClaimRate": 0.9880952380952381,
-      "beatNaiveRate": 0.5416666666666666
+      "meanEdgeVsNaive": 21.86166666666666,
+      "positiveClaimRate": 1,
+      "beatNaiveRate": 0.6428571428571429
+    },
+    "waiverPolicy": {
+      "horizonWeeks": 6,
+      "horizonDecay": 0.8
+    },
+    "footballContextSuccessor": {
+      "version": "football-context-audit-2026.1",
+      "status": "prospective-only-not-serving",
+      "families": {
+        "teamVolumeToPlayerShare": "shadow-only",
+        "opponentPressureEfficiency": "shadow-only",
+        "offensiveLineVsFront": "shadow-only",
+        "playcallerSystem": "shadow-only",
+        "qbPassingRushingComponents": "shadow-only",
+        "teRoleSystem": "shadow-only",
+        "campRoleState": "uncertainty-only",
+        "decisionScheduleHorizon": "separately audited by surface"
+      },
+      "preRegisteredAdmission": {
+        "evaluationSeason": 2026,
+        "baseline": "same point-in-time ESPN PPR projection used by the frozen SnapCount model",
+        "noRetuneAfterOutcomeInspection": true,
+        "gates": {
+          "overallMaeImprovement": "> 0",
+          "overallRmseImprovement": "> 0",
+          "weeklyRankNonInferiority": ">= 0",
+          "pairedWeekBootstrapMaeLower95": "> 0",
+          "effectDirectionStability": "same sign in at least 4 of 5 rolling seasonal folds",
+          "ablationRequirement": "each promoted family must improve the full successor when removed/added"
+        },
+        "restrictions": {
+          "productionMeanChangedNow": false,
+          "mayUse2026ForTuning": false,
+          "mayPromoteIndividualFamilyWithoutAblation": false
+        }
+      }
     },
     "trade2024": {
       "threshold": 28,

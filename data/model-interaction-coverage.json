@@ -1,21 +1,94 @@
 {
-  "version": "snapcount-interaction-coverage-2026.1",
-  "principle": "Measure and retain useful football interactions before granting them scoring effects; scoring effects require an explicit validation gate.",
+  "version": "snapcount-interaction-coverage-2026.2",
+  "principle": "Measure football interactions first; only a separately validated family may change the serving mean.",
   "families": {
-    "target_share_and_targets": { "status": "admitted", "scope": "player-week opportunity and trend context" },
-    "air_yards_wopr_and_receptions": { "status": "admitted", "scope": "receiver opportunity and efficiency context" },
-    "qb_receiver_same_game_correlation": { "status": "admitted", "scope": "empirically fitted residual correlation" },
-    "qb_replacement_to_pass_catchers": { "status": "admitted", "scope": "validated WR/TE mean penalty" },
-    "teammate_absence_redistribution": { "status": "admitted", "scope": "bounded target/carry redistribution" },
-    "qb_target_ecosystem": { "status": "context-only", "scope": "primary QB plus team target/snap pecking order" },
-    "direct_qb_to_receiver_pair_effect": { "status": "context-only", "scope": "relationship retained; no pair-specific mean coefficient yet" },
-    "play_caller_and_offensive_tendencies": { "status": "context-only", "scope": "pace, pass rate, target concentration, committee, TE usage, QB run, play action, motion, red-zone tendencies" },
-    "kicker_projection_market_weather": { "status": "admitted", "scope": "baseline projection, ADP, replacement value, environment and draft timing" },
-    "dst_projection_market_environment": { "status": "admitted", "scope": "baseline projection, ADP, replacement value, game environment and draft timing" },
-    "fourth_down_aggressiveness": { "status": "context-only", "scope": "2023-2025 team and head-coach go/FG/punt rates on tracked kickable fourth-down decisions" },
-    "kicker_distance_distribution": { "status": "context-only", "scope": "2023-2025 attempts and makes by distance bucket, including 50-59 and 60+" },
-    "kickable_drive_and_red_zone_stall_rate": { "status": "context-only", "scope": "2023-2025 drive-level opponent-40 and red-zone field-goal/TD outcome rates" },
-    "dst_pressure_sack_takeaway_interactions": { "status": "context-only", "scope": "2023-2025 defense sacks/QB hits/takeaways paired with opponent offense sacks/turnovers allowed" },
-    "special_teams_personnel_continuity": { "status": "not-yet-measured", "scope": "kicker/holder/snapper and coverage-unit continuity" }
+    "target_share_and_targets": {
+      "status": "admitted",
+      "scope": "player-week opportunity and trend context"
+    },
+    "air_yards_wopr_and_receptions": {
+      "status": "admitted",
+      "scope": "receiver opportunity and efficiency context"
+    },
+    "qb_receiver_same_game_correlation": {
+      "status": "admitted",
+      "scope": "empirically fitted residual correlation"
+    },
+    "qb_replacement_to_pass_catchers": {
+      "status": "admitted",
+      "scope": "validated WR/TE mean penalty"
+    },
+    "teammate_absence_redistribution": {
+      "status": "admitted",
+      "scope": "bounded target/carry redistribution"
+    },
+    "team_volume_to_player_share": {
+      "status": "shadow-only",
+      "scope": "team plays and pass/rush volume interacted with player target/carry share"
+    },
+    "opponent_pressure_and_efficiency": {
+      "status": "shadow-only",
+      "scope": "pressure, sacks, success rate, explosive plays, red-zone profile by scheduled opponent"
+    },
+    "offensive_line_vs_front": {
+      "status": "shadow-only",
+      "scope": "pass-protection and run-block proxies interacted with opponent pressure/run-front profiles"
+    },
+    "play_caller_and_offensive_tendencies": {
+      "status": "shadow-only",
+      "scope": "pace, pass rate, concentration, committee, TE usage, QB run, play action, motion, red-zone tendencies"
+    },
+    "qb_passing_rushing_components": {
+      "status": "shadow-only",
+      "scope": "separate passing and rushing context components before recombination"
+    },
+    "te_system_role": {
+      "status": "shadow-only",
+      "scope": "TE usage, target concentration, team passing environment, route/snap opportunity where available"
+    },
+    "camp_role_state": {
+      "status": "uncertainty-only",
+      "scope": "training-camp/news evidence changes role uncertainty, never the serving mean directly"
+    },
+    "qb_target_ecosystem": {
+      "status": "context-only",
+      "scope": "primary QB plus team target/snap pecking order"
+    },
+    "direct_qb_to_receiver_pair_effect": {
+      "status": "context-only",
+      "scope": "relationship retained; no pair-specific mean coefficient yet"
+    },
+    "kicker_projection_market_weather": {
+      "status": "admitted",
+      "scope": "baseline projection, ADP, replacement value, environment and draft timing"
+    },
+    "dst_projection_market_environment": {
+      "status": "admitted",
+      "scope": "baseline projection, ADP, replacement value, game environment and draft timing"
+    },
+    "decision_schedule_horizon": {
+      "status": "surface-specific",
+      "scope": "Start/Sit=current week; Waivers=audited multi-week horizon; League Impact=remaining real schedule; Draft=season value/market timing"
+    },
+    "special_teams_personnel_continuity": {
+      "status": "not-yet-measured",
+      "scope": "kicker/holder/snapper and coverage-unit continuity"
+    },
+    "fourth_down_aggressiveness": {
+      "status": "context-only",
+      "scope": "2023-2025 team and head-coach go/FG/punt rates on tracked kickable fourth-down decisions"
+    },
+    "kicker_distance_distribution": {
+      "status": "context-only",
+      "scope": "2023-2025 attempts and makes by distance bucket, including 50-59 and 60+"
+    },
+    "kickable_drive_and_red_zone_stall_rate": {
+      "status": "context-only",
+      "scope": "2023-2025 drive-level opponent-40 and red-zone field-goal/TD outcome rates"
+    },
+    "dst_pressure_sack_takeaway_interactions": {
+      "status": "context-only",
+      "scope": "2023-2025 defense sacks/QB hits/takeaways paired with opponent offense sacks/turnovers allowed"
+    }
   }
 }

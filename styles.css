@@ -4112,3 +4112,34 @@ tbody tr:hover td { background: #edf4fb !important; }
 }
 .team-roster-heading > div { display: grid; gap: 4px; }
 #myleague .league-command-strip > div > span { color: #1268d7; }
+
+
+/* Keep the draft action visible without making users hunt horizontally. */
+.draft-recommendations .table-wrap { position: relative; }
+.draft-recommendations table { min-width: 660px; }
+.draft-recommendations th:last-child,
+.draft-recommendations td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  width: 112px;
+  min-width: 112px;
+  background: #fff;
+  box-shadow: -10px 0 18px rgba(27, 48, 74, .06);
+}
+.draft-recommendations thead th:last-child { z-index: 4; background: #f7f9fc; }
+.draft-recommendations .pick-button { width: 100%; min-width: 0; padding-inline: 10px; }
+@media (min-width: 760px) {
+  .draft-recommendations table { min-width: 0; table-layout: fixed; }
+  .draft-recommendations th:nth-child(1) { width: 44px; }
+  .draft-recommendations th:nth-child(2) { width: 28%; }
+  .draft-recommendations th:nth-child(4) { width: 18%; }
+  .draft-recommendations th:last-child { width: 112px; }
+  .draft-recommendations th,
+  .draft-recommendations td { white-space: normal; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 1180px) {
+  .draft-focus-grid { grid-template-columns: 1fr; }
+  .draft-roster-card { position: static; }
+}

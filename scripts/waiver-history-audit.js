@@ -10,6 +10,8 @@ const root = path.resolve(__dirname, "..");
 const artifact = path.join(root, "data", "validation", "historical-ppr-2020-2025.json.gz");
 const WEEKS = [2, 4, 6, 8, 10, 12, 14];
 const THRESHOLDS = [0.25, 2, 4, 6, 8, 10, 12, 16, 20, 28, 36];
+const HORIZON_WEEKS = Math.max(1, Math.min(8, Number(process.env.WAIVER_HORIZON || 6)));
+const HORIZON_DECAY = Math.max(0.45, Math.min(1, Number(process.env.WAIVER_DECAY || 0.8)));
 
 function finite(value, fallback = 0) {
   const number = Number(value);
@@ -53,7 +55,7 @@ function sampleRows(data, season, seeds = 2) {
       const roster = (result.state.rosters[String(slot)] || []).map((id) => byId.get(String(id))).filter(Boolean);
       const freeAgents = pool.filter((row) => !drafted.has(row.id));
       for (const week of WEEKS) {
-        const suggestion = core.waiverRecommendations(roster, freeAgents, settings, 1, week, { minimumScore: 0 })[0] || null;
+        const suggestion = core.waiverRecommendations(roster, freeAgents, settings, 1, week, { minimumScore: 0, horizonWeeks: HORIZON_WEEKS, horizonDecay: HORIZON_DECAY })[0] || null;
         if (!suggestion) continue;
         const before = realizedPoints(roster, settings, week);
         const afterRoster = [...roster.filter((row) => row.id !== suggestion.drop.id), suggestion.add];
@@ -115,7 +117,7 @@ function main() {
   const frozen2024 = scoreThreshold(bySeason[2024], selected.threshold);
   const consistency2025 = scoreThreshold(bySeason[2025], selected.threshold);
   const admitted = frozen2024.meanGainPerOpportunity > 0 && frozen2024.meanGainPerClaim > 0 && frozen2024.meanEdgeVsNaive > 0 && consistency2025.meanGainPerOpportunity >= 0 && consistency2025.meanEdgeVsNaive >= 0;
-  const report = { version: "waiver-history-audit-2026.1", generatedAt: new Date().toISOString(), split: { development: [2021, 2022], selection: 2023, frozenTest: 2024, consistencyOnly: 2025 }, selectedThreshold: selected.threshold, selected, frozen2024, consistency2025, admitted, candidates: ranked };
+  const report = { version: "waiver-history-audit-2026.2", generatedAt: new Date().toISOString(), policy: { horizonWeeks: HORIZON_WEEKS, horizonDecay: HORIZON_DECAY }, split: { development: [2021, 2022], selection: 2023, frozenTest: 2024, consistencyOnly: 2025 }, selectedThreshold: selected.threshold, selected, frozen2024, consistency2025, admitted, candidates: ranked };
   console.log("selected", selected.threshold, "2024", frozen2024, "2025", consistency2025, "admitted", admitted);
   fs.writeFileSync(path.join(root, "data", "validation", "waiver-audit-report.json"), JSON.stringify(report, null, 2));
   if (!admitted) process.exitCode = 2;

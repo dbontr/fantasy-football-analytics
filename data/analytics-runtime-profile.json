@@ -1,7 +1,7 @@
 {
   "version": "snapcount-runtime-profile-2026.8",
-  "qualifiedAt": "2026-08-10T18:23:07.443Z",
-  "qualificationSha256": "b6d219d7832e8a06f008d2baf54152640bd3e729aade8de8dddc77126c943233",
+  "qualifiedAt": "2026-08-12T00:35:26.114Z",
+  "qualificationSha256": "4a659586d578668f019c94ce10b5aa8de9b5877e38d12697c0159c8fdeac9ba2",
   "mode": "serve-frozen-qualified-analytics",
   "decisionObjective": {
     "version": "snapcount-future-win-objective-2026.1",
@@ -95,7 +95,10 @@
   "waivers": {
     "baseline": "espn-live-ppr",
     "validatedMeanScale": 0,
-    "minimumScore": 0.25
+    "minimumScore": 0.25,
+    "horizonWeeks": 6,
+    "horizonDecay": 0.8,
+    "auditVersion": "waiver-history-audit-2026.2"
   },
   "trades": {
     "baseline": "espn-live-ppr",
@@ -238,6 +241,8 @@
   },
   "context": {
     "version": "oracle-context-browser-2026.4",
-    "policy": "admitted-mean-or-metadata-only"
+    "policy": "admitted-mean-or-metadata-only",
+    "footballContextVersion": "football-context-audit-2026.1",
+    "footballContextStatus": "prospective-only-not-serving"
   }
 }

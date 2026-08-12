@@ -37,6 +37,7 @@ function main() {
   const forecastOverfit = read("forecast-overfit-audit.json");
   const forecastSuccessor = read("forecast-successor-candidate.json");
   const futureWin = read("future-win-audit.json");
+  const footballContextAudit = read("football-context-audit.json");
   const uncertaintyReport = read("uncertainty-audit-report.json");
   const decisions = read("decision-audit-report.json");
   const waivers = read("waiver-audit-report.json");
@@ -60,6 +61,7 @@ function main() {
   requireGate(futureWin.evidenceDiscipline?.policyFrozenBeforeAuditRun === true && futureWin.evidenceDiscipline?.tuningAllowedAfterInspection === false && futureWin.evidenceDiscipline?.prospectiveConfirmation === 2026, "future-win no-retune contract");
   requireGate(futureWin.result?.decisions === 140 && futureWin.result?.changedDecisions === 0 && futureWin.result?.baselineCredits === 70 && futureWin.result?.preferredCredits === 70, "future-win observed neutral result must remain explicit");
   requireGate(futureWin.gates?.realizedNoninferiority === true && futureWin.gates?.defaultLineupOverlayAdmitted === true, "future-win retrospective noninferiority guard");
+  requireGate(footballContextAudit.status === "prospective-only-not-serving" && footballContextAudit.preRegisteredAdmission?.restrictions?.productionMeanChangedNow === false, "football-context shadow serving lock");
   requireGate(forecast.overall.frozen2024.corrected.rmse < forecast.overall.frozen2024.raw.rmse, "forecast RMSE");
   requireGate(uncertaintyReport.admitted === true, "uncertainty calibration");
   requireGate(decisions.releaseGatePassed === true && decisions.selectedPolicy === "raw-live-ppr", "Start/Sit policy selection");
@@ -81,7 +83,7 @@ function main() {
   requireGate(draftOverfit.gates?.robustnessPass === true, "draft anti-overfit robustness");
 
   const datasetPath = path.join(validationDir, "historical-ppr-2020-2025.json.gz");
-  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json", "forecast-provenance-audit.json", "forecast-overfit-audit.json", "forecast-successor-candidate.json", "future-win-audit.json"];
+  const reportNames = ["forecast-audit-report.json", "uncertainty-audit-report.json", "decision-audit-report.json", "waiver-audit-report.json", "trade-audit-report.json", "season-audit-report.json", "draft-segmented-policy.json", "draft-postfreeze-holdout.json", "draft-robust-refine.json", "draft-robust-policy.json", "draft-a-plus-holdout-2018.json", "draft-overfit-audit.json", "forecast-provenance-audit.json", "forecast-overfit-audit.json", "forecast-successor-candidate.json", "future-win-audit.json", "football-context-audit.json"];
   const reportHashes = Object.fromEntries(reportNames.map((name) => [name, hashJsonFile(path.join(validationDir, name))]));
 
   const qualifiedAt = new Date().toISOString();
@@ -106,7 +108,8 @@ function main() {
       uncertainty2024: uncertaintyReport.overall.frozen2024.legacy,
       uncertainty2025: uncertaintyReport.overall.consistency2025.legacy,
       startSitPolicy: decisions.selectedPolicy,
-      waiver2024: waivers.frozen2024, waiver2025: waivers.consistency2025,
+      waiver2024: waivers.frozen2024, waiver2025: waivers.consistency2025, waiverPolicy: waivers.policy || null,
+      footballContextSuccessor: { version: footballContextAudit.version, status: footballContextAudit.status, families: footballContextAudit.families, preRegisteredAdmission: footballContextAudit.preRegisteredAdmission },
       trade2024: trades.frozen2024, trade2025: trades.consistency2025,
       season2024: season.frozen2024, season2025: season.consistency2025,
       draftPreFreeze2020: priorDraft.fresh2020, draftConsistency2024: priorDraft.consistency2024, draftConsistency2025: priorDraft.consistency2025,
@@ -158,11 +161,11 @@ function main() {
       prospectiveSuccessor: { version: forecastSuccessor.version, status: forecastSuccessor.status, modelSha256: forecastSuccessor.candidateModelSha256, evaluationSeason: forecastSuccessor.preRegisteredAdmission.evaluationSeason, mayServeNow: false },
     },
     startSit: { baseline: "espn-live-ppr", validatedMeanScale: 0, policy: "raw-live-ppr-exact-lineup" },
-    waivers: { baseline: "espn-live-ppr", validatedMeanScale: 0, minimumScore: waivers.selectedThreshold },
+    waivers: { baseline: "espn-live-ppr", validatedMeanScale: 0, minimumScore: waivers.selectedThreshold, horizonWeeks: waivers.policy?.horizonWeeks || 1, horizonDecay: waivers.policy?.horizonDecay || 1, auditVersion: waivers.version },
     trades: { baseline: "espn-live-ppr", validatedMeanScale: 0, acceptScore: trades.selectedThreshold, passScore: -trades.selectedThreshold },
     draft: { policy: "segmented-qualified", grade: draftGrade, postFreezeHoldoutSeason: 2018, policyDefinitionSha256: robustDraft.policyDefinitionSha256, robustnessAuditVersion: draftOverfit.version, robustnessEvidenceYears: draftOverfit.evidenceYears, supportedTeamCounts: robustDraft.supportedTeamCounts, segments: draftSegments, fallbackPolicy: robustDraft.policy },
     season: { probabilityEngine: "monte-carlo", calibrationVersion: uncertainty.VERSION, correlationVersion: correlation.VERSION },
-    context: { version: context.VERSION, policy: "admitted-mean-or-metadata-only" },
+    context: { version: context.VERSION, policy: "admitted-mean-or-metadata-only", footballContextVersion: footballContextAudit.version, footballContextStatus: footballContextAudit.status },
   };
 
   fs.writeFileSync(path.join(validationDir, "analytics-qualification.json"), JSON.stringify(qualification, null, 2));
