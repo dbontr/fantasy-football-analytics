@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.32.0-football-context";
+const CACHE = "snapcount-browser-v1.33.0-football-context";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
