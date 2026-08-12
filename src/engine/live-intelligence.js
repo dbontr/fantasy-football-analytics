@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createLiveIntelligence() {
   "use strict";
 
-  const VERSION = "oracle-live-intelligence-2026.2";
+  const VERSION = "oracle-live-intelligence-2026.3";
   function finite(value, fallback = 0) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
@@ -22,6 +22,14 @@
     { key: "availability.negative", family: "availability", score: -0.45, weight: 0.7, phrases: ["held out", "sidelined", "missed practice", "not practicing", "left practice", "limited in practice"] },
   ]);
   const CAMP_CONTEXT = ["training camp", "preseason", "practice", "scrimmage", "reps", "depth chart", "roster battle", "position battle", "first-team", "first team", "second-team", "second team"];
+  const USAGE_INTENT_RULES = Object.freeze([
+    { key: "usage.featured", score: 0.95, weight: 1.0, phrases: ["heavy workload", "focal point", "centerpiece", "workhorse", "bell cow", "building block", "build around", "featured weapon", "feature him", "feature her", "feed him", "feed her", "touch the ball more than", "touches per game", "touches a game"] },
+    { key: "usage.expand", score: 0.76, weight: 0.9, phrases: ["bigger role", "larger role", "expanded role", "more involved", "more touches", "more carries", "more targets", "more opportunities", "increase his workload", "increase her workload", "plenty of reps", "get him the ball", "get her the ball", "get the ball to him", "get the ball to her"] },
+    { key: "usage.versatility", score: 0.58, weight: 0.72, phrases: ["can really do everything", "does it all well", "opens up a lot of doors", "stress a defense"] },
+    { key: "usage.reduce", score: -0.88, weight: 1.0, phrases: ["reduce his workload", "reduce her workload", "fewer touches", "fewer carries", "fewer targets", "scale back", "limit his touches", "limit her touches", "manage his workload", "manage her workload", "keep him fresh", "keep her fresh"] },
+    { key: "usage.committee", score: -0.68, weight: 0.86, phrases: ["committee backfield", "running back committee", "split carries", "split the carries", "timeshare", "rotate the backs", "share the workload"] },
+  ]);
+  const SOURCE_AUTHORITY = Object.freeze({ "head-coach": 1, "play-caller": 1, "offensive-coordinator": 0.94, "position-coach": 0.8, "general-manager": 0.72, player: 0.54, reporter: 0.48, analyst: 0.25, unknown: 0.34 });
 
   function numericStat(value) {
     const text = String(value ?? "0");
@@ -177,6 +185,33 @@
     };
   }
 
+  function classifyUsageIntentText(input, options = {}) {
+    const sourceRole = String(options.sourceRole || "unknown").toLowerCase();
+    const authority = SOURCE_AUTHORITY[sourceRole] ?? SOURCE_AUTHORITY.unknown;
+    const text = cleanText(input).toLowerCase();
+    const empty = { active: false, usageScore: 0, roleIntent: "neutral", confidence: 0, sourceAuthority: authority, sourceRole, hyperbole: false, literalVolume: false, matches: [], modelEffect: "role-state-only" };
+    if (!text) return empty;
+    const matches = [];
+    for (const rule of USAGE_INTENT_RULES) {
+      const phrase = rule.phrases.find((candidate) => text.includes(candidate) && !phraseNegated(text, candidate));
+      if (phrase) matches.push({ key: rule.key, score: rule.score, weight: rule.weight, phrase });
+    }
+    const extremeVolume = /\b(?:3[5-9]|[4-9]\d)\s*(?:-|to)?\s*\d*\s*(?:touches|carries|targets)\b/i.test(text) || /\b(?:touch(?:es)?(?: the ball)?|carries|targets)\b.{0,32}\b(?:3[5-9]|[4-9]\d)\b/i.test(text) || /\bevery (?:single )?(?:snap|play)\b/i.test(text);
+    const futureIntent = /\b(?:will|would|could|may|might|going to|plan|plans|planned|want|wants|wanted|promise|promised)\b/i.test(text);
+    const hyperbole = extremeVolume && futureIntent && (options.directQuote === true || authority >= 0.8);
+    if (hyperbole && !matches.length) {
+      matches.push({ key: "usage.featured", score: 0.82, weight: 1, phrase: "extreme stated workload" });
+    }
+    if (!matches.length) return empty;
+    const denominator = matches.reduce((sum, row) => sum + row.weight, 0);
+    const raw = denominator ? matches.reduce((sum, row) => sum + row.score * row.weight, 0) / denominator : 0;
+    let usageScore = clamp(raw, -1, 1);
+    if (hyperbole && usageScore > 0.82) usageScore = 0.82;
+    const directQuote = options.directQuote === true;
+    const confidence = clamp(authority * (directQuote ? 0.9 : 0.72) * (hyperbole ? 0.82 : 1), 0.1, 0.9);
+    const roleIntent = usageScore >= 0.2 ? "expand" : usageScore <= -0.2 ? "reduce" : "neutral";
+    return { active: true, usageScore, roleIntent, confidence, sourceAuthority: authority, sourceRole, hyperbole, literalVolume: false, matches, modelEffect: "role-state-only" };
+  }
   function extractNewsPulse(news, players = []) {
     const playerByEspnId = new Map((players || []).map((player) => [String(player.id), player]));
     return (news?.articles || []).map((article) => {
@@ -188,6 +223,7 @@
         headline: String(article.headline || "NFL update"),
         description: String(article.description || ""),
         camp: classifyCampText(`${article.headline || ""} ${article.description || ""}`),
+        usageIntent: classifyUsageIntentText(`${article.headline || ""} ${article.description || ""}`, { sourceRole: "reporter", directQuote: String(`${article.headline || ""} ${article.description || ""}`).includes(String.fromCharCode(34)) }),
         published: article.published || article.lastModified || null,
         url: article.links?.web?.href || null,
         premium: Boolean(article.premium),
@@ -203,7 +239,9 @@
     const maxAgeDays = Math.max(1, finite(options.maxAgeDays, 21));
     const relevant = (articles || []).filter((article) => {
       const applies = article.playerIds?.length ? article.playerIds.includes(String(player?.id || "")) : article.teams?.includes(String(player?.team || ""));
-      if (!applies || !article.camp?.active || !article.camp.matches?.length) return false;
+      const campActive = Boolean(article.camp?.active && article.camp.matches?.length);
+      const usageActive = Boolean(article.usageIntent?.active && article.usageIntent.matches?.length);
+      if (!applies || (!campActive && !usageActive)) return false;
       const published = Date.parse(article.published || "");
       return !Number.isFinite(published) || asOf - published <= maxAgeDays * 86400000;
     });
@@ -212,22 +250,38 @@
       const published = Date.parse(article.published || "");
       const ageDays = Number.isFinite(published) ? Math.max(0, asOf - published) / 86400000 : 7;
       const freshness = Math.exp((-Math.LN2 * ageDays) / 5);
-      const structural = article.camp.matches.some((match) => match.family === "role") ? 1 : 0.6;
-      return { article, weight: Math.max(0.05, freshness * structural) };
+      const campStructural = article.camp?.matches?.some((match) => match.family === "role");
+      const usageStructural = Boolean(article.usageIntent?.active);
+      const structural = campStructural || usageStructural ? 1 : 0.6;
+      const authority = usageStructural ? Math.max(0.5, finite(article.usageIntent.confidence, 0.5)) : 1;
+      return { article, weight: Math.max(0.05, freshness * structural * authority) };
     });
     const total = rows.reduce((sum, row) => sum + row.weight, 0);
-    const score = rows.reduce((sum, row) => sum + row.article.camp.score * row.weight, 0) / total;
-    const roleScore = rows.reduce((sum, row) => sum + row.article.camp.roleScore * row.weight, 0) / total;
-    const performanceScore = rows.reduce((sum, row) => sum + row.article.camp.performanceScore * row.weight, 0) / total;
-    const availabilityRisk = rows.reduce((sum, row) => sum + row.article.camp.availabilityRisk * row.weight, 0) / total;
+    const blendedSignal = (article, field) => {
+      const campActive = Boolean(article.camp?.active && article.camp.matches?.length);
+      const usageActive = Boolean(article.usageIntent?.active && article.usageIntent.matches?.length);
+      const campValue = campActive ? finite(article.camp?.[field]) : 0;
+      if (!usageActive || !["score", "roleScore"].includes(field)) return campValue;
+      const usageValue = finite(article.usageIntent.usageScore);
+      if (!campActive) return usageValue;
+      const usageWeight = Math.max(0.35, finite(article.usageIntent.confidence, 0.35));
+      return (campValue * 0.7 + usageValue * usageWeight) / (0.7 + usageWeight);
+    };
+    const score = rows.reduce((sum, row) => sum + blendedSignal(row.article, "score") * row.weight, 0) / total;
+    const roleScore = rows.reduce((sum, row) => sum + blendedSignal(row.article, "roleScore") * row.weight, 0) / total;
+    const usageScore = rows.reduce((sum, row) => sum + finite(row.article.usageIntent?.usageScore) * row.weight, 0) / total;
+    const usageConfidence = rows.reduce((sum, row) => sum + finite(row.article.usageIntent?.confidence) * row.weight, 0) / total;
+    const performanceScore = rows.reduce((sum, row) => sum + finite(row.article.camp?.performanceScore) * row.weight, 0) / total;
+    const availabilityRisk = rows.reduce((sum, row) => sum + finite(row.article.camp?.availabilityRisk) * row.weight, 0) / total;
     const conflict = clamp(rows.reduce((sum, row) => sum + Math.abs(row.article.camp.score - score) * row.weight, 0) / Math.max(0.25, total), 0, 1);
     const confidence = clamp((0.14 + Math.min(0.34, total * 0.11)) * (1 - conflict * 0.45), 0.08, 0.55);
     const direction = score >= 0.18 ? "up" : score <= -0.18 ? "down" : conflict >= 0.3 ? "mixed" : "neutral";
     return {
-      available: true, direction, score: clamp(score, -1, 1), roleScore: clamp(roleScore, -1, 1), performanceScore: clamp(performanceScore, -1, 1),
+      available: true, direction, score: clamp(score, -1, 1), roleScore: clamp(roleScore, -1, 1), usageScore: clamp(usageScore, -1, 1), usageConfidence: clamp(usageConfidence, 0, 0.9), performanceScore: clamp(performanceScore, -1, 1),
       availabilityRisk: clamp(availabilityRisk, 0, 1), confidence, conflict, articles: relevant.length, modelEffect: "advisory-only",
-      evidenceKeys: [...new Set(relevant.flatMap((article) => article.camp.matches.map((match) => match.key)))],
-      sources: [...new Set(relevant.map(() => "ESPN headline/description metadata"))],
+      evidenceKeys: [...new Set(relevant.flatMap((article) => [...(article.camp?.matches || []), ...(article.usageIntent?.matches || [])].map((match) => match.key)))],
+      usageHyperbole: relevant.some((article) => article.usageIntent?.hyperbole === true),
+      sources: [...new Set(relevant.map(() => "ESPN headline/description role-usage metadata"))],
     };
   }
 
@@ -242,6 +296,7 @@
     VERSION,
     campEvidence,
     classifyCampText,
+    classifyUsageIntentText,
     extractNewsPulse,
     marketEvidence,
     parseEspnMarketScoreboard,

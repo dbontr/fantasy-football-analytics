@@ -71,8 +71,9 @@ if (footballArtifact.meta?.version !== "snapcount-football-context-2026.1" || Ob
 const footballAudit = JSON.parse(fs.readFileSync(path.join(root, "data", "validation", "football-context-audit.json"), "utf8"));
 if (footballAudit.status !== "prospective-only-not-serving" || footballAudit.preRegisteredAdmission?.restrictions?.productionMeanChangedNow !== false) throw new Error("Football-context successor serving lock drift");
 const campArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "camp-2026.json"), "utf8"));
-if (campArtifact.meta?.version !== "camp-intelligence-2026.1" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10) throw new Error("Camp intelligence artifact is incomplete");
+if (campArtifact.meta?.version !== "camp-intelligence-2026.2" || !Array.isArray(campArtifact.players) || campArtifact.players.length < 10 || Number(campArtifact.meta?.searchedPlayers || 0) < 20) throw new Error("Role intelligence artifact is incomplete");
 if (campArtifact.players.some((row) => row.modelEffect !== "advisory-only")) throw new Error("Camp intelligence must remain advisory-only");
+if (campArtifact.players.some((row) => row.usageHyperbole && row.observations?.some((item) => item.literalVolume === true))) throw new Error("Role intelligence must never convert workload rhetoric into literal volume");
 const campText = JSON.stringify(campArtifact);
 if (campText.includes("<p") || campText.includes("rawText")) throw new Error("Camp artifact must not persist raw article bodies");
 const rookieArtifact = JSON.parse(fs.readFileSync(path.join(root, "data", "rookies-2026.json"), "utf8"));

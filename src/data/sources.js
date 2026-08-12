@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createSources() {
   "use strict";
 
-  const VERSION = "oracle-free-sources-browser-2026.2";
+  const VERSION = "oracle-free-sources-browser-2026.3";
   const SOURCES = Object.freeze({
     sleeper: Object.freeze({
       id: "sleeper",
@@ -28,7 +28,7 @@
     espn: Object.freeze({
       id: "espn",
       origins: ["https://site.web.api.espn.com"],
-      prefixes: ["/apis/site/v2/sports/football/nfl/"],
+      prefixes: ["/apis/site/v2/sports/football/nfl/", "/apis/search/v2"],
       maxBytes: 10 * 1024 * 1024,
       attribution: "ESPN",
       terms: "https://www.espn.com/",
@@ -317,6 +317,17 @@
     return fetchJson("espn", `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=${count}`, { timeoutMs: 20_000 });
   }
 
+  async function espnNflSearch(query, limit = 10) {
+    const term = String(query || "").trim();
+    if (!term || term.length > 120) throw new TypeError("ESPN search query must be 1-120 characters");
+    const count = Math.round(Math.max(1, Math.min(25, Number(limit || 10))));
+    const url = new URL("https://site.web.api.espn.com/apis/search/v2");
+    url.searchParams.set("region", "us");
+    url.searchParams.set("lang", "en");
+    url.searchParams.set("query", term);
+    url.searchParams.set("limit", String(count));
+    return fetchJson("espn", url.href, { timeoutMs: 20_000 });
+  }
   async function espnPprPlayerSnapshot(season) {
     const selected = Math.round(Number(season || new Date().getFullYear()));
     const filter = { players: { limit: 700, sortPercOwned: { sortPriority: 1, sortAsc: false } } };
@@ -413,6 +424,7 @@
     enrichLocalPlayers,
     enrichPprProjectionBaseline,
     espnNflNews,
+    espnNflSearch,
     espnPprPlayerSnapshot,
     espnNflScoreboard,
     espnNflSummary,

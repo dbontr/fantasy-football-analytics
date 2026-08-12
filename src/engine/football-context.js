@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createFootballContext() {
   "use strict";
 
-  const VERSION = "snapcount-football-context-engine-2026.1";
+  const VERSION = "snapcount-football-context-engine-2026.2";
   const BASELINES = Object.freeze({ plays: 64, passRate: 0.58, pressure: 0.18, rushSuccess: 0.42, passSuccess: 0.45 });
 
   function finite(value, fallback = 0) {
@@ -80,10 +80,12 @@
         value: structural,
         roleScore: structural,
         performanceScore: performance,
+        usageScore: clamp(finite(signal.usageScore), -1, 1),
+        usageConfidence: clamp(finite(signal.usageConfidence), 0, 0.9),
         availabilityRisk,
         confidence: clamp(signal.confidence, 0.05, 0.6),
         conflict: clamp(signal.conflict, 0, 1),
-        source: "training-camp/news role-state classifier",
+        source: "camp/news coach-usage role-state classifier",
         scoringEffect: "uncertainty-only",
       },
     };
@@ -168,7 +170,7 @@
     const clarity = structuralMagnitude * confidence * (1 - conflict * 0.6);
     const roleDelta = camp.roleScore >= 0 ? -0.12 * clarity : 0.16 * clarity;
     const availabilityDelta = clamp(camp.availabilityRisk, 0, 1) * confidence * 0.08;
-    return { roleDelta, availabilityDelta, reason: "camp/news role state absorbed into uncertainty, not the forecast mean" };
+    return { roleDelta, availabilityDelta, reason: "camp/news/coach-usage role state absorbed into uncertainty, not the forecast mean" };
   }
 
   return { VERSION, contextEvidence, campRoleEvidence, shadowDrivers, roleUncertaintyAdjustment };
