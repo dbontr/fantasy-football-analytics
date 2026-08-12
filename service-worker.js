@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "snapcount-browser-v1.33.0-football-context";
+const CACHE = "snapcount-browser-v1.34.0-player-popout";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
   "./snapcount-logo.svg",
   "./engine-worker.js",
   "./src/app.js",
+  "./src/outlook-player-popout.js",
   "./src/engine/core.js",
   "./src/engine/league.js",
   "./src/engine/rookies.js",
