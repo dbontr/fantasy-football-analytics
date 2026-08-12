@@ -8,6 +8,6 @@ No new football-context family is promoted into the serving projection mean by t
 
 ## Personal view
 
-My Outlooks now asks where the user would draft a player relative to ESPN: slightly (about a quarter round), moderately (about a half round), higher/lower (about three quarters of a round), or much higher/lower (about one-and-a-quarter rounds). The stored keys remain backward compatible.
+My Outlooks now asks where the user would draft a player relative to ESPN: slightly (about a sixth of a round), moderately (about a third of a round), higher/lower (about three quarters of a round), or much higher/lower (about one-and-a-quarter rounds). The stored keys remain backward compatible.
 
 The user's target is compared with SnapCount's existing rank first. Only the residual disagreement can move My Board or Draft recommendations, so a bearish or bullish signal already captured by SnapCount is not counted twice. Pass remains a separate hard preference, not an extreme negative rating.
