@@ -1,0 +1,661 @@
+{
+  "version": "draft-structure-research-2026.1",
+  "generatedAt": "2026-08-12T22:09:42.041Z",
+  "purpose": "development-only structural roster timing search; 2018 excluded from selection",
+  "developmentYears": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "excludedConsumedHoldout": 2018,
+  "championPolicy": {
+    "market": 0.6,
+    "value": 0.18,
+    "need": 0.65,
+    "injury": 7,
+    "rookie": 0,
+    "maxQB": 2,
+    "maxTE": 2,
+    "maxK": 1,
+    "maxDST": 1,
+    "secondQbRound": 10,
+    "secondTeRound": 10,
+    "kickerRound": 14,
+    "dstRound": 13
+  },
+  "candidateDimensions": {
+    "secondQbRound": [
+      9,
+      10,
+      11,
+      12
+    ],
+    "secondTeRound": [
+      9,
+      10,
+      11,
+      12
+    ],
+    "kickerRound": [
+      13,
+      14,
+      15,
+      16
+    ],
+    "dstRound": [
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "coarseSeeds": 1,
+  "fineSeeds": 4,
+  "coarseCandidates": 256,
+  "fineFinalists": 12,
+  "selectionRule": "qualified controls, positive leave-one-season-out champion delta, season breadth, then paired starter-point delta",
+  "winner": {
+    "policy": {
+      "secondQbRound": 11,
+      "secondTeRound": 10,
+      "kickerRound": 13,
+      "dstRound": 14
+    },
+    "meanRealized": 2141.49,
+    "championDelta": 18.56,
+    "positiveSeasons": 7,
+    "worstSeasonDelta": 1.1,
+    "looMin": 15.36,
+    "qualified": true,
+    "needHeavyWin": 0.595,
+    "seasonDelta": {
+      "2019": 37.71,
+      "2020": 1.1,
+      "2021": 34.75,
+      "2022": 31.03,
+      "2023": 22.07,
+      "2024": 1.92,
+      "2025": 1.31
+    }
+  },
+  "outerLeaveOneSeasonOut": [
+    {
+      "heldOut": 2019,
+      "selectedPolicy": {
+        "secondQbRound": 10,
+        "secondTeRound": 9,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 17.412361111111114,
+        "controls": {
+          "espn-market": {
+            "edge": 326.33861111111116,
+            "winRate": 0.8888888888888888
+          },
+          "balanced": {
+            "edge": 67.2447222222222,
+            "winRate": 0.6458333333333334
+          },
+          "value": {
+            "edge": 359.00555555555553,
+            "winRate": 0.8819444444444445
+          },
+          "need-heavy": {
+            "edge": 36.98319444444443,
+            "winRate": 0.6041666666666666
+          },
+          "zero-rb": {
+            "edge": 95.44888888888887,
+            "winRate": 0.6875
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.8558333333333035,
+        "looMin": 14.028166666666664,
+        "qualified": true
+      },
+      "heldOutChampionDelta": -1.6325000000000216,
+      "heldOutNeedHeavyWin": 0.5
+    },
+    {
+      "heldOut": 2020,
+      "selectedPolicy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 21.465277777777782,
+        "controls": {
+          "espn-market": {
+            "edge": 324.51319444444465,
+            "winRate": 0.875
+          },
+          "balanced": {
+            "edge": 56.105416666666656,
+            "winRate": 0.625
+          },
+          "value": {
+            "edge": 343.53527777777776,
+            "winRate": 0.875
+          },
+          "need-heavy": {
+            "edge": 34.99375,
+            "winRate": 0.576388888888889
+          },
+          "zero-rb": {
+            "edge": 74.44875,
+            "winRate": 0.638888888888889
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.3149999999999409,
+        "looMin": 18.217166666666678,
+        "qualified": true
+      },
+      "heldOutChampionDelta": 1.1033333333332962,
+      "heldOutNeedHeavyWin": 0.7083333333333334
+    },
+    {
+      "heldOut": 2021,
+      "selectedPolicy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 15.858194444444434,
+        "controls": {
+          "espn-market": {
+            "edge": 358.586527777778,
+            "winRate": 0.8958333333333334
+          },
+          "balanced": {
+            "edge": 74.66374999999998,
+            "winRate": 0.6666666666666666
+          },
+          "value": {
+            "edge": 345.7584722222222,
+            "winRate": 0.875
+          },
+          "need-heavy": {
+            "edge": 42.59347222222221,
+            "winRate": 0.5833333333333334
+          },
+          "zero-rb": {
+            "edge": 95.57444444444444,
+            "winRate": 0.6805555555555557
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.1033333333332962,
+        "looMin": 11.488666666666656,
+        "qualified": true
+      },
+      "heldOutChampionDelta": 34.745833333333394,
+      "heldOutNeedHeavyWin": 0.6666666666666666
+    },
+    {
+      "heldOut": 2022,
+      "selectedPolicy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 16.477222222222206,
+        "controls": {
+          "espn-market": {
+            "edge": 359.05125000000015,
+            "winRate": 0.8819444444444445
+          },
+          "balanced": {
+            "edge": 64.69027777777775,
+            "winRate": 0.6458333333333334
+          },
+          "value": {
+            "edge": 360.88222222222225,
+            "winRate": 0.8958333333333334
+          },
+          "need-heavy": {
+            "edge": 47.307499999999976,
+            "winRate": 0.6041666666666666
+          },
+          "zero-rb": {
+            "edge": 92.86138888888884,
+            "winRate": 0.6805555555555557
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.1033333333332962,
+        "looMin": 12.231499999999984,
+        "qualified": true
+      },
+      "heldOutChampionDelta": 31.03166666666675,
+      "heldOutNeedHeavyWin": 0.5416666666666666
+    },
+    {
+      "heldOut": 2023,
+      "selectedPolicy": {
+        "secondQbRound": 12,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 20.64236111111113,
+        "controls": {
+          "espn-market": {
+            "edge": 394.4058333333334,
+            "winRate": 0.9375
+          },
+          "balanced": {
+            "edge": 82.26374999999999,
+            "winRate": 0.6666666666666666
+          },
+          "value": {
+            "edge": 272.85152777777785,
+            "winRate": 0.8819444444444445
+          },
+          "need-heavy": {
+            "edge": 41.64444444444445,
+            "winRate": 0.611111111111111
+          },
+          "zero-rb": {
+            "edge": 88.81680555555558,
+            "winRate": 0.6736111111111112
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.8583333333333012,
+        "looMin": 15.548000000000007,
+        "qualified": true
+      },
+      "heldOutChampionDelta": 3.5691666666666038,
+      "heldOutNeedHeavyWin": 0.5833333333333334
+    },
+    {
+      "heldOut": 2024,
+      "selectedPolicy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 21.329166666666666,
+        "controls": {
+          "espn-market": {
+            "edge": 344.10277777777793,
+            "winRate": 0.8819444444444443
+          },
+          "balanced": {
+            "edge": 77.19819444444444,
+            "winRate": 0.6597222222222222
+          },
+          "value": {
+            "edge": 340.5140277777778,
+            "winRate": 0.8819444444444445
+          },
+          "need-heavy": {
+            "edge": 47.08069444444442,
+            "winRate": 0.6041666666666666
+          },
+          "zero-rb": {
+            "edge": 85.60791666666665,
+            "winRate": 0.6527777777777778
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.1033333333332962,
+        "looMin": 18.053833333333337,
+        "qualified": true
+      },
+      "heldOutChampionDelta": 1.919999999999997,
+      "heldOutNeedHeavyWin": 0.5416666666666666
+    },
+    {
+      "heldOut": 2025,
+      "selectedPolicy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "train": {
+        "championDelta": 21.430000000000007,
+        "controls": {
+          "espn-market": {
+            "edge": 332.83222222222236,
+            "winRate": 0.8680555555555555
+          },
+          "balanced": {
+            "edge": 68.0034722222222,
+            "winRate": 0.6388888888888888
+          },
+          "value": {
+            "edge": 356.1283333333334,
+            "winRate": 0.8958333333333334
+          },
+          "need-heavy": {
+            "edge": 39.79152777777777,
+            "winRate": 0.5972222222222222
+          },
+          "zero-rb": {
+            "edge": 76.56055555555554,
+            "winRate": 0.6736111111111112
+          }
+        },
+        "positiveSeasons": 6,
+        "worstSeasonDelta": 1.1033333333332962,
+        "looMin": 18.174833333333346,
+        "qualified": true
+      },
+      "heldOutChampionDelta": 1.3149999999999409,
+      "heldOutNeedHeavyWin": 0.5833333333333334
+    }
+  ],
+  "outerPositiveHeldouts": 6,
+  "researchPass": true,
+  "servingEligible": false,
+  "servingReason": "Consumed history can freeze a shadow successor but cannot replace the A+ champion; prospective 2026 evidence is required.",
+  "top": [
+    {
+      "policy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2141.49,
+      "championDelta": 18.56,
+      "positiveSeasons": 7,
+      "worstSeasonDelta": 1.1,
+      "looMin": 15.36,
+      "qualified": true,
+      "needHeavyWin": 0.595,
+      "seasonDelta": {
+        "2019": 37.71,
+        "2020": 1.1,
+        "2021": 34.75,
+        "2022": 31.03,
+        "2023": 22.07,
+        "2024": 1.92,
+        "2025": 1.31
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 12,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2141.14,
+      "championDelta": 18.2,
+      "positiveSeasons": 7,
+      "worstSeasonDelta": 1.86,
+      "looMin": 13.55,
+      "qualified": true,
+      "needHeavyWin": 0.607,
+      "seasonDelta": {
+        "2019": 30.9,
+        "2020": 1.86,
+        "2021": 34.47,
+        "2022": 46.11,
+        "2023": 3.57,
+        "2024": 3.33,
+        "2025": 7.18
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 11,
+        "secondTeRound": 9,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2139.38,
+      "championDelta": 16.45,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -4.48,
+      "looMin": 13.21,
+      "qualified": true,
+      "needHeavyWin": 0.583,
+      "seasonDelta": {
+        "2019": 21.18,
+        "2020": 5.67,
+        "2021": 35.88,
+        "2022": 26.04,
+        "2023": 22.07,
+        "2024": 8.79,
+        "2025": -4.48
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 10,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2138.38,
+      "championDelta": 15.45,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -3.44,
+      "looMin": 12.79,
+      "qualified": true,
+      "needHeavyWin": 0.601,
+      "seasonDelta": {
+        "2019": 16.45,
+        "2020": 3.25,
+        "2021": 31.4,
+        "2022": 22.07,
+        "2023": 24.38,
+        "2024": -3.44,
+        "2025": 14.02
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 12,
+        "secondTeRound": 9,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2139.56,
+      "championDelta": 16.63,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -2.53,
+      "looMin": 12.54,
+      "qualified": true,
+      "needHeavyWin": 0.589,
+      "seasonDelta": {
+        "2019": 19.77,
+        "2020": -2.53,
+        "2021": 35.6,
+        "2022": 41.12,
+        "2023": 3.57,
+        "2024": 10.2,
+        "2025": 8.64
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 10,
+        "secondTeRound": 9,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2137.62,
+      "championDelta": 14.69,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -1.63,
+      "looMin": 11.42,
+      "qualified": true,
+      "needHeavyWin": 0.589,
+      "seasonDelta": {
+        "2019": -1.63,
+        "2020": 1.86,
+        "2021": 34.33,
+        "2022": 23.75,
+        "2023": 24.38,
+        "2024": 10,
+        "2025": 10.15
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 11,
+        "secondTeRound": 11,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2137.92,
+      "championDelta": 14.99,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -5.96,
+      "looMin": 11.33,
+      "qualified": true,
+      "needHeavyWin": 0.601,
+      "seasonDelta": {
+        "2019": 29.16,
+        "2020": -5.96,
+        "2021": 36.94,
+        "2022": 17.7,
+        "2023": 19.91,
+        "2024": 1.92,
+        "2025": 5.22
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 12,
+        "secondTeRound": 11,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2136.68,
+      "championDelta": 13.74,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -5.2,
+      "looMin": 10.09,
+      "qualified": true,
+      "needHeavyWin": 0.595,
+      "seasonDelta": {
+        "2019": 22.93,
+        "2020": -5.2,
+        "2021": 35.67,
+        "2022": 32.78,
+        "2023": 2.01,
+        "2024": 3.33,
+        "2025": 4.68
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 10,
+        "secondTeRound": 11,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2135.04,
+      "championDelta": 12.11,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -3.44,
+      "looMin": 9.73,
+      "qualified": true,
+      "needHeavyWin": 0.601,
+      "seasonDelta": {
+        "2019": 9.27,
+        "2020": 5.33,
+        "2021": 26.4,
+        "2022": 9.82,
+        "2023": 24.23,
+        "2024": -3.44,
+        "2025": 13.14
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 10,
+        "secondTeRound": 12,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2133.6,
+      "championDelta": 10.67,
+      "positiveSeasons": 6,
+      "worstSeasonDelta": -13.95,
+      "looMin": 8.62,
+      "qualified": true,
+      "needHeavyWin": 0.595,
+      "seasonDelta": {
+        "2019": 17.5,
+        "2020": 5.33,
+        "2021": 22.96,
+        "2022": 8.6,
+        "2023": 22.22,
+        "2024": -13.95,
+        "2025": 12.03
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 11,
+        "secondTeRound": 10,
+        "kickerRound": 13,
+        "dstRound": 12
+      },
+      "meanRealized": 2136.01,
+      "championDelta": 13.08,
+      "positiveSeasons": 5,
+      "worstSeasonDelta": -14.49,
+      "looMin": 8.36,
+      "qualified": true,
+      "needHeavyWin": 0.583,
+      "seasonDelta": {
+        "2019": 41.41,
+        "2020": -14.49,
+        "2021": -0.86,
+        "2022": 2.88,
+        "2023": 24.51,
+        "2024": 31.91,
+        "2025": 6.2
+      }
+    },
+    {
+      "policy": {
+        "secondQbRound": 11,
+        "secondTeRound": 12,
+        "kickerRound": 13,
+        "dstRound": 14
+      },
+      "meanRealized": 2134.84,
+      "championDelta": 11.91,
+      "positiveSeasons": 5,
+      "worstSeasonDelta": -13.09,
+      "looMin": 8.31,
+      "qualified": true,
+      "needHeavyWin": 0.589,
+      "seasonDelta": {
+        "2019": 32.52,
+        "2020": -5.96,
+        "2021": 33.5,
+        "2022": 16.47,
+        "2023": 19.91,
+        "2024": -13.09,
+        "2025": 0
+      }
+    }
+  ]
+}
