@@ -4149,12 +4149,13 @@ tbody tr:hover td { background: #edf4fb !important; }
 #outlooks .outlook-toolbar label > small { display: block; margin-top: 5px; color: #718197; font-size: 9px; font-weight: 700; }
 #outlooks .outlook-toolbar select:disabled { opacity: 1; cursor: default; background: #f1f5fa; color: #37516f; }
 .outlook-round-guide { margin: -2px 0 12px; padding: 0 2px; color: #65768b; font-size: 10px; font-weight: 700; }
-#outlooks .outlook-table th:nth-child(1) { width: 9%; }
-#outlooks .outlook-table th:nth-child(2) { width: 25%; }
-#outlooks .outlook-table th:nth-child(3) { width: 11%; }
-#outlooks .outlook-table th:nth-child(4) { width: 12%; }
+#outlooks .outlook-table th:nth-child(1) { width: 8%; }
+#outlooks .outlook-table th:nth-child(2) { width: 22%; }
+#outlooks .outlook-table th:nth-child(3) { width: 9%; }
+#outlooks .outlook-table th:nth-child(4) { width: 10%; }
 #outlooks .outlook-table th:nth-child(5) { width: 9%; }
-#outlooks .outlook-table th:nth-child(6) { width: 34%; }
+#outlooks .outlook-table th:nth-child(6) { width: 8%; }
+#outlooks .outlook-table th:nth-child(7) { width: 34%; }
 #outlooks .board-rank-cell { vertical-align: middle; }
 #outlooks .board-rank-cell strong { display: block; color: #173f6b; font-size: 14px; line-height: 1.2; }
 #outlooks .board-rank-cell small { display: block; margin-top: 2px; color: #8291a4; font-size: 8px; font-weight: 800; line-height: 1.2; }
@@ -4170,4 +4171,29 @@ tbody tr:hover td { background: #edf4fb !important; }
 .outlook-chip.slightly-negative, .outlook-select.slightly-negative { background: #fdf6f5; color: #85635f; border-color: #edddda; }
 .outlook-chip.very-negative, .outlook-select.very-negative { background: #edcbc7; color: #6f1f19; border-color: #bf736b; }
 @media (max-width: 1080px) { #outlooks .outlook-toolbar { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 680px) { #outlooks .outlook-toolbar { grid-template-columns: 1fr; } #outlooks .outlook-table { min-width: 760px; } }
+@media (max-width: 680px) { #outlooks .outlook-toolbar { grid-template-columns: 1fr; } #outlooks .outlook-table { min-width: 860px; } }
+
+
+/* Outlook round-lock + pass controls 2026.15 */
+.outlook-round-lock { display:flex; align-items:flex-start; gap:10px; margin:10px 0 12px; padding:12px 14px; cursor:pointer; }
+.outlook-round-lock input { flex:0 0 18px; width:18px; height:18px; min-height:0 !important; margin:2px 0 0; accent-color:#1268d7; }
+.outlook-round-lock span { display:grid; gap:3px; }
+.outlook-round-lock strong { color:#163f6e; font-size:11px; }
+.outlook-round-lock small { color:#6f8095; font-size:9px; line-height:1.45; }
+.outlook-adjusted-rank { display:grid; gap:2px; color:#244d78; font-weight:850; font-variant-numeric:tabular-nums; }
+.outlook-adjusted-rank small { color:#8290a0; font-size:8px; font-weight:750; }
+.outlook-pass-toggle { min-height:30px; padding:5px 9px; border:1px solid #c7d2df; border-radius:8px; background:#fff; color:#66778c; font-size:9px; font-weight:850; }
+.outlook-pass-toggle:hover { border-color:#8fa2b7; color:#223e60; }
+.outlook-pass-toggle.active { border-color:#8d98a6; background:#dde2e8; color:#3f4d5d; }
+.outlook-pass-row > td { background:#f2f4f7 !important; }
+.outlook-pass-row .player-identity, .outlook-pass-row .rank-source-chip, .outlook-pass-row .outlook-adjusted-rank, .outlook-pass-row .outlook-change { opacity:.52; }
+.outlook-pass-row .player-identity-copy > strong { color:#7c8795; }
+.outlook-pass-badge { display:inline-flex; margin-top:5px; padding:3px 6px; border:1px solid #aeb8c4; border-radius:999px; background:#e4e8ed; color:#536171; font-size:8px; font-weight:900; letter-spacing:.08em; }
+#outlooks .outlook-control-cell > div { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+.big-board-row.is-pass { background:#f2f4f7; }
+.big-board-row.is-pass .player-media,
+.big-board-row.is-pass .player-identity-copy > small,
+.big-board-row.is-pass .board-rank,
+.big-board-row.is-pass .board-score { opacity:.48; }
+.big-board-row.is-pass .player-identity-copy > strong { color:#778391; }
