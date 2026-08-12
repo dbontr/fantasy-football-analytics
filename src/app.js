@@ -55,6 +55,8 @@
     publicDraftPresetSettings: null,
     tradeAnalysisMode: "basic",
     playerOutlooks: {},
+    playerPasses: {},
+    outlookRoundLock: false,
     playerRunToken: 0,
     ledger: new evidenceApi.EvidenceLedger(),
     rosterIds: [],
@@ -169,6 +171,10 @@
     return { key, ...(PLAYER_OUTLOOKS[key] || PLAYER_OUTLOOKS.unknown) };
   }
 
+  function playerPassed(playerId) {
+    return Boolean(state.playerPasses?.[String(playerId)]);
+  }
+
   function outlookTeamCount() {
     if (hasEspnMyLeagueAccess()) return Math.round(clamp(Number(currentLeagueSettings()?.teams || 12), 4, 20));
     return Math.round(clamp(Number($("#outlook-teams")?.value || 12), 4, 20));
@@ -202,6 +208,21 @@
     await store.set("player-outlooks", state.playerOutlooks);
     renderPlayerOutlooks();
     if ($("#draft")?.classList.contains("active")) renderDraft();
+  }
+
+  async function savePlayerPass(playerId, passed) {
+    const id = String(playerId);
+    if (passed) state.playerPasses[id] = true;
+    else delete state.playerPasses[id];
+    await store.set("player-passes", state.playerPasses);
+    renderPlayerOutlooks();
+    if ($("#draft")?.classList.contains("active")) renderDraft();
+  }
+
+  async function saveOutlookRoundLock(locked) {
+    state.outlookRoundLock = Boolean(locked);
+    await store.set("outlook-round-lock", state.outlookRoundLock);
+    renderPlayerOutlooks();
   }
 
   function espnOverallRank(player) {
@@ -249,20 +270,29 @@
 
   function buildPersonalizedOutlookBoard(settings = outlookBoardSettings()) {
     const rankContext = buildOutlookRankContext(settings);
-    return rankContext.modelBoard.map((player) => {
+    const rows = rankContext.modelBoard.map((player) => {
       const outlook = playerOutlook(player.id);
       const residual = outlookResidualContext(player, outlook, rankContext);
       const personalizedScore = residual.snapOverall + residual.boardDelta;
-      return { ...player, outlook, residual, personalizedScore };
-    }).sort((a, b) => a.personalizedScore - b.personalizedScore || a.residual.snapOverall - b.residual.snapOverall)
-      .map((row, index) => ({ ...row, personalRank: index + 1, boardChange: row.residual.snapOverall - (index + 1) }));
+      const espnRound = Math.ceil(Number(residual.espnOverall || 9999) / rankContext.teams);
+      return { ...player, outlook, residual, personalizedScore, espnRound, passed: playerPassed(player.id) };
+    });
+    const freeRows = [...rows].sort((a, b) => a.personalizedScore - b.personalizedScore || a.residual.snapOverall - b.residual.snapOverall);
+    const freeRank = new Map(freeRows.map((row, index) => [String(row.id), index + 1]));
+    const ordered = state.outlookRoundLock
+      ? [...rows].sort((a, b) => a.espnRound - b.espnRound || a.personalizedScore - b.personalizedScore || a.residual.snapOverall - b.residual.snapOverall)
+      : freeRows;
+    return ordered.map((row, index) => {
+      const rawPersonalRank = Number(freeRank.get(String(row.id)) || index + 1);
+      return { ...row, personalRank: index + 1, rawPersonalRank, boardChange: row.residual.snapOverall - (index + 1), freeBoardChange: row.residual.snapOverall - rawPersonalRank };
+    });
   }
 
   function applyPlayerOutlookOverlay(rows = [], settings = {}, limit = rows.length) {
     const teams = Math.max(4, Math.min(20, Number(settings?.teams || 12)));
     const currentPick = Math.max(1, Number(state.draftState?.picks?.length || 0) + 1);
     const rankContext = buildOutlookRankContext({ ...settings, teams });
-    return rows.map((row, index) => {
+    return rows.filter((row) => !playerPassed(row.id)).map((row, index) => {
       const outlook = playerOutlook(row.id);
       const qualifiedRank = index + 1;
       const residual = outlookResidualContext(row, outlook, rankContext);
@@ -301,6 +331,8 @@
     const table = $("#outlook-table");
     if (!table || !state.players.length) return;
     syncOutlookTeamControl();
+    const lock = $("#outlook-round-lock");
+    if (lock) lock.checked = Boolean(state.outlookRoundLock);
     const settings = outlookBoardSettings();
     const teams = outlookTeamCount();
     const query = $("#outlook-search")?.value || "";
@@ -309,6 +341,7 @@
     let rows = buildPersonalizedOutlookBoard(settings).filter((row) => (position === "ALL" || row.position === position) && playerMatchesSearch(row, query));
     if (filter === "rated") rows = rows.filter((row) => row.outlook.reviewed);
     if (filter === "unknown") rows = rows.filter((row) => !row.outlook.reviewed);
+    if (filter === "passed") rows = rows.filter((row) => row.passed);
     rows = rows.slice(0, 180);
     const options = Object.entries(PLAYER_OUTLOOKS).map(([key, row]) => `<option value="${key}">${esc(row.label)}</option>`).join("");
     let previousRound = null;
@@ -318,17 +351,21 @@
       const round = Math.ceil(row.personalRank / teams);
       const roundStart = (round - 1) * teams + 1;
       const roundEnd = round * teams;
-      const separator = round !== previousRound ? `<tr class="outlook-round-row"><td colspan="6"><span>ROUND ${round}</span><small>Picks ${roundStart}–${roundEnd}</small></td></tr>` : "";
+      const separator = round !== previousRound ? `<tr class="outlook-round-row"><td colspan="7"><span>ROUND ${round}</span><small>Picks ${roundStart}–${roundEnd}</small></td></tr>` : "";
       previousRound = round;
-      const basis = !outlook.reviewed ? "No personal view yet — My Board matches SnapCount."
-        : outlook.direction === 0 ? `Reviewed neutral · no personal adjustment from SnapCount #${ranks.snapOverall}.`
-          : ranks.alreadyReflected ? `Already reflected — SnapCount #${ranks.snapOverall} is already at least as ${outlook.direction > 0 ? "bullish" : "bearish"} as your view.`
-            : `ESPN #${ranks.espnOverall} → your view about #${Math.round(ranks.targetOverall)} · SnapCount #${ranks.snapOverall} · My Board #${row.personalRank}.`;
-      return `${separator}<tr data-outlook-tone="${esc(outlook.tone)}" data-personal-rank="${row.personalRank}" data-snap-rank="${ranks.snapOverall}" data-board-change="${row.boardChange}"><td class="board-rank-cell"><strong>${row.personalRank}</strong><small>R${round}</small></td><td class="player-cell player-cell-visual">${playerIdentityMarkup(row)}</td><td><span class="rank-source-chip espn">ESPN #${Math.round(ranks.espnOverall)}</span></td><td><span class="rank-source-chip snap">SNAP #${Math.round(ranks.snapOverall)}</span></td><td>${outlookChangeMarkup(row.boardChange)}</td><td class="outlook-control-cell"><div><select class="outlook-select ${esc(outlook.tone)}" data-player-outlook="${esc(row.id)}" aria-label="Outlook for ${esc(row.name)}">${options}</select><span class="outlook-chip ${esc(outlook.tone)}">${esc(outlook.reviewed ? outlook.label : "No opinion yet")}</span></div><small class="outlook-basis">${esc(basis)}</small></td></tr>`;
+      const basis = row.passed ? "PASS — excluded from your personalized draft recommendations."
+        : !outlook.reviewed ? "No personal view yet — My Board matches SnapCount."
+          : outlook.direction === 0 ? `Reviewed neutral · no personal adjustment from SnapCount #${ranks.snapOverall}.`
+            : ranks.alreadyReflected ? `Already reflected — SnapCount #${ranks.snapOverall} is already at least as ${outlook.direction > 0 ? "bullish" : "bearish"} as your view.`
+              : `ESPN #${ranks.espnOverall} → your view about #${Math.round(ranks.targetOverall)} · SnapCount #${ranks.snapOverall} · My Board #${row.personalRank}.`;
+      const adjustedLabel = state.outlookRoundLock && row.rawPersonalRank !== row.personalRank ? `#${row.rawPersonalRank}<small>free sort</small>` : `#${row.rawPersonalRank}`;
+      return `${separator}<tr class="${row.passed ? "outlook-pass-row" : ""}" data-outlook-tone="${esc(outlook.tone)}" data-personal-rank="${row.personalRank}" data-free-rank="${row.rawPersonalRank}" data-espn-rank="${ranks.espnOverall}" data-snap-rank="${ranks.snapOverall}" data-board-change="${row.boardChange}" data-player-passed="${row.passed ? "true" : "false"}"><td class="board-rank-cell"><strong>${row.personalRank}</strong><small>R${round}</small></td><td class="player-cell player-cell-visual">${playerIdentityMarkup(row)}${row.passed ? '<span class="outlook-pass-badge">PASS</span>' : ""}</td><td><span class="rank-source-chip espn">ESPN #${Math.round(ranks.espnOverall)}</span></td><td><span class="rank-source-chip snap">SNAP #${Math.round(ranks.snapOverall)}</span></td><td><span class="outlook-adjusted-rank">${adjustedLabel}</span></td><td>${outlookChangeMarkup(row.boardChange)}</td><td class="outlook-control-cell"><div><select class="outlook-select ${esc(outlook.tone)}" data-player-outlook="${esc(row.id)}" aria-label="Outlook for ${esc(row.name)}">${options}</select><button type="button" class="outlook-pass-toggle ${row.passed ? "active" : ""}" data-player-pass="${esc(row.id)}" aria-pressed="${row.passed ? "true" : "false"}">${row.passed ? "Passed" : "Pass"}</button><span class="outlook-chip ${esc(outlook.tone)}">${esc(outlook.reviewed ? outlook.label : "No opinion yet")}</span></div><small class="outlook-basis">${esc(basis)}</small></td></tr>`;
     }).join("");
     $$('[data-player-outlook]').forEach((select) => { select.value = playerOutlook(select.dataset.playerOutlook).key; select.addEventListener("change", () => savePlayerOutlook(select.dataset.playerOutlook, select.value).catch((error) => status(error.message, "error"))); });
+    $$('[data-player-pass]').forEach((button) => button.addEventListener("click", () => savePlayerPass(button.dataset.playerPass, !playerPassed(button.dataset.playerPass)).catch((error) => status(error.message, "error"))));
     const rated = Object.keys(state.playerOutlooks || {}).length;
-    $("#outlook-count").textContent = `${rows.length} shown · ${rated} rated · ${teams}-team rounds`;
+    const passed = Object.keys(state.playerPasses || {}).length;
+    $("#outlook-count").textContent = `${rows.length} shown · ${rated} rated · ${passed} passed · ${state.outlookRoundLock ? "round-locked" : "free sort"}`;
   }
 
   function historyKey(player, season = Number($("#history-season")?.value || 2025)) {
@@ -1818,10 +1855,12 @@
     const rows = oracleDraftBoard(currentDraftSettings()).filter((row) => position === "ALL" || row.position === position).slice(0, 80);
     node.innerHTML = rows.map((row) => {
       const outlook = playerOutlook(row.id);
+      const passed = playerPassed(row.id);
       const outlookPill = outlook.reviewed ? ` <span class="outlook-chip draft-user-outlook ${esc(outlook.tone)}">${esc(outlook.label)}</span>` : "";
-      const extras = `${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${outlookPill}`;
+      const passPill = passed ? ' <span class="outlook-pass-badge">PASS</span>' : "";
+      const extras = `${row.rookie ? ' <span class="rookie-pill compact">R</span>' : ''} ${outlookPill}${passPill}`;
       const secondary = `<span class="board-pos">${esc(row.position)}</span> · ${esc(row.team)}${Number.isFinite(row.marketRank) ? ` · usually drafted #${Math.round(row.marketRank)}` : ""}${Number.isFinite(Number(row.market?.averageDraftPosition)) ? ` · live ESPN ADP ${num(row.market.averageDraftPosition)}` : ""}`;
-      return `<div class="big-board-row pos-${esc(String(row.position || '').toLowerCase())}"><span class="board-rank">${row.oracleRank}</span><div class="board-player">${playerIdentityMarkup(row, extras, secondary)}</div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`;
+      return `<div class="big-board-row pos-${esc(String(row.position || '').toLowerCase())}${passed ? " is-pass" : ""}"><span class="board-rank">${row.oracleRank}</span><div class="board-player">${playerIdentityMarkup(row, extras, secondary)}</div><div class="board-score"><span>SNAP SCORE</span><strong>${row.oracleScore}</strong></div></div>`;
     }).join("");
   }
 
@@ -3061,9 +3100,11 @@
 
   async function clearLocalState() {
     clearImportedProjectionOverrides();
-    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-state"), store.remove("league-profile"), store.remove("my-league-enabled"), store.remove("player-outlooks")]);
+    await Promise.all([store.remove("roster-ids"), store.remove("evidence-ledger"), store.remove("ensemble-weights"), store.remove("draft-custom-board"), store.remove("espn-connection"), store.remove("espn-snapshot"), store.remove("league-state"), store.remove("league-profile"), store.remove("my-league-enabled"), store.remove("player-outlooks"), store.remove("player-passes"), store.remove("outlook-round-lock")]);
     state.rosterIds = [];
     state.playerOutlooks = {};
+    state.playerPasses = {};
+    state.outlookRoundLock = false;
     state.ledger = new evidenceApi.EvidenceLedger();
     state.ensembleWeights = { market: 0.55, opportunity: 0.45 };
     state.leagueTeams = null;
@@ -3141,6 +3182,7 @@
     $("#player-search").addEventListener("input", () => { const rows = fillPlayerPicker("#player-select", $("#player-search").value); if (rows[0]) { $("#player-select").value = String(rows[0].id); renderNewsPulse(); } });
     ["#rankings-search", "#rankings-position", "#rankings-view", "#rankings-week"].forEach((selector) => $(selector)?.addEventListener(selector === "#rankings-search" ? "input" : "change", renderPublicRankings));
     ["#outlook-search", "#outlook-position", "#outlook-filter", "#outlook-teams"].forEach((selector) => $(selector)?.addEventListener(selector === "#outlook-search" ? "input" : "change", renderPlayerOutlooks));
+    $("#outlook-round-lock")?.addEventListener("change", (event) => saveOutlookRoundLock(event.currentTarget.checked).catch((error) => status(error.message, "error")));
     $("#roster-search").addEventListener("input", () => fillPlayerPicker("#roster-add", $("#roster-search").value));
     $("#trade-actor-team")?.addEventListener("change", () => {
       state.tradeActorTeamId = $("#trade-actor-team").value || connectedUserTeamId();
@@ -3245,7 +3287,7 @@
       fillPlayerSelects();
       renderPublicRankings();
 
-      const [savedLedger, savedRoster, savedWeights, savedBoard, savedLeagueProfile, savedEspnConnection, savedEspnSnapshot, savedPlayerOutlooks] = await Promise.all([
+      const [savedLedger, savedRoster, savedWeights, savedBoard, savedLeagueProfile, savedEspnConnection, savedEspnSnapshot, savedPlayerOutlooks, savedPlayerPasses, savedOutlookRoundLock] = await Promise.all([
         store.get("evidence-ledger", []),
         store.get("roster-ids", []),
         store.get("ensemble-weights", null),
@@ -3254,6 +3296,8 @@
         store.get("espn-connection", null),
         store.get("espn-snapshot", null),
         store.get("player-outlooks", {}),
+        store.get("player-passes", {}),
+        store.get("outlook-round-lock", false),
       ]);
       state.ledger = new evidenceApi.EvidenceLedger(Array.isArray(savedLedger) ? savedLedger : []);
       state.rosterIds = Array.isArray(savedRoster) ? savedRoster.map(String).filter((id) => playerById(id)) : [];
@@ -3261,6 +3305,8 @@
       const migratedOutlooks = Object.fromEntries(Object.entries(state.playerOutlooks).map(([id, value]) => [id, OUTLOOK_ALIASES[value] || value]));
       const outlookMigrationChanged = Object.keys(migratedOutlooks).some((id) => migratedOutlooks[id] !== state.playerOutlooks[id]);
       state.playerOutlooks = migratedOutlooks;
+      state.playerPasses = savedPlayerPasses && typeof savedPlayerPasses === "object" && !Array.isArray(savedPlayerPasses) ? Object.fromEntries(Object.entries(savedPlayerPasses).filter(([, value]) => Boolean(value))) : {};
+      state.outlookRoundLock = Boolean(savedOutlookRoundLock);
       if (outlookMigrationChanged) await store.set("player-outlooks", state.playerOutlooks);
       renderPlayerOutlooks();
         const canRestoreEspnProfile = Boolean(savedEspnConnection?.leagueId && savedEspnSnapshot?.provider === "espn");
@@ -3298,7 +3344,7 @@
       if (requested === "league-draft") activatePanel("draft", { draftContext: "league" });
       else if (requested && $(`[data-panel-target="${CSS.escape(requested)}"]`)) activatePanel(requested);
       else activatePanel("overview");
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.31.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js?v=1.32.0", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
     } catch (error) {
       $("#bootstrap-status").textContent = "Load failed";
       syncRuntimeReadouts();
