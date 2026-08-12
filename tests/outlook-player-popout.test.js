@@ -31,7 +31,7 @@ test("player popout stays wired to the existing Player Analysis surface and cach
   const source = fs.readFileSync(path.join(root, "src", "outlook-player-popout.js"), "utf8");
   const store = fs.readFileSync(path.join(root, "src", "storage", "browser-store.js"), "utf8");
   const worker = fs.readFileSync(path.join(root, "service-worker.js"), "utf8");
-  for (const token of ["player-analysis-popout", "data-player-analysis-popout", "AVG PROJECTED PPG", "#run-player", "#load-intelligence", "#player-result", "#player-intelligence"]) {
+  for (const token of ["player-analysis-popout", "data-player-analysis-popout", "AVG PROJECTED PPG", 'getElementById("run-player")', 'getElementById("load-intelligence")', 'getElementById("player-result")', 'getElementById("player-intelligence")']) {
     assert.ok(source.includes(token), `missing ${token}`);
   }
   assert.ok(store.includes("./src/outlook-player-popout.js"));
