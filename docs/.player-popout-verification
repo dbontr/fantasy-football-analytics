@@ -1,1 +1,0 @@
-Syntax/logic verification note: src/outlook-player-popout.js was independently parsed with Node --check and projectedAveragePpg unit cases passed during implementation. Browser interaction QA remains covered by the implementation's keyboard/modal semantics and should be exercised in the standard browser QA environment before release.
