@@ -833,6 +833,7 @@
     if (!dashboard) return;
     const connected = Boolean(league && team);
     dashboard.classList.toggle("hidden", !connected);
+    $("#win-plan-card")?.classList.toggle("hidden", !connected);
     if (!connected) return;
     const week = Math.max(1, Number(league.currentWeek || 1));
     const opponent = leagueOpponentForWeek(week, team.teamId);
@@ -2482,6 +2483,160 @@
     renderRoster();
   }
 
+
+  function winPlanLabel(row) {
+    if (!row || row.id === "hold") return "HOLD";
+    if (row.planKind === "lineup") return "SET LINEUP";
+    if (row.planKind === "waiver") return "MAKE WAIVER MOVE";
+    if (row.planKind === "trade") return "MAKE TRADE";
+    return "NEXT MOVE";
+  }
+
+  function renderWinPlanResult({ selected, alternatives = [], baseline = null, uncertainCount = 0, week = 1 }) {
+    const node = $("#win-plan-result");
+    if (!node) return;
+    const hold = !selected || selected.id === "hold";
+    const delta = Number(selected?.delta?.expectedFutureHeadToHeadWins || 0);
+    const lower = Number(selected?.robustness?.lower95 || 0);
+    const baselineWins = Number(baseline?.expectedFutureHeadToHeadWins || 0);
+    const baselineChance = Number(baseline?.averageMatchupWinProbability || 0);
+    const detail = hold
+      ? "No legal qualified lineup, waiver, or trade action has a positive remaining-win edge whose paired 95% simulation interval stays above zero."
+      : String(selected.planDetail || selected.label || "Take the recommended action.");
+    const metrics = `<div class="win-plan-metrics"><span>Baseline remaining wins <strong>${num(baselineWins, 2)}</strong></span><span>Baseline game win chance <strong>${pct(baselineChance, 1)}</strong></span>${hold ? "" : `<span>Expected win gain <strong>+${num(delta, 2)}</strong></span><span>95% lower bound <strong>+${num(lower, 2)}</strong></span>`}</div>`;
+    const altMarkup = alternatives.length ? `<div class="win-plan-alternatives">${alternatives.slice(0, 3).map((row) => `<div class="win-plan-alternative"><strong>${esc(winPlanLabel(row))}</strong> · ${esc(row.planDetail || row.label || "Qualified alternative")} · +${num(row.delta.expectedFutureHeadToHeadWins, 2)} expected wins</div>`).join("")}</div>` : "";
+    const withheld = uncertainCount ? `<span>${uncertainCount} positive-looking option${uncertainCount === 1 ? " was" : "s were"} withheld because uncertainty still crossed zero.</span>` : "";
+    node.innerHTML = `<div class="win-plan-call"><span>WEEK ${week} · ${hold ? "NO FORCED MOVE" : "ROBUST EDGE"}</span><b>${esc(winPlanLabel(selected))}</b><strong>${esc(detail)}</strong>${metrics}${altMarkup}${withheld}<span>Win Plan compares one next move at a time. After any transaction or lineup change, rerun it. Qualified forecast, waiver, trade, and Draft gates remain unchanged.</span></div>`;
+  }
+
+  function winPlanTradeDetail(row) {
+    const give = (row.give || []).map((player) => player.name).join(" + ");
+    const receive = (row.receive || []).map((player) => player.name).join(" + ");
+    return `Trade with ${row.opponentName}: give ${give}; get ${receive}`;
+  }
+
+  async function runWinPlan() {
+    if (!hasEspnMyLeagueAccess()) return status("Connect ESPN and choose your team before building a Win Plan.", "error");
+    if (!hasRealFantasySchedule()) return status("Win Plan needs your remaining ESPN head-to-head schedule.", "error");
+    const userTeamId = connectedUserTeamId();
+    const league = activeLeagueState();
+    const week = Math.max(1, Number(league?.currentWeek || $("#lineup-week")?.value || 1));
+    const endWeek = futureWinRegularSeasonEnd(week);
+    const button = $("#run-win-plan");
+    button.disabled = true;
+    status("Building one win-first plan across lineup, waivers, and trades…");
+    try {
+      let roster = rosterPlayers();
+      let freeAgents = leagueApi.availablePlayers(state.players, state.leagueTeams, state.rosterIds);
+      const intelligencePool = [...freeAgents].sort((a, b) => baselineWeekProjection(b, week) - baselineWeekProjection(a, week)).slice(0, 140);
+      await prepareDecisionContext([...roster, ...intelligencePool], week);
+      roster = refreshDecisionPlayers(roster);
+      freeAgents = leagueApi.availablePlayers(state.players, state.leagueTeams, state.rosterIds);
+      const preparedLeague = await prepareLeagueWinContext(week, endWeek, "waivers");
+      if (!preparedLeague || !hasReliableLeagueRosterCoverage(preparedLeague.teams)) throw new Error("Win Plan needs recognized starters for every ESPN team before it can compare moves safely.");
+      const userTeam = preparedLeague.teams.find((team) => String(team.teamId) === userTeamId);
+      if (!userTeam) throw new Error("SnapCount could not resolve your connected team for Win Plan.");
+      const metadata = new Map();
+      const rosterActions = [];
+      let lineupCandidate = null;
+      const opponent = leagueOpponentForWeek(week);
+      if (opponent?.roster?.length && rosterStarterCoverage(opponent.roster) >= 0.88) {
+        const userConstraints = liveLineupConstraintsForTeam(userTeamId, week);
+        const opponentConstraints = liveLineupConstraintsForTeam(opponent.teamId, week);
+        const matchup = await runWorker("matchup-lineups", { options: {
+          userRoster: userTeam.roster, opponentRoster: refreshDecisionPlayers(opponent.roster).map((player) => leagueApi.playerForScoring(player, preparedLeague.settings)),
+          settings: preparedLeague.settings, week, schedule: state.schedule, evidenceByPlayer: preparedLeague.evidenceByPlayer,
+          validatedMeanScale: servingMeanScale("startSit"), userLineupConstraints: userConstraints,
+          opponentLineupConstraints: opponentConstraints.complete === false ? {} : opponentConstraints,
+          finalScoresByTeamWeek: { [week]: currentWeekLeagueFinalScoresByTeam(week) }, scenarios: 5000,
+          seed: `win-plan-lineup-${userTeamId}-${opponent.teamId}-${week}`,
+        } });
+        const preferredIds = new Set((matchup.preferred?.starterIds || []).map(String));
+        const baselineIds = new Set((matchup.baseline?.starterIds || []).map(String));
+        const starts = [...preferredIds].filter((id) => !baselineIds.has(id)).map((id) => playerById(id)?.name).filter(Boolean);
+        const sits = [...baselineIds].filter((id) => !preferredIds.has(id)).map((id) => playerById(id)?.name).filter(Boolean);
+        lineupCandidate = {
+          id: "lineup", action: { type: "lineup" }, planKind: "lineup",
+          label: `Opponent-aware lineup vs ${opponent.name}`,
+          planDetail: starts.length || sits.length ? `Start ${starts.join(" + ") || "the recommended lineup"}${sits.length ? `; sit ${sits.join(" + ")}` : ""}` : `Keep the point-max lineup against ${opponent.name}`,
+          delta: { expectedFutureHeadToHeadWins: Number(matchup.winProbabilityGain || 0), expectedFutureHeadToHeadWins95: matchup.winProbabilityGain95 || [0, 0], averageMatchupWinProbability: Number(matchup.winProbabilityGain || 0) },
+        };
+        lineupCandidate.robustness = engine.futureWinRobustness(lineupCandidate);
+      }
+
+      const settings = preparedLeague.settings;
+      const intelligenceIds = new Set(intelligencePool.map((player) => String(player.id)));
+      const decisionRoster = roster.map((player) => decisionPlayerForWeek(player, week, "waivers"));
+      const decisionFreeAgents = freeAgents.map((player) => intelligenceIds.has(String(player.id)) ? decisionPlayerForWeek(player, week, "waivers") : leagueApi.playerForScoring(player, settings));
+      let waiverRows = await runWorker("waivers", { roster: decisionRoster, freeAgents: decisionFreeAgents, settings, limit: 8, week, policy: { minimumScore: Number(servingPolicy("waivers").minimumScore || 0.25) } });
+      const lockedIds = currentLockedPlayerIds(userTeamId, week);
+      const usage = transactionRosterUsage();
+      waiverRows = waiverRows.filter((row) => {
+        const dropSlot = leagueApi.normalizeLineupSlot(usage.entryByPlayer.get(String(row.drop.id))?.lineupSlot);
+        const droppingIr = dropSlot === "IR";
+        return leagueApi.transactionFeasibility({ league, teamId: userTeamId, type: "waiver", rosterCountAfter: usage.active === null ? null : usage.active + (droppingIr ? 1 : 0), irCountAfter: usage.ir === null ? null : Math.max(0, usage.ir - (droppingIr ? 1 : 0)), involvedPlayerIds: [String(row.drop.id)], lockedPlayerIds: lockedIds }).allowed;
+      }).slice(0, 4);
+      for (const [index, row] of waiverRows.entries()) {
+        const id = `win-plan-waiver-${index + 1}`;
+        const add = playerById(row.add.id) || row.add;
+        preparedLeague.evidenceByPlayer[String(add.id)] = staticDecisionEvidence(add);
+        for (let futureWeek = week; futureWeek <= endWeek; futureWeek += 1) {
+          if (!preparedLeague.evidenceByPlayerWeek[futureWeek]) preparedLeague.evidenceByPlayerWeek[futureWeek] = {};
+          preparedLeague.evidenceByPlayerWeek[futureWeek][String(add.id)] = context.mergeEvidence(priorDefenseEvidence(add, futureWeek), marketEvidenceFor(add, futureWeek), rookieEvidenceFor(add, futureWeek));
+        }
+        rosterActions.push({ id, type: "waiver", label: `Add ${row.add.name}`, dropPlayerId: String(row.drop.id), addPlayer: add });
+        metadata.set(id, { planKind: "waiver", planDetail: `Add ${row.add.name}; drop ${row.drop.name}`, qualifiedScore: row.score });
+      }
+
+      const tradeWindow = leagueApi.transactionFeasibility({ league, teamId: userTeamId, type: "trade", now: Date.now() });
+      const tradeRows = [];
+      if (tradeWindow.allowed) {
+        const acceptScore = Number(servingPolicy("trades").acceptScore || 28);
+        const userDecisionRoster = userTeam.roster.map((player) => decisionPlayerForWeek(player, week, "trades"));
+        for (const opponentTeam of preparedLeague.teams.filter((team) => String(team.teamId) !== userTeamId)) {
+          const proposals = await runWorker("trade-proposals", { options: { userRoster: userDecisionRoster, opponentRoster: opponentTeam.roster.map((player) => decisionPlayerForWeek(player, week, "trades")), players: state.players, settings, week, includeTwoForTwo: true, maxEvaluations: 240, limit: 2 } });
+          for (const proposal of proposals) {
+            if (Number(proposal.userAnalysis?.score || 0) < acceptScore) continue;
+            const irGiveCount = proposal.give.filter((player) => leagueApi.normalizeLineupSlot(usage.entryByPlayer.get(String(player.id))?.lineupSlot) === "IR").length;
+            const feasible = leagueApi.transactionFeasibility({ league, teamId: userTeamId, type: "trade", now: Date.now(), rosterCountAfter: usage.active === null ? null : usage.active - (proposal.give.length - irGiveCount) + proposal.receive.length, irCountAfter: usage.ir === null ? null : Math.max(0, usage.ir - irGiveCount) });
+            if (feasible.allowed) tradeRows.push({ ...proposal, opponentTeamId: String(opponentTeam.teamId), opponentName: opponentTeam.name });
+          }
+        }
+      }
+      const bestTrades = tradeRows.sort((a, b) => Number(b.userAnalysis?.score || 0) - Number(a.userAnalysis?.score || 0) || Number(b.mutualScore || 0) - Number(a.mutualScore || 0)).slice(0, 6);
+      for (const [index, row] of bestTrades.entries()) {
+        const id = `win-plan-trade-${index + 1}`;
+        rosterActions.push({ id, type: "trade", label: winPlanTradeDetail(row), opponentTeamId: row.opponentTeamId, sendPlayerIds: row.give.map((player) => String(player.id)), receivePlayerIds: row.receive.map((player) => String(player.id)) });
+        metadata.set(id, { planKind: "trade", planDetail: winPlanTradeDetail(row), qualifiedScore: row.userAnalysis?.score });
+      }
+
+      const future = await runWorker("future-win-actions", { options: {
+        teams: preparedLeague.teams, userTeamId, actions: rosterActions, settings, schedule: state.schedule,
+        fantasySchedule: fantasyScheduleForLeague(), startWeek: week, regularSeasonEnd: endWeek,
+        evidenceByPlayer: preparedLeague.evidenceByPlayer, evidenceByPlayerWeek: preparedLeague.evidenceByPlayerWeek,
+        validatedMeanScale: preparedLeague.validatedMeanScale,
+        lineupConstraintsByTeamWeek: { [week]: currentWeekLeagueConstraintsByTeam(week) },
+        finalScoresByTeamWeek: { [week]: currentWeekLeagueFinalScoresByTeam(week) },
+        simulations: 2200, seed: `win-plan-${userTeamId}-${week}`,
+      } });
+      const hold = (future.actions || []).find((row) => row.id === "hold") || { id: "hold", action: { type: "none" }, outcome: future.baseline, delta: { expectedFutureHeadToHeadWins: 0, expectedFutureHeadToHeadWins95: [0, 0], averageMatchupWinProbability: 0 }, robustness: { status: "hold", robustPositive: false, lower95: 0 } };
+      const planRows = (future.actions || []).filter((row) => row.id !== "hold").map((row) => ({ ...row, ...(metadata.get(row.id) || {}) }));
+      if (lineupCandidate) planRows.push(lineupCandidate);
+      const selected = engine.selectRobustFutureWinAction([hold, ...planRows]) || hold;
+      const robust = planRows.filter((row) => row.robustness?.robustPositive).sort((a, b) => Number(b.delta?.expectedFutureHeadToHeadWins || 0) - Number(a.delta?.expectedFutureHeadToHeadWins || 0));
+      const alternatives = robust.filter((row) => row.id !== selected.id);
+      const uncertainCount = planRows.filter((row) => row.robustness?.status === "uncertain-positive").length;
+      renderWinPlanResult({ selected, alternatives, baseline: hold.outcome || future.baseline, uncertainCount, week });
+      $("#win-plan-result").dataset.contextKey = `${userTeamId}|${week}`;
+      status(selected.id === "hold" ? "Win Plan found no robust reason to force a move." : `Win Plan recommends: ${winPlanLabel(selected)}.`, "good");
+    } catch (error) {
+      $("#win-plan-result").innerHTML = `<strong>Win Plan could not finish.</strong><span>${esc(error.message)}</span>`;
+      status(error.message, "error");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   async function analyzeLineup() {
     let roster = rosterPlayers();
     if (!roster.length) return status("Build a roster first.", "error");
@@ -2519,7 +2674,7 @@
           validatedMeanScale: servingMeanScale("startSit"),
           userLineupConstraints: userConstraints,
           opponentLineupConstraints: opponentConstraints.complete === false ? {} : opponentConstraints,
-          finalScoresByTeamWeek: currentWeekLeagueFinalScoresByTeam(week),
+          finalScoresByTeamWeek: { [week]: currentWeekLeagueFinalScoresByTeam(week) },
           scenarios: 5000,
           seed: `matchup-lineup-${connectedUserTeamId()}-${opponent.teamId}-${week}`,
         } });
@@ -2620,7 +2775,7 @@
           const future = await runWorker("future-win-actions", { options: { teams: preparedLeague.teams, userTeamId: connectedUserTeamId(), actions, settings: preparedLeague.settings, schedule: state.schedule, fantasySchedule: fantasyScheduleForLeague(), startWeek: week, regularSeasonEnd: endWeek, evidenceByPlayer: preparedLeague.evidenceByPlayer, evidenceByPlayerWeek: preparedLeague.evidenceByPlayerWeek, validatedMeanScale: preparedLeague.validatedMeanScale, lineupConstraintsByTeamWeek: { [week]: currentWeekLeagueConstraintsByTeam(week) }, finalScoresByTeamWeek: { [week]: currentWeekLeagueFinalScoresByTeam(week) }, simulations: 1200, seed: `waiver-future-${week}` } });
           const futureById = new Map((future.actions || []).map((row) => [row.id, row]));
           suggestions = candidates.map((row, index) => ({ ...row, futureWin: futureById.get(`waiver-${index + 1}`) || null }))
-            .filter((row) => Number(row.futureWin?.delta?.expectedFutureHeadToHeadWins || 0) > 0)
+            .filter((row) => row.futureWin?.robustness?.robustPositive)
             .sort((a, b) => (a.futureWin?.rank || 999) - (b.futureWin?.rank || 999));
         }
       }
@@ -2632,7 +2787,7 @@
         const detail = bid ? `Reasonable range: ${bid.floor}–${bid.ceiling}` : row.lineupGain > 0 ? `Could improve your starters by ${num(row.lineupGain)} points` : `Adds ${num(row.depthGain)} points of bench depth`;
         const futureDetail = row.futureWin ? `<span>Future H2H win chance: <b>${pct(row.futureWin.outcome.averageMatchupWinProbability, 1)}</b> (${row.futureWin.delta.averageMatchupWinProbability >= 0 ? "+" : ""}${pct(row.futureWin.delta.averageMatchupWinProbability, 1)}) · expected wins ${row.futureWin.delta.expectedFutureHeadToHeadWins >= 0 ? "+" : ""}${num(row.futureWin.delta.expectedFutureHeadToHeadWins, 2)}</span>` : "";
         return `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">${esc(claim)}</span><strong>Add ${esc(row.add.name)}</strong></div><b>Drop ${esc(row.drop.name)}</b></div><p>${esc(row.reason)}</p><div class="decision-stats"><span>${esc(detail)}</span>${futureDetail}</div></article>`;
-      }).join("")}</div>${transactionNote ? `<p class="fineprint">Transaction state: ${esc(transactionNote)}.</p>` : ""}` : `<div class="empty-answer"><strong>No pickup is clearly worth it right now.</strong><p>Your current roster grades better than the available add/drop options for this week.</p>${transactionNote ? `<p class="fineprint">Transaction state: ${esc(transactionNote)}.</p>` : ""}</div>`;
+      }).join("")}</div>${transactionNote ? `<p class="fineprint">Transaction state: ${esc(transactionNote)}.</p>` : ""}` : `<div class="empty-answer"><strong>No pickup is clearly worth it right now.</strong><p>No legal qualified add/drop produced a positive remaining-win gain whose paired 95% simulation interval stayed above zero.</p>${transactionNote ? `<p class="fineprint">Transaction state: ${esc(transactionNote)}.</p>` : ""}</div>`;
       status(`Your waiver recommendations are ready. ${decisionContextLabel(contextState)}.`, "good");
     } catch (error) {
       status(error.message, "error");
@@ -2878,11 +3033,11 @@
         } });
         const futureById = new Map((future.actions || []).map((row) => [row.id, row]));
         const ranked = candidates.map((row, index) => ({ ...row, future: futureById.get(`trade-idea-${index + 1}`) }))
-          .filter((row) => row.future && row.future.delta.expectedFutureHeadToHeadWins > 0)
+          .filter((row) => row.future?.robustness?.robustPositive)
           .sort((a, b) => a.future.rank - b.future.rank)
           .slice(0, 10);
         $("#trade-result").className = "result-space";
-        $("#trade-result").innerHTML = ranked.length ? `<div class="decision-list">${ranked.map((row) => `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">FUTURE-WIN TRADE · ${esc(row.opponentName)}</span><strong>Give ${esc(row.give.map((p) => p.name).join(" + "))}</strong></div><b>Get ${esc(row.receive.map((p) => p.name).join(" + "))}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>Future H2H win chance: <b>${pct(row.future.outcome.averageMatchupWinProbability, 1)}</b> (${row.future.delta.averageMatchupWinProbability >= 0 ? "+" : ""}${pct(row.future.delta.averageMatchupWinProbability, 1)})</span><span>Expected remaining wins: <b>${num(row.future.outcome.expectedFutureHeadToHeadWins, 2)}</b> (${row.future.delta.expectedFutureHeadToHeadWins >= 0 ? "+" : ""}${num(row.future.delta.expectedFutureHeadToHeadWins, 2)})</span><span>Qualified trade score: ${num(row.userAnalysis.score, 1)}</span></div></article>`).join("")}</div>` : `<div class="empty-answer"><strong>No trade clearly improves future wins.</strong><p>Some packages passed the historical trade gate, but none increased your expected remaining head-to-head wins in the opponent-aware simulation.</p></div>`;
+        $("#trade-result").innerHTML = ranked.length ? `<div class="decision-list">${ranked.map((row) => `<article class="decision-card friendly-decision"><div class="decision-head"><div><span class="result-kicker">FUTURE-WIN TRADE · ${esc(row.opponentName)}</span><strong>Give ${esc(row.give.map((p) => p.name).join(" + "))}</strong></div><b>Get ${esc(row.receive.map((p) => p.name).join(" + "))}</b></div><p>${esc(row.summary)}</p><div class="decision-stats"><span>Future H2H win chance: <b>${pct(row.future.outcome.averageMatchupWinProbability, 1)}</b> (${row.future.delta.averageMatchupWinProbability >= 0 ? "+" : ""}${pct(row.future.delta.averageMatchupWinProbability, 1)})</span><span>Expected remaining wins: <b>${num(row.future.outcome.expectedFutureHeadToHeadWins, 2)}</b> (${row.future.delta.expectedFutureHeadToHeadWins >= 0 ? "+" : ""}${num(row.future.delta.expectedFutureHeadToHeadWins, 2)})</span><span>Qualified trade score: ${num(row.userAnalysis.score, 1)}</span></div></article>`).join("")}</div>` : `<div class="empty-answer"><strong>No trade clearly improves future wins.</strong><p>Some packages passed the historical trade gate, but none produced a positive remaining-win gain whose paired 95% simulation interval stayed above zero.</p></div>`;
         status("Opponent-aware trade ideas are ready. Real league rosters and your remaining schedule were used.", "good");
         return;
       }
@@ -3217,6 +3372,7 @@
     $("#roster-add-button").addEventListener("click", () => addRosterPlayer($("#roster-add").value));
     $("#roster-demo").addEventListener("click", loadDemoRoster);
     $("#roster-clear").addEventListener("click", async () => { state.rosterIds = []; await persistRoster(); renderRoster(); });
+    $("#run-win-plan")?.addEventListener("click", () => runWinPlan().catch((error) => status(error.message, "error")));
     $("#run-lineup").addEventListener("click", () => analyzeLineup().catch((error) => status(error.message, "error")));
     $("#run-waivers").addEventListener("click", runWaivers);
     $("#waiver-mode").addEventListener("change", () => $("#faab-budget-label").classList.toggle("hidden", $("#waiver-mode").value !== "faab"));

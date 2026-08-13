@@ -36,5 +36,5 @@ test("player popout stays wired to the existing Player Analysis surface and cach
   }
   assert.ok(store.includes("./src/outlook-player-popout.js"));
   assert.ok(worker.includes("./src/outlook-player-popout.js"));
-  assert.ok(worker.includes("snapcount-browser-v1.39.0-preseason-alpha"));
+  assert.ok(worker.includes("snapcount-browser-v1.40.0-win-plan"));
 });

@@ -4261,3 +4261,21 @@ tbody tr:hover td { background: #edf4fb !important; }
 .preseason-alpha-card p { margin:10px 0 5px; color:#304c6d; font-size:10px; line-height:1.5; }
 .preseason-alpha-card > small { display:block; color:#74869a; font-size:9px; line-height:1.45; }
 @media (max-width:680px) { .preseason-alpha-grid { grid-template-columns:1fr; } .preseason-alpha-head { display:grid; } }
+
+/* Connected-league Win Plan: one robust next action across lineup, waivers and trades. */
+.win-plan-card { margin-bottom: 16px; padding: 18px; border: 1px solid var(--sc-border); border-radius: 16px; background: #fff; box-shadow: var(--sc-shadow); }
+.win-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.win-plan-head > div { display: grid; gap: 4px; min-width: 0; }
+.win-plan-head span { color: #1268d7; font-size: 9px; font-weight: 900; letter-spacing: .11em; }
+.win-plan-head strong { color: var(--sc-navy); font-size: 22px; }
+.win-plan-head small { color: #6c7d91; font-size: 10px; line-height: 1.45; }
+.win-plan-result { display: grid; gap: 5px; margin-top: 14px; padding: 14px 15px; border-radius: 13px; background: #f3f7fc; color: #53677e; }
+.win-plan-result > strong { color: #173f6b; font-size: 15px; }
+.win-plan-result > span { font-size: 11px; line-height: 1.5; }
+.win-plan-result .win-plan-call { display: grid; gap: 7px; }
+.win-plan-result .win-plan-call b { color: var(--sc-navy); font-size: 20px; }
+.win-plan-result .win-plan-metrics { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 10px; }
+.win-plan-result .win-plan-metrics strong { color: #173f6b; }
+.win-plan-alternatives { display: grid; gap: 7px; margin-top: 4px; }
+.win-plan-alternative { padding-top: 7px; border-top: 1px solid #dce6f1; font-size: 10px; line-height: 1.45; }
+@media (max-width: 620px) { .win-plan-head { align-items: stretch; flex-direction: column; } .win-plan-head .primary { width: 100%; } }

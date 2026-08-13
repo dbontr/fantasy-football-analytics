@@ -1,0 +1,459 @@
+{
+  "version": "draft-h2h-objective-audit-2026.1",
+  "generatedAt": "2026-08-13T01:10:18.853Z",
+  "purpose": "diagnostic-only check that the frozen qualified Draft policy aligns with realized regular-season head-to-head wins",
+  "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "controls": [
+    "espn-market",
+    "balanced",
+    "value",
+    "need-heavy",
+    "zero-rb"
+  ],
+  "regularSeasonWeeks": 14,
+  "seedsPerSegment": 8,
+  "segments": [
+    [
+      10,
+      "early",
+      1
+    ],
+    [
+      10,
+      "middle",
+      5
+    ],
+    [
+      10,
+      "late",
+      10
+    ],
+    [
+      12,
+      "early",
+      1
+    ],
+    [
+      12,
+      "middle",
+      6
+    ],
+    [
+      12,
+      "late",
+      12
+    ]
+  ],
+  "policy": {
+    "market": 0.6,
+    "value": 0.18,
+    "need": 0.65,
+    "injury": 7,
+    "rookie": 0,
+    "maxQB": 2,
+    "maxTE": 2,
+    "maxK": 1,
+    "maxDST": 1,
+    "secondQbRound": 10,
+    "secondTeRound": 10,
+    "kickerRound": 14,
+    "dstRound": 13
+  },
+  "aggregate": {
+    "espn-market": {
+      "drafts": 336,
+      "snapMeanWins": 9.193,
+      "controlMeanWins": 5.808,
+      "meanWinDelta": 3.385,
+      "pairedWinRate": 0.786,
+      "pairedNonLossRate": 0.854,
+      "deltaStdDev": 3.354
+    },
+    "balanced": {
+      "drafts": 336,
+      "snapMeanWins": 9.193,
+      "controlMeanWins": 8.554,
+      "meanWinDelta": 0.64,
+      "pairedWinRate": 0.533,
+      "pairedNonLossRate": 0.688,
+      "deltaStdDev": 2.487
+    },
+    "value": {
+      "drafts": 336,
+      "snapMeanWins": 9.193,
+      "controlMeanWins": 6.171,
+      "meanWinDelta": 3.022,
+      "pairedWinRate": 0.81,
+      "pairedNonLossRate": 0.896,
+      "deltaStdDev": 3.039
+    },
+    "need-heavy": {
+      "drafts": 336,
+      "snapMeanWins": 9.193,
+      "controlMeanWins": 9.098,
+      "meanWinDelta": 0.095,
+      "pairedWinRate": 0.446,
+      "pairedNonLossRate": 0.598,
+      "deltaStdDev": 2.445
+    },
+    "zero-rb": {
+      "drafts": 336,
+      "snapMeanWins": 9.193,
+      "controlMeanWins": 8.408,
+      "meanWinDelta": 0.786,
+      "pairedWinRate": 0.518,
+      "pairedNonLossRate": 0.67,
+      "deltaStdDev": 2.86
+    }
+  },
+  "seasons": {
+    "2019": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 8.563,
+        "controlMeanWins": 4.188,
+        "meanWinDelta": 4.375,
+        "pairedWinRate": 0.938,
+        "pairedNonLossRate": 0.958,
+        "deltaStdDev": 2.472
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 8.563,
+        "controlMeanWins": 8.177,
+        "meanWinDelta": 0.385,
+        "pairedWinRate": 0.5,
+        "pairedNonLossRate": 0.625,
+        "deltaStdDev": 2.232
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 8.563,
+        "controlMeanWins": 6.354,
+        "meanWinDelta": 2.208,
+        "pairedWinRate": 0.729,
+        "pairedNonLossRate": 0.875,
+        "deltaStdDev": 2.432
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 8.563,
+        "controlMeanWins": 8.167,
+        "meanWinDelta": 0.396,
+        "pairedWinRate": 0.458,
+        "pairedNonLossRate": 0.563,
+        "deltaStdDev": 2.886
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 8.563,
+        "controlMeanWins": 8.438,
+        "meanWinDelta": 0.125,
+        "pairedWinRate": 0.396,
+        "pairedNonLossRate": 0.583,
+        "deltaStdDev": 2.438
+      }
+    },
+    "2020": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 9.417,
+        "controlMeanWins": 4.729,
+        "meanWinDelta": 4.688,
+        "pairedWinRate": 0.938,
+        "pairedNonLossRate": 0.979,
+        "deltaStdDev": 2.896
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 9.417,
+        "controlMeanWins": 8.917,
+        "meanWinDelta": 0.5,
+        "pairedWinRate": 0.479,
+        "pairedNonLossRate": 0.708,
+        "deltaStdDev": 2.593
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 9.417,
+        "controlMeanWins": 6.75,
+        "meanWinDelta": 2.667,
+        "pairedWinRate": 0.792,
+        "pairedNonLossRate": 0.917,
+        "deltaStdDev": 2.739
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 9.417,
+        "controlMeanWins": 9.146,
+        "meanWinDelta": 0.271,
+        "pairedWinRate": 0.458,
+        "pairedNonLossRate": 0.563,
+        "deltaStdDev": 2.516
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 9.417,
+        "controlMeanWins": 8.396,
+        "meanWinDelta": 1.021,
+        "pairedWinRate": 0.583,
+        "pairedNonLossRate": 0.729,
+        "deltaStdDev": 2.589
+      }
+    },
+    "2021": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 8.979,
+        "controlMeanWins": 6.552,
+        "meanWinDelta": 2.427,
+        "pairedWinRate": 0.667,
+        "pairedNonLossRate": 0.75,
+        "deltaStdDev": 3.633
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 8.979,
+        "controlMeanWins": 8.25,
+        "meanWinDelta": 0.729,
+        "pairedWinRate": 0.5,
+        "pairedNonLossRate": 0.771,
+        "deltaStdDev": 2.05
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 8.979,
+        "controlMeanWins": 6.688,
+        "meanWinDelta": 2.292,
+        "pairedWinRate": 0.729,
+        "pairedNonLossRate": 0.833,
+        "deltaStdDev": 3.066
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 8.979,
+        "controlMeanWins": 9.042,
+        "meanWinDelta": -0.063,
+        "pairedWinRate": 0.417,
+        "pairedNonLossRate": 0.563,
+        "deltaStdDev": 2.479
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 8.979,
+        "controlMeanWins": 8.375,
+        "meanWinDelta": 0.604,
+        "pairedWinRate": 0.5,
+        "pairedNonLossRate": 0.646,
+        "deltaStdDev": 2.886
+      }
+    },
+    "2022": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 9.01,
+        "controlMeanWins": 6.042,
+        "meanWinDelta": 2.969,
+        "pairedWinRate": 0.771,
+        "pairedNonLossRate": 0.896,
+        "deltaStdDev": 2.892
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 9.01,
+        "controlMeanWins": 7.875,
+        "meanWinDelta": 1.135,
+        "pairedWinRate": 0.646,
+        "pairedNonLossRate": 0.708,
+        "deltaStdDev": 2.594
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 9.01,
+        "controlMeanWins": 6.208,
+        "meanWinDelta": 2.802,
+        "pairedWinRate": 0.813,
+        "pairedNonLossRate": 0.875,
+        "deltaStdDev": 2.951
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 9.01,
+        "controlMeanWins": 8.875,
+        "meanWinDelta": 0.135,
+        "pairedWinRate": 0.458,
+        "pairedNonLossRate": 0.625,
+        "deltaStdDev": 2.594
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 9.01,
+        "controlMeanWins": 8.25,
+        "meanWinDelta": 0.76,
+        "pairedWinRate": 0.542,
+        "pairedNonLossRate": 0.667,
+        "deltaStdDev": 2.977
+      }
+    },
+    "2023": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 9.115,
+        "controlMeanWins": 9.271,
+        "meanWinDelta": -0.156,
+        "pairedWinRate": 0.354,
+        "pairedNonLossRate": 0.521,
+        "deltaStdDev": 2.493
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 9.115,
+        "controlMeanWins": 9.667,
+        "meanWinDelta": -0.552,
+        "pairedWinRate": 0.375,
+        "pairedNonLossRate": 0.479,
+        "deltaStdDev": 2.604
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 9.115,
+        "controlMeanWins": 3.313,
+        "meanWinDelta": 5.802,
+        "pairedWinRate": 0.958,
+        "pairedNonLossRate": 0.979,
+        "deltaStdDev": 2.958
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 9.115,
+        "controlMeanWins": 9.625,
+        "meanWinDelta": -0.51,
+        "pairedWinRate": 0.333,
+        "pairedNonLossRate": 0.521,
+        "deltaStdDev": 2.291
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 9.115,
+        "controlMeanWins": 8.938,
+        "meanWinDelta": 0.177,
+        "pairedWinRate": 0.417,
+        "pairedNonLossRate": 0.563,
+        "deltaStdDev": 3.048
+      }
+    },
+    "2024": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 9.271,
+        "controlMeanWins": 5.083,
+        "meanWinDelta": 4.188,
+        "pairedWinRate": 0.896,
+        "pairedNonLossRate": 0.938,
+        "deltaStdDev": 3.057
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 9.271,
+        "controlMeanWins": 8.406,
+        "meanWinDelta": 0.865,
+        "pairedWinRate": 0.521,
+        "pairedNonLossRate": 0.708,
+        "deltaStdDev": 2.586
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 9.271,
+        "controlMeanWins": 6.292,
+        "meanWinDelta": 2.979,
+        "pairedWinRate": 0.875,
+        "pairedNonLossRate": 0.917,
+        "deltaStdDev": 2.564
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 9.271,
+        "controlMeanWins": 9.167,
+        "meanWinDelta": 0.104,
+        "pairedWinRate": 0.458,
+        "pairedNonLossRate": 0.646,
+        "deltaStdDev": 2.096
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 9.271,
+        "controlMeanWins": 8.333,
+        "meanWinDelta": 0.938,
+        "pairedWinRate": 0.521,
+        "pairedNonLossRate": 0.688,
+        "deltaStdDev": 2.718
+      }
+    },
+    "2025": {
+      "espn-market": {
+        "drafts": 48,
+        "snapMeanWins": 10,
+        "controlMeanWins": 4.792,
+        "meanWinDelta": 5.208,
+        "pairedWinRate": 0.938,
+        "pairedNonLossRate": 0.938,
+        "deltaStdDev": 2.798
+      },
+      "balanced": {
+        "drafts": 48,
+        "snapMeanWins": 10,
+        "controlMeanWins": 8.583,
+        "meanWinDelta": 1.417,
+        "pairedWinRate": 0.708,
+        "pairedNonLossRate": 0.813,
+        "deltaStdDev": 2.35
+      },
+      "value": {
+        "drafts": 48,
+        "snapMeanWins": 10,
+        "controlMeanWins": 7.594,
+        "meanWinDelta": 2.406,
+        "pairedWinRate": 0.771,
+        "pairedNonLossRate": 0.875,
+        "deltaStdDev": 3.047
+      },
+      "need-heavy": {
+        "drafts": 48,
+        "snapMeanWins": 10,
+        "controlMeanWins": 9.667,
+        "meanWinDelta": 0.333,
+        "pairedWinRate": 0.542,
+        "pairedNonLossRate": 0.708,
+        "deltaStdDev": 2.206
+      },
+      "zero-rb": {
+        "drafts": 48,
+        "snapMeanWins": 10,
+        "controlMeanWins": 8.125,
+        "meanWinDelta": 1.875,
+        "pairedWinRate": 0.667,
+        "pairedNonLossRate": 0.813,
+        "deltaStdDev": 3.105
+      }
+    }
+  },
+  "positiveSeasons": {
+    "espn-market": 6,
+    "balanced": 6,
+    "value": 7,
+    "need-heavy": 5,
+    "zero-rb": 7
+  },
+  "usedForSelection": false,
+  "servingPolicyChanged": false,
+  "consumedHistoricalEvidence": true,
+  "interpretation": "This audit does not qualify or tune a Draft policy. It only checks whether the already-frozen policy's roster-point advantage is directionally aligned with realized head-to-head wins on consumed historical seasons."
+}
