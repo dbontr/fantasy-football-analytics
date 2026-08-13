@@ -10,6 +10,21 @@ const forwardDir = path.join(root, "data", "forward");
 const season = 2026;
 function sha(bytes) { return crypto.createHash("sha256").update(bytes).digest("hex"); }
 function fileStamp(iso) { return iso.replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
+const POLICY_BINDING_FILES = [
+  "data/analytics-runtime-profile.json", "data/validation/draft-robust-policy.json",
+  "src/engine/core.js", "src/engine/runtime.js", "src/engine/draft-sim.js",
+  "src/engine/draft-intelligence.js", "src/engine/preseason-alpha.js",
+  "src/engine/correlation.js", "src/engine/calibration.js", "src/engine/mean-calibration.js",
+];
+function decisionPolicyBinding() {
+  const files = Object.fromEntries(POLICY_BINDING_FILES.map((relative) => {
+    const bytes = fs.readFileSync(path.join(root, relative));
+    return [relative, sha(bytes)];
+  }));
+  const canonical = Object.entries(files).map(([relative, digest]) => relative + ":" + digest).join("\n");
+  return { version: "decision-policy-binding-2026.1", files, combinedSha256: sha(Buffer.from(canonical)) };
+}
+
 function compactProjection(player) {
   return {
     id: String(player.id), name: player.name, position: player.position, team: player.team,
@@ -18,15 +33,6 @@ function compactProjection(player) {
     adp: Number.isFinite(Number(player.adp)) ? Number(player.adp) : null,
     injuryStatus: player.injuryStatus || null, projectionSource: player.projectionSource || null,
     market: player.market ? { ...player.market } : null,
-  };
-}
-function compactPreseasonAlpha(row) {
-  return {
-    id: String(row.id), alphaScore: Number(row.alphaScore || 0), confidence: Number(row.confidence || 0),
-    candidateShift: Number(row.candidateShift || 0), roleProbabilities: row.roleProbabilities || [],
-    market: row.market ? { pricedFraction: row.market.pricedFraction, movement: row.market.movement, label: row.market.label } : null,
-    injury: row.injury ? { trend: row.injury.trend, latestState: row.injury.latestState } : null,
-    modelEffect: row.modelEffect || "uncertainty-and-shadow-only",
   };
 }
 function compactPreseasonAlpha(row) {
@@ -80,6 +86,7 @@ async function main() {
       version: "forward-input-snapshot-2026.3", season, capturedAt,
       purpose: "prospective pre-outcome input freeze for future validation; contains no regular-season realized labels",
       policy: "Record this snapshot before future outcomes. Do not retroactively edit it or use later results to change its inputs.",
+      decisionPolicyBinding: decisionPolicyBinding(),
     },
     projections: enriched.map(compactProjection),
     camp: { artifactVersion: camp.meta?.version || null, capturedAt: camp.meta?.capturedAt || null, sha256: sha(campBytes), players: camp.players || [] },

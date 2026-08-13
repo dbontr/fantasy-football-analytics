@@ -942,6 +942,27 @@
     return [center - 1.96 * standardError, center + 1.96 * standardError];
   }
 
+  function futureWinRobustness(row, options = {}) {
+    const delta = finite(row?.delta?.expectedFutureHeadToHeadWins, 0);
+    const interval = row?.delta?.expectedFutureHeadToHeadWins95;
+    const lower95 = Array.isArray(interval) && Number.isFinite(Number(interval[0])) ? Number(interval[0]) : null;
+    const upper95 = Array.isArray(interval) && Number.isFinite(Number(interval[1])) ? Number(interval[1]) : null;
+    const minimumDelta = Math.max(0, finite(options.minimumDelta, 0));
+    const hold = String(row?.id || "") === "hold" || row?.action?.type === "none";
+    const robustPositive = !hold && delta > minimumDelta && lower95 !== null && lower95 > 0;
+    const robustNegative = !hold && delta < -minimumDelta && upper95 !== null && upper95 < 0;
+    const status = hold ? "hold" : robustPositive ? "recommend" : robustNegative ? "avoid" : delta > 0 ? "uncertain-positive" : delta < 0 ? "negative-expected" : "neutral";
+    return { expectedDelta: delta, lower95, upper95, robustPositive, robustNegative, status };
+  }
+
+  function selectRobustFutureWinAction(rows = [], options = {}) {
+    const prepared = (rows || []).map((row) => ({ row, robustness: row?.robustness || futureWinRobustness(row, options) }));
+    const robust = prepared.filter((entry) => entry.robustness.robustPositive)
+      .sort((left, right) => right.robustness.expectedDelta - left.robustness.expectedDelta || right.robustness.lower95 - left.robustness.lower95 || String(left.row?.id || "").localeCompare(String(right.row?.id || "")));
+    if (robust.length) return robust[0].row;
+    return prepared.find((entry) => String(entry.row?.id || "") === "hold" || entry.row?.action?.type === "none")?.row || null;
+  }
+
   function uniqueRosterPlayers(teams) {
     const byId = new Map();
     for (const team of teams || []) {
@@ -1105,6 +1126,7 @@
         expectedFutureHeadToHeadWins95: meanConfidence95(deltaSamples),
         averageMatchupWinProbability: row.outcome.averageMatchupWinProbability - baseline.averageMatchupWinProbability,
       };
+      row.robustness = futureWinRobustness(row);
     });
     const leagueSimulations = Math.min(6_000, Math.max(0, Number(options.leagueSimulations || 0)));
     if (leagueSimulations >= 250) {
@@ -1145,6 +1167,7 @@
       right.outcome.averageMatchupWinProbability - left.outcome.averageMatchupWinProbability ||
       left.id.localeCompare(right.id));
     const preferred = rows[0];
+    const robustPreferred = selectRobustFutureWinAction(rows) || rows.find((row) => row.id === "hold") || preferred;
     rows.forEach((row, index) => { row.rank = index + 1; });
     return {
       version: VERSION,
@@ -1153,6 +1176,7 @@
       startWeek,
       regularSeasonEnd,
       preferredActionId: preferred.id,
+      robustPreferredActionId: robustPreferred?.id || "hold",
       baseline,
       actions: rows,
     };
@@ -1320,6 +1344,8 @@
     evaluateChampionshipActions,
     evaluateFutureWinActions,
     evaluateMatchupLineups,
+    futureWinRobustness,
+    selectRobustFutureWinAction,
     evaluatePortfolios,
     buildCorrelationPlan,
     forecastPlayer,

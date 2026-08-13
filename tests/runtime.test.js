@@ -317,3 +317,34 @@ test("future-win actions can apply a trade between two other teams while evaluat
   assert.ok(trade.outcome.matchupWinProbabilities.find((row) => row.week === 1).winProbability > hold.outcome.matchupWinProbabilities.find((row) => row.week === 1).winProbability);
   assert.ok(trade.outcome.matchupWinProbabilities.find((row) => row.week === 2).winProbability < hold.outcome.matchupWinProbabilities.find((row) => row.week === 2).winProbability);
 });
+
+test("future-win robustness recommends only a positive lower-bound action", () => {
+  const hold = { id: "hold", action: { type: "none" }, delta: { expectedFutureHeadToHeadWins: 0, expectedFutureHeadToHeadWins95: [0, 0] } };
+  const noisy = { id: "noisy", action: { type: "waiver" }, delta: { expectedFutureHeadToHeadWins: 0.18, expectedFutureHeadToHeadWins95: [-0.03, 0.39] } };
+  const robust = { id: "robust", action: { type: "trade" }, delta: { expectedFutureHeadToHeadWins: 0.14, expectedFutureHeadToHeadWins95: [0.02, 0.26] } };
+  assert.equal(engine.futureWinRobustness(noisy).status, "uncertain-positive");
+  assert.equal(engine.futureWinRobustness(robust).status, "recommend");
+  assert.equal(engine.selectRobustFutureWinAction([noisy, hold, robust]).id, "robust");
+});
+
+test("future-win robustness defaults to HOLD when no changed action clears uncertainty", () => {
+  const rows = [
+    { id: "hold", action: { type: "none" }, delta: { expectedFutureHeadToHeadWins: 0, expectedFutureHeadToHeadWins95: [0, 0] } },
+    { id: "waiver", action: { type: "waiver" }, delta: { expectedFutureHeadToHeadWins: 0.08, expectedFutureHeadToHeadWins95: [-0.01, 0.17] } },
+    { id: "trade", action: { type: "trade" }, delta: { expectedFutureHeadToHeadWins: -0.04, expectedFutureHeadToHeadWins95: [-0.12, 0.04] } },
+  ];
+  assert.equal(engine.selectRobustFutureWinAction(rows).id, "hold");
+});
+
+test("opponent-aware lineup consumes nested current-week final scores", () => {
+  const settings = { slots: { QB: 0, RB: 0, WR: 1, TE: 0, FLEX: 0, SUPERFLEX: 0, DST: 0, K: 0, BN: 0 } };
+  const user = makePlayer("final-user", "WR", "DET", 8, { projectionStdDev: 6 });
+  const opponent = makePlayer("final-opp", "WR", "GB", 20, { projectionStdDev: 6 });
+  const result = engine.evaluateMatchupLineups({
+    userRoster: [user], opponentRoster: [opponent], settings, week: 1, scenarios: 1200, seed: "nested-final-score",
+    finalScoresByTeamWeek: { 1: { 1: { "final-user": 27.4 }, 2: { "final-opp": 10.1 } } },
+  });
+  assert.ok(Math.abs(result.baseline.expectedPoints - 27.4) < 1e-4);
+  assert.equal(result.baseline.winProbability, 1);
+  assert.equal(result.preferred.winProbability, 1);
+});
